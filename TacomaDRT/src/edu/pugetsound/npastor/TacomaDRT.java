@@ -2,11 +2,18 @@ package edu.pugetsound.npastor;
 
 public class TacomaDRT {
 
+	private TripGenerator mTripGen;
+	
 	public static void main(String[] args) {
-		
+		TacomaDRT drt = new TacomaDRT();
+		drt.runModel();
 	}
 	
 	public TacomaDRT() {
-		
+		mTripGen = new TripGenerator();
+	}
+	
+	public void runModel() {
+		mTripGen.generateTrips();
 	}
 }

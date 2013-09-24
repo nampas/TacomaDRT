@@ -1,2 +1,4 @@
 # Ignore Eclipse Files #
 *.metadata
+*.project
+*.classpath
