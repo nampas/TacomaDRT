@@ -2,6 +2,8 @@ package edu.pugetsound.npastor;
 
 public class TacomaDRT {
 
+	//Note to self: Run from .\TacomaDRT\bin
+	//execute: java edu/pugetsound/npastor/TacomaDRT
 	private TripGenerator mTripGen;
 	
 	public static void main(String[] args) {
