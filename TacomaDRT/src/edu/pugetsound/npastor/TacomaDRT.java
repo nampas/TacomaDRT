@@ -1,5 +1,7 @@
 package edu.pugetsound.npastor;
 
+import java.util.Random;
+
 public class TacomaDRT {
 
 	//Note to self: Run from .\TacomaDRT\bin

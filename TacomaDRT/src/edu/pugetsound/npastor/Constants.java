@@ -6,13 +6,18 @@ package edu.pugetsound.npastor;
  */
 public class Constants {
 	
-	// Filenames
-	public final static String APTA_DATA_FILE = "../files/APTAData.txt";
+	// Filenames and paths
+	public final static String APTA_DATA_FILE = "../files/APTAData.txt"; //APTA rider age and trip type distributions
+	public final static String PC_CENSUS_SHP = "../files/PCCensusTracts/pie10ct.shp"; //Pierce County census tract shapefile
+	public final static String PC_AGE_FILE = "../files/PCAgeEmployment/DEC_10_SF1_P12_with_ann.txt"; //Piece county age data by census tract, from census
+	public final static String PC_EMPLOYMENT_FILE = "../files/PCAgeEmployment/PCTractEmp2009.txt "; // Pierce County employment data, from PSRC
 	
 	//Total trips per day
 	public final static int TOTAL_TRIPS = 10;
 	
-	// Constants representing trip types
+	//***************************************
+	//           APTA Trip Types
+	//***************************************
 	public final static int TRIP_COMMUTE = 0;
 	public final static int TRIP_SCHOOL = 1;
 	public final static int TRIP_SOCIAL = 2;
@@ -21,23 +26,34 @@ public class Constants {
 	public final static int TRIP_PERSONAL_BUSINESS = 5;
 	public final static int TRIP_OTHER = 6;
 	
-	// These strings are trip type labels in the APTA text file
-	public static final String[] TRIP_TYPES = {
-		"commute", "school", "social", "shopping/dining",
-		"medical/dental", "personal_business", "other"};
+	//***************************************
+	//            APTA Age Groups
+	//***************************************
+	public final static int APTA_AGE_0_14 = 10;
+	public final static int APTA_AGE_15_19 = 11;
+	public final static int APTA_AGE_20_24 = 12;
+	public final static int APTA_AGE_25_34 = 13;
+	public final static int APTA_AGE_35_44 = 14;
+	public final static int APTA_AGE_45_54 = 15;
+	public final static int APTA_AGE_55_64 = 16;
+	public final static int APTA_AGE_65_OVER = 17;
 	
-	// Constants representing age groups
-	public final static int AGE_0_14 = 10;
-	public final static int AGE_15_19 = 11;
-	public final static int AGE_20_24 = 12;
-	public final static int AGE_25_34 = 13;
-	public final static int AGE_35_44 = 14;
-	public final static int AGE_45_54 = 15;
-	public final static int AGE_55_64 = 16;
-	public final static int AGE_65_OVER = 17;
+	//***************************************
+	//           Census Age Groups
+	//***************************************
 	
-	// These strings are age group labels in the APTA text file
-	public static final String[] AGE_GROUPS = {
-		"0-14", "15-19", "20-24", "25-34",
-		"35-44", "45-54", "55-64", "65+"};
+	// Constants representing Census age groups
+	
+	//***************************************
+	//         PSRC Employment Groups
+	//***************************************
+	public final static int PSRC_EMP_CONST_RES = 30;
+	public final static int PSRC_EMP_FIRE = 31;
+	public final static int PSRC_EMP_MANF = 32;
+	public final static int PSRC_EMP_RETAIL = 33;
+	public final static int PSRC_EMP_SERVS = 34;
+	public final static int PSRC_EMP_WTU = 35;
+	public final static int PSRC_EMP_GOVT = 36;
+	public final static int PSRC_EMP_EDU = 37;
+	public final static int PSRC_EMP_TOTAL = 38;
 }

@@ -17,11 +17,13 @@ public class TripGenerator {
 
 	private ArrayList<Trip> mTrips;
 	private AptaData mAptaData;
+	private PCAgeEmployment mPCData;
 	private Random mRandom;
 
 	public TripGenerator() {
 		mTrips = new ArrayList<Trip>();
 		mAptaData = new AptaData();
+		mPCData = new PCAgeEmployment();
 		mRandom = new Random();
 	}
 
@@ -53,28 +55,28 @@ public class TripGenerator {
 			double percentage = mAptaData.getAgeGroupPct(curKey);
 			int groupTotal = (int) Math.ceil(percentage * Constants.TOTAL_TRIPS / 100); // Total riders in this group
 			switch(curKey) {
-			case Constants.AGE_0_14:
+			case Constants.APTA_AGE_0_14:
 				ages.addAll(generateAgesInRange(groupTotal, 0, 14));
 				break;
-			case Constants.AGE_15_19:
+			case Constants.APTA_AGE_15_19:
 				ages.addAll(generateAgesInRange(groupTotal, 15, 19));
 				break;
-			case Constants.AGE_20_24:
+			case Constants.APTA_AGE_20_24:
 				ages.addAll(generateAgesInRange(groupTotal, 20, 24));
 				break;
-			case Constants.AGE_25_34:
+			case Constants.APTA_AGE_25_34:
 				ages.addAll(generateAgesInRange(groupTotal, 25, 34));
 				break;
-			case Constants.AGE_35_44:
+			case Constants.APTA_AGE_35_44:
 				ages.addAll(generateAgesInRange(groupTotal, 35, 44));
 				break;
-			case Constants.AGE_45_54:
+			case Constants.APTA_AGE_45_54:
 				ages.addAll(generateAgesInRange(groupTotal, 45, 54));
 				break;
-			case Constants.AGE_55_64:
+			case Constants.APTA_AGE_55_64:
 				ages.addAll(generateAgesInRange(groupTotal, 55, 64));
 				break;
-			case Constants.AGE_65_OVER:
+			case Constants.APTA_AGE_65_OVER:
 				ages.addAll(generateAgesInRange(groupTotal, 65, 80)); //TODO: DETERMINE MAX AGE HERE
 			}
 		}
@@ -104,7 +106,6 @@ public class TripGenerator {
 		// Loop through the key set, process each trip type
 		for(int i = 0; i < keys.length; i++) {
 			int curKey = (int) keys[i];
-			System.out.println("Current trip type key: " + curKey);
 			double percentage = mAptaData.getTripTypePct(curKey);
 			int groupTotal = (int) Math.ceil(percentage * Constants.TOTAL_TRIPS / 100); // Total riders in this group
 			for(int j = 0; j < groupTotal; j++) {
@@ -232,21 +233,21 @@ public class TripGenerator {
 				mTripTypePcts.put(Constants.TRIP_OTHER, Double.valueOf(tokens[1]));
 			// Check age groups
 			else if(tokens[0].equals("0-14"))
-				mRiderAgePcts.put(Constants.AGE_0_14, Double.valueOf(tokens[1]));
+				mRiderAgePcts.put(Constants.APTA_AGE_0_14, Double.valueOf(tokens[1]));
 			else if(tokens[0].equals("15-19"))
-				mRiderAgePcts.put(Constants.AGE_15_19, Double.valueOf(tokens[1]));
+				mRiderAgePcts.put(Constants.APTA_AGE_15_19, Double.valueOf(tokens[1]));
 			else if(tokens[0].equals("20-24"))
-				mRiderAgePcts.put(Constants.AGE_20_24, Double.valueOf(tokens[1]));
+				mRiderAgePcts.put(Constants.APTA_AGE_20_24, Double.valueOf(tokens[1]));
 			else if(tokens[0].equals("25-34"))
-				mRiderAgePcts.put(Constants.AGE_25_34, Double.valueOf(tokens[1]));
+				mRiderAgePcts.put(Constants.APTA_AGE_25_34, Double.valueOf(tokens[1]));
 			else if(tokens[0].equals("35-44"))
-				mRiderAgePcts.put(Constants.AGE_35_44, Double.valueOf(tokens[1]));
+				mRiderAgePcts.put(Constants.APTA_AGE_35_44, Double.valueOf(tokens[1]));
 			else if(tokens[0].equals("45-54"))
-				mRiderAgePcts.put(Constants.AGE_45_54, Double.valueOf(tokens[1]));
+				mRiderAgePcts.put(Constants.APTA_AGE_45_54, Double.valueOf(tokens[1]));
 			else if(tokens[0].equals("55-64"))
-				mRiderAgePcts.put(Constants.AGE_55_64, Double.valueOf(tokens[1]));
+				mRiderAgePcts.put(Constants.APTA_AGE_55_64, Double.valueOf(tokens[1]));
 			else if(tokens[0].equals("65+"))
-				mRiderAgePcts.put(Constants.AGE_65_OVER, Double.valueOf(tokens[1]));
+				mRiderAgePcts.put(Constants.APTA_AGE_65_OVER, Double.valueOf(tokens[1]));
 		}
 	}
 }
