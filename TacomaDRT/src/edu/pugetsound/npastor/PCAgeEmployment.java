@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 /**
+ * TODO: Y NO 9400 CENSUS TRACTS IN PSRC EMPLOYMENT DATA?!?!
  * Age and employment data by census tract in Pierce County
  * @author Nathan P
  *
@@ -31,18 +32,57 @@ public class PCAgeEmployment {
 		mEmploymentByTract = new TractCSVFile(Constants.PC_EMPLOYMENT_FILE);
 		ArrayList<Integer> columnCodes = generateEmpColumnCodes(mEmploymentByTract.getColumnLabels());
 		mEmploymentByTract.setColumnCodes(columnCodes);
-		System.out.println("Tract at row 3:" + mEmploymentByTract.getTractAtRow(3));
+		System.out.println("Tract at row 3: " + mEmploymentByTract.getTractAtRow(3));
 	}
 	
-//	public String getTractWeightedByAge(int ageGroupCode) {
-//		
-//	}
-//	
-//	public String getTractWeightedByEmp(int employmentCode) {
-//		ArrayList<String> column = mEmploymentByTract.getColumn(employmentCode);
-//		int total = Integer.valueOf(column.get(column.size()-1));
-//		int randomVal = mRand.nextInt(total+1);
-//	}
+	/**
+	 * Get a tract weighted according the specified column codes
+	 * @param columnCodes List of column codes to weigh when choosing tract
+	 * @param isEmployment Specifies if seeking employment or demographic data
+	 * @return Name of tract
+	 */
+	public String getWeightedTract(int[] columnCodes, boolean isEmployment) {
+		
+		String tract = "";
+		
+		ArrayList<ArrayList<String>> columns = new ArrayList<ArrayList<String>>();
+		int columnLength = 0;
+		int employmentTotal = 0;
+		
+		// Loop through all columns to calculate total employment
+		for(int i = 0; i < columnCodes.length; i++) {
+			ArrayList<String> curCol = isEmployment ? mEmploymentByTract.getColumn(columnCodes[i]) : mAgeByTract.getColumn(columnCodes[i]);
+			columnLength = curCol.size();
+			for(int j = 1; j < columnLength; j++) {
+				if(!curCol.get(j).contains("*") && !curCol.get(j).contains("-"))
+					employmentTotal += Integer.valueOf(curCol.get(j));
+			}
+			columns.add(curCol); // Add current column to local list to speed up loops below
+		}
+		
+		
+		
+		// Generate random number within total employment range
+		int randomVal = mRand.nextInt(employmentTotal + 1);
+		int runningTotal = 0;
+		// When random value falls within running total, pick last tract
+		System.out.println("Column length: " + columnLength + ". Num columns: " + columns.size());
+		for(int i = 1; i < columnLength; i++) {
+			for(int j = 0; j < columns.size(); j++) {
+//				System.out.println(columns.get(j).get(i));
+				if(!columns.get(j).get(i).contains("*") && !columns.get(j).get(i).contains("-"))
+					runningTotal += Integer.valueOf(columns.get(j).get(i));
+			}
+			if(randomVal < runningTotal) {
+				tract = mEmploymentByTract.getTractAtRow(i);
+				System.out.println("Picking tract: " + tract);
+				break;
+			}
+		}
+		System.out.println("Column total: " + employmentTotal);
+		System.out.println("End running total: " + runningTotal);
+		return tract;
+	}
 	
 	private ArrayList<Integer> generateEmpColumnCodes(ArrayList<String> columnLabels) {
 		ArrayList<Integer> columnCodes = new ArrayList<Integer>(columnLabels.size());

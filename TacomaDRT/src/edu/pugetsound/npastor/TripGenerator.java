@@ -34,9 +34,11 @@ public class TripGenerator {
 		for(int i = 0; i < Constants.TOTAL_TRIPS; i++) {
 			mTrips.add(new Trip());
 		}
+		// Generate all trip attributes. ORDER IS IMPORTANT!
 		generateTripTypes();
 		generateAges();
 		assignDirections();
+		generateEndpoints();
 		for(int i = 0; i < mTrips.size(); i++)
 			System.out.println(mTrips.get(i).toString());
 	}
@@ -135,6 +137,34 @@ public class TripGenerator {
 		for(int i = 0; i < mTrips.size(); i++) {
 			int randomIndex = mRandom.nextInt(directions.size());
 			mTrips.get(i).setDirection(directions.get(randomIndex)); // Pick a random trip out of tripls list
+		}
+	}
+	
+	private void generateEndpoints() {
+		for(Trip t: mTrips) {
+			switch(t.getTripType()) {
+				case Constants.TRIP_COMMUTE:
+					int[] commuteCode = {Constants.PSRC_EMP_TOTAL};
+					t.setSecondTract(mPCData.getWeightedTract(commuteCode, true));
+					break;
+				case Constants.TRIP_MEDICAL_DENTAL:
+					int[] medCodes = {Constants.PSRC_EMP_SERVS, Constants.PSRC_EMP_GOVT};
+					t.setSecondTract(mPCData.getWeightedTract(medCodes, true));
+					break;
+				case Constants.TRIP_OTHER:
+					break;
+				case Constants.TRIP_PERSONAL_BUSINESS:
+					break;
+				case Constants.TRIP_SCHOOL:
+					int [] schoolCode = {Constants.PSRC_EMP_EDU};
+					t.setSecondTract(mPCData.getWeightedTract(schoolCode, true));
+					break;
+				case Constants.TRIP_SHOPPING_DINING:
+					int[] shopCodes = {Constants.PSRC_EMP_SERVS, Constants.PSRC_EMP_RETAIL};
+					t.setSecondTract(mPCData.getWeightedTract(shopCodes, true));
+					break;
+				case Constants.TRIP_SOCIAL:
+			}
 		}
 	}
 
