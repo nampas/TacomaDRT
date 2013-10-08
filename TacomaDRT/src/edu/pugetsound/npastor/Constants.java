@@ -27,7 +27,7 @@ public class Constants {
 	public final static int TRIP_OTHER = 6;
 	
 	//***************************************
-	//            APTA Age Groups
+	//    APTA Age Groups (For census too)
 	//***************************************
 	public final static int APTA_AGE_0_14 = 10;
 	public final static int APTA_AGE_15_19 = 11;
@@ -38,22 +38,37 @@ public class Constants {
 	public final static int APTA_AGE_55_64 = 16;
 	public final static int APTA_AGE_65_OVER = 17;
 	
-	//***************************************
-	//           Census Age Groups
-	//***************************************
+	public final static String APTA_AGE_0_14_LBL = "0-14";
+	public final static String APTA_AGE_15_19_LBL = "15-19";
+	public final static String APTA_AGE_20_24_LBL = "20-24";
+	public final static String APTA_AGE_25_34_LBL = "25-34";
+	public final static String APTA_AGE_35_44_LBL = "35-44";
+	public final static String APTA_AGE_45_54_LBL = "45-54";
+	public final static String APTA_AGE_55_64_LBL = "55-64";
+	public final static String APTA_AGE_65_OVER_LBL = "65+";
 	
 	// Constants representing Census age groups
 	
 	//***************************************
 	//         PSRC Employment Groups
 	//***************************************
-	public final static int PSRC_EMP_CONST_RES = 30;
-	public final static int PSRC_EMP_FIRE = 31;
-	public final static int PSRC_EMP_MANF = 32;
-	public final static int PSRC_EMP_RETAIL = 33;
-	public final static int PSRC_EMP_SERVS = 34;
-	public final static int PSRC_EMP_WTU = 35;
-	public final static int PSRC_EMP_GOVT = 36;
-	public final static int PSRC_EMP_EDU = 37;
-	public final static int PSRC_EMP_TOTAL = 38;
+	public final static int PSRC_CONST_RES = 30;
+	public final static int PSRC_FIRE = 31;
+	public final static int PSRC_MANF = 32;
+	public final static int PSRC_RETAIL = 33;
+	public final static int PSRC_SERVS = 34;
+	public final static int PSRC_WTU = 35;
+	public final static int PSRC_GOVT = 36;
+	public final static int PSRC_EDU = 37;
+	public final static int PSRC_TOTAL = 38;
+	
+	public static final String PSRC_CONST_RES_LBL = "Const/Res";
+	public static final String PSRC_FIRE_LBL = "FIRE";
+	public static final String PSRC_MANF_LBL = "Manufacturing";
+	public static final String PSRC_RETAIL_LBL = "Retail";
+	public static final String PSRC_SERVS_LBL = "Services";
+	public static final String PSRC_WTU_LBL = "WTU";
+	public static final String PSRC_GOVT_LBL = "Government";
+	public static final String PSRC_EDU_LBL = "Education";
+	public static final String PSRC_TOTAL_LBL = "Total";
 }

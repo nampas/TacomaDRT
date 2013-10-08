@@ -38,7 +38,7 @@ public class TripGenerator {
 		generateTripTypes();
 		generateAges();
 		assignDirections();
-		generateEndpoints();
+		generateEndpointTracts();
 		for(int i = 0; i < mTrips.size(); i++)
 			System.out.println(mTrips.get(i).toString());
 	}
@@ -140,30 +140,38 @@ public class TripGenerator {
 		}
 	}
 	
-	private void generateEndpoints() {
+	private void generateEndpointTracts() {
 		for(Trip t: mTrips) {
+			int[] riderAgeGroup = {Utilities.getGroupForAge(t.getRiderAge())};
 			switch(t.getTripType()) {
 				case Constants.TRIP_COMMUTE:
-					int[] commuteCode = {Constants.PSRC_EMP_TOTAL};
+					int[] commuteCode = {Constants.PSRC_TOTAL};
+					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
 					t.setSecondTract(mPCData.getWeightedTract(commuteCode, true));
 					break;
 				case Constants.TRIP_MEDICAL_DENTAL:
-					int[] medCodes = {Constants.PSRC_EMP_SERVS, Constants.PSRC_EMP_GOVT};
+					int[] medCodes = {Constants.PSRC_SERVS, Constants.PSRC_GOVT};
+					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
 					t.setSecondTract(mPCData.getWeightedTract(medCodes, true));
 					break;
 				case Constants.TRIP_OTHER:
+					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
 					break;
 				case Constants.TRIP_PERSONAL_BUSINESS:
+					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
 					break;
 				case Constants.TRIP_SCHOOL:
-					int [] schoolCode = {Constants.PSRC_EMP_EDU};
+					int [] schoolCode = {Constants.PSRC_EDU};
+					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
 					t.setSecondTract(mPCData.getWeightedTract(schoolCode, true));
 					break;
 				case Constants.TRIP_SHOPPING_DINING:
-					int[] shopCodes = {Constants.PSRC_EMP_SERVS, Constants.PSRC_EMP_RETAIL};
+					int[] shopCodes = {Constants.PSRC_SERVS, Constants.PSRC_RETAIL};
+					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
 					t.setSecondTract(mPCData.getWeightedTract(shopCodes, true));
 					break;
 				case Constants.TRIP_SOCIAL:
+					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
 			}
 		}
 	}
@@ -262,21 +270,21 @@ public class TripGenerator {
 			else if(tokens[0].equals("other"))
 				mTripTypePcts.put(Constants.TRIP_OTHER, Double.valueOf(tokens[1]));
 			// Check age groups
-			else if(tokens[0].equals("0-14"))
+			else if(tokens[0].equals(Constants.APTA_AGE_0_14_LBL))
 				mRiderAgePcts.put(Constants.APTA_AGE_0_14, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("15-19"))
+			else if(tokens[0].equals(Constants.APTA_AGE_15_19_LBL))
 				mRiderAgePcts.put(Constants.APTA_AGE_15_19, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("20-24"))
+			else if(tokens[0].equals(Constants.APTA_AGE_20_24))
 				mRiderAgePcts.put(Constants.APTA_AGE_20_24, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("25-34"))
+			else if(tokens[0].equals(Constants.APTA_AGE_25_34_LBL))
 				mRiderAgePcts.put(Constants.APTA_AGE_25_34, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("35-44"))
+			else if(tokens[0].equals(Constants.APTA_AGE_35_44_LBL))
 				mRiderAgePcts.put(Constants.APTA_AGE_35_44, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("45-54"))
+			else if(tokens[0].equals(Constants.APTA_AGE_45_54_LBL))
 				mRiderAgePcts.put(Constants.APTA_AGE_45_54, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("55-64"))
+			else if(tokens[0].equals(Constants.APTA_AGE_55_64_LBL))
 				mRiderAgePcts.put(Constants.APTA_AGE_55_64, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("65+"))
+			else if(tokens[0].equals(Constants.APTA_AGE_65_OVER_LBL))
 				mRiderAgePcts.put(Constants.APTA_AGE_65_OVER, Double.valueOf(tokens[1]));
 		}
 	}

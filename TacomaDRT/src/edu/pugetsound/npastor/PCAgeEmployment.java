@@ -11,16 +11,6 @@ import java.util.Random;
  */
 public class PCAgeEmployment {
 	
-	public static final String PSRC_CONST_RES = "Const/Res";
-	public static final String PSRC_FIRE = "FIRE";
-	public static final String PSRC_MANF = "Manufacturing";
-	public static final String PSRC_RETAIL = "Retail";
-	public static final String PSRC_SERVS = "Services";
-	public static final String PSRC_WTU = "WTU";
-	public static final String PSRC_GOVT = "Government";
-	public static final String PSRC_EDU = "Education";
-	public static final String PSRC_TOTAL = "Total";
-
 	private TractCSVFile mAgeByTract;
 	private TractCSVFile mEmploymentByTract;
 	private Random mRand;
@@ -32,7 +22,10 @@ public class PCAgeEmployment {
 		mEmploymentByTract = new TractCSVFile(Constants.PC_EMPLOYMENT_FILE);
 		ArrayList<Integer> columnCodes = generateEmpColumnCodes(mEmploymentByTract.getColumnLabels());
 		mEmploymentByTract.setColumnCodes(columnCodes);
-		System.out.println("Tract at row 3: " + mEmploymentByTract.getTractAtRow(3));
+		columnCodes = generateAgeColumnCodes(mAgeByTract.getColumnLabels());
+		mAgeByTract.setColumnCodes(columnCodes);
+		System.out.println("Emp tract at row 3: " + mEmploymentByTract.getTractAtRow(3));
+		System.out.println("Age tract at row 3: " + mAgeByTract.getTractAtRow(3));
 	}
 	
 	/**
@@ -47,40 +40,35 @@ public class PCAgeEmployment {
 		
 		ArrayList<ArrayList<String>> columns = new ArrayList<ArrayList<String>>();
 		int columnLength = 0;
-		int employmentTotal = 0;
+		int total = 0;
 		
-		// Loop through all columns to calculate total employment
+		// Loop through all columns to calculate total
 		for(int i = 0; i < columnCodes.length; i++) {
 			ArrayList<String> curCol = isEmployment ? mEmploymentByTract.getColumn(columnCodes[i]) : mAgeByTract.getColumn(columnCodes[i]);
-			columnLength = curCol.size();
-			for(int j = 1; j < columnLength; j++) {
-				if(!curCol.get(j).contains("*") && !curCol.get(j).contains("-"))
-					employmentTotal += Integer.valueOf(curCol.get(j));
-			}
+			total += Integer.valueOf(curCol.get(curCol.size()-1));
+			System.out.println("Column Total : " + total);
 			columns.add(curCol); // Add current column to local list to speed up loops below
+			if(i==0) columnLength = curCol.size();
 		}
 		
-		
-		
-		// Generate random number within total employment range
-		int randomVal = mRand.nextInt(employmentTotal + 1);
+		// Generate random number within total range
+		int randomVal = mRand.nextInt(total + 1);
 		int runningTotal = 0;
 		// When random value falls within running total, pick last tract
 		System.out.println("Column length: " + columnLength + ". Num columns: " + columns.size());
 		for(int i = 1; i < columnLength; i++) {
 			for(int j = 0; j < columns.size(); j++) {
-//				System.out.println(columns.get(j).get(i));
 				if(!columns.get(j).get(i).contains("*") && !columns.get(j).get(i).contains("-"))
 					runningTotal += Integer.valueOf(columns.get(j).get(i));
 			}
 			if(randomVal < runningTotal) {
-				tract = mEmploymentByTract.getTractAtRow(i);
+				tract = isEmployment ? mEmploymentByTract.getTractAtRow(i) : mAgeByTract.getTractAtRow(i);
 				System.out.println("Picking tract: " + tract);
 				break;
 			}
 		}
-		System.out.println("Column total: " + employmentTotal);
-		System.out.println("End running total: " + runningTotal);
+//		System.out.println("Column total: " + total);
+//		System.out.println("End running total: " + runningTotal);
 		return tract;
 	}
 	
@@ -89,24 +77,24 @@ public class PCAgeEmployment {
 		for(int i = 0; i < columnLabels.size(); i++) {
 			String curLabel = columnLabels.get(i);
 			
-			if(curLabel.equals(PSRC_CONST_RES))
-				columnCodes.add(i, Constants.PSRC_EMP_CONST_RES);
-			else if(curLabel.equals(PSRC_FIRE))
-				columnCodes.add(i, Constants.PSRC_EMP_FIRE);
-			else if(curLabel.equals(PSRC_MANF))
-				columnCodes.add(i, Constants.PSRC_EMP_MANF);
-			else if(curLabel.equals(PSRC_RETAIL))
-				columnCodes.add(i, Constants.PSRC_EMP_RETAIL);
-			else if(curLabel.equals(PSRC_SERVS))
-				columnCodes.add(i, Constants.PSRC_EMP_SERVS);
-			else if(curLabel.equals(PSRC_WTU))
-				columnCodes.add(i, Constants.PSRC_EMP_WTU);
-			else if(curLabel.equals(PSRC_GOVT))
-				columnCodes.add(i, Constants.PSRC_EMP_GOVT);
-			else if(curLabel.equals(PSRC_EDU))
-				columnCodes.add(i, Constants.PSRC_EMP_EDU);
-			else if(curLabel.equals(PSRC_TOTAL))
-				columnCodes.add(i, Constants.PSRC_EMP_TOTAL);
+			if(curLabel.equals(Constants.PSRC_CONST_RES_LBL))
+				columnCodes.add(i, Constants.PSRC_CONST_RES);
+			else if(curLabel.equals(Constants.PSRC_FIRE_LBL))
+				columnCodes.add(i, Constants.PSRC_FIRE);
+			else if(curLabel.equals(Constants.PSRC_MANF_LBL))
+				columnCodes.add(i, Constants.PSRC_MANF);
+			else if(curLabel.equals(Constants.PSRC_RETAIL_LBL))
+				columnCodes.add(i, Constants.PSRC_RETAIL);
+			else if(curLabel.equals(Constants.PSRC_SERVS_LBL))
+				columnCodes.add(i, Constants.PSRC_SERVS);
+			else if(curLabel.equals(Constants.PSRC_WTU_LBL))
+				columnCodes.add(i, Constants.PSRC_WTU);
+			else if(curLabel.equals(Constants.PSRC_GOVT_LBL))
+				columnCodes.add(i, Constants.PSRC_GOVT);
+			else if(curLabel.equals(Constants.PSRC_EDU_LBL))
+				columnCodes.add(i, Constants.PSRC_EDU);
+			else if(curLabel.equals(Constants.PSRC_TOTAL_LBL))
+				columnCodes.add(i, Constants.PSRC_TOTAL);
 			else 
 				columnCodes.add(i, -1);
 		}
@@ -114,30 +102,29 @@ public class PCAgeEmployment {
 		return columnCodes;
 	}
 	
-	//TODO: change this to age constants
 	private ArrayList<Integer> generateAgeColumnCodes(ArrayList<String> columnLabels) {
 		ArrayList<Integer> columnCodes = new ArrayList<Integer>();
 		for(int i = 0; i < columnLabels.size(); i++) {
 			String curLabel = columnLabels.get(i);
 			
-			if(curLabel.equals(PSRC_CONST_RES))
-				columnCodes.add(i, Constants.PSRC_EMP_CONST_RES);
-			else if(curLabel.equals(PSRC_FIRE))
-				columnCodes.add(i, Constants.PSRC_EMP_FIRE);
-			else if(curLabel.equals(PSRC_MANF))
-				columnCodes.add(i, Constants.PSRC_EMP_MANF);
-			else if(curLabel.equals(PSRC_RETAIL))
-				columnCodes.add(i, Constants.PSRC_EMP_RETAIL);
-			else if(curLabel.equals(PSRC_SERVS))
-				columnCodes.add(i, Constants.PSRC_EMP_SERVS);
-			else if(curLabel.equals(PSRC_WTU))
-				columnCodes.add(i, Constants.PSRC_EMP_WTU);
-			else if(curLabel.equals(PSRC_GOVT))
-				columnCodes.add(i, Constants.PSRC_EMP_GOVT);
-			else if(curLabel.equals(PSRC_EDU))
-				columnCodes.add(i, Constants.PSRC_EMP_EDU);
-			else if(curLabel.equals(PSRC_TOTAL))
-				columnCodes.add(i, Constants.PSRC_EMP_TOTAL);
+			if(curLabel.equals(Constants.APTA_AGE_0_14_LBL))
+				columnCodes.add(i, Constants.APTA_AGE_0_14);
+			else if(curLabel.equals(Constants.APTA_AGE_15_19_LBL))
+				columnCodes.add(i, Constants.APTA_AGE_15_19);
+			else if(curLabel.equals(Constants.APTA_AGE_20_24))
+				columnCodes.add(i, Constants.APTA_AGE_20_24);
+			else if(curLabel.equals(Constants.APTA_AGE_25_34_LBL))
+				columnCodes.add(i, Constants.APTA_AGE_25_34);
+			else if(curLabel.equals(Constants.APTA_AGE_35_44_LBL))
+				columnCodes.add(i, Constants.APTA_AGE_35_44);
+			else if(curLabel.equals(Constants.APTA_AGE_45_54_LBL))
+				columnCodes.add(i, Constants.APTA_AGE_45_54);
+			else if(curLabel.equals(Constants.APTA_AGE_55_64_LBL))
+				columnCodes.add(i, Constants.APTA_AGE_55_64);
+			else if(curLabel.equals(Constants.APTA_AGE_65_OVER_LBL))
+				columnCodes.add(i, Constants.APTA_AGE_65_OVER);
+			else 
+				columnCodes.add(i, -1);
 		}
 		
 		return columnCodes;

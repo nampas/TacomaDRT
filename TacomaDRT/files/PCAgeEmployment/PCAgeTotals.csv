@@ -1,57 +1,58 @@
-GEO.id,GEO.id2,GEO.display-label,T 0 -14,T 15 - 19,T 20 - 24,T  25 - 34,T 35 - 44,T 45 - 54,T 55 - 64,T 65+,ALL TOTAL
-1580000US5370000053060200,5.37E+15,"Census Tract 602 (part), Pierce County (part), Tacoma city, Washington",17,67,329,656,324,209,134,57,1793
-1580000US5370000053060300,5.37E+15,"Census Tract 603 (part), Pierce County (part), Tacoma city, Washington",431,164,127,442,396,446,490,861,3357
-1580000US5370000053060400,5.37E+15,"Census Tract 604, Pierce County (part), Tacoma city, Washington",703,206,147,510,605,640,611,474,3896
-1580000US5370000053060500,5.37E+15,"Census Tract 605, Pierce County (part), Tacoma city, Washington",675,207,261,347,535,690,727,481,3923
-1580000US5370000053060600,5.37E+15,"Census Tract 606, Pierce County (part), Tacoma city, Washington",840,263,326,893,805,856,729,550,5262
-1580000US5370000053060700,5.37E+15,"Census Tract 607, Pierce County (part), Tacoma city, Washington",768,1033,1376,797,743,755,655,396,6523
-1580000US5370000053060800,5.37E+15,"Census Tract 608, Pierce County (part), Tacoma city, Washington",839,252,285,778,731,789,650,616,4940
-1580000US5370000053060903,5.37E+15,"Census Tract 609.03, Pierce County (part), Tacoma city, Washington",404,168,153,312,348,433,497,728,3043
-1580000US5370000053060904,5.37E+15,"Census Tract 609.04, Pierce County (part), Tacoma city, Washington",1014,266,320,827,681,737,573,597,5015
-1580000US5370000053060905,5.37E+15,"Census Tract 609.05, Pierce County (part), Tacoma city, Washington",931,365,382,678,624,936,887,1556,6359
-1580000US5370000053060906,5.37E+15,"Census Tract 609.06, Pierce County (part), Tacoma city, Washington",296,134,122,190,250,309,302,442,2045
-1580000US5370000053061001,5.37E+15,"Census Tract 610.01, Pierce County (part), Tacoma city, Washington",505,221,154,394,445,631,578,863,3791
-1580000US5370000053061002,5.37E+15,"Census Tract 610.02, Pierce County (part), Tacoma city, Washington",561,244,383,696,501,599,486,717,4187
-1580000US5370000053061100,5.37E+15,"Census Tract 611, Pierce County (part), Tacoma city, Washington",1056,324,378,1029,838,822,693,1060,6200
-1580000US5370000053061200,5.37E+15,"Census Tract 612, Pierce County (part), Tacoma city, Washington",856,291,413,982,713,685,486,542,4968
-1580000US5370000053061300,5.37E+15,"Census Tract 613, Pierce County (part), Tacoma city, Washington",1146,334,389,865,655,630,431,358,4808
-1580000US5370000053061400,5.37E+15,"Census Tract 614, Pierce County (part), Tacoma city, Washington",599,238,519,977,775,736,384,214,4442
-1580000US5370000053061500,5.37E+15,"Census Tract 615, Pierce County (part), Tacoma city, Washington",317,146,560,1275,646,636,574,588,4742
-1580000US5370000053061601,5.37E+15,"Census Tract 616.01, Pierce County (part), Tacoma city, Washington",131,48,199,399,223,246,198,380,1824
-1580000US5370000053061602,5.37E+15,"Census Tract 616.02, Pierce County (part), Tacoma city, Washington",61,50,114,248,164,200,85,34,956
-1580000US5370000053061700,5.37E+15,"Census Tract 617, Pierce County (part), Tacoma city, Washington",972,338,347,876,649,635,402,359,4578
-1580000US5370000053061800,5.37E+15,"Census Tract 618, Pierce County (part), Tacoma city, Washington",635,198,197,533,421,425,252,219,2880
-1580000US5370000053061900,5.37E+15,"Census Tract 619, Pierce County (part), Tacoma city, Washington",340,116,127,342,242,283,265,246,1961
-1580000US5370000053062000,5.37E+15,"Census Tract 620, Pierce County (part), Tacoma city, Washington",894,262,277,656,601,662,476,400,4228
-1580000US5370000053062300,5.37E+15,"Census Tract 623, Pierce County (part), Tacoma city, Washington",1295,411,349,842,769,688,506,384,5244
-1580000US5370000053062400,5.37E+15,"Census Tract 624, Pierce County (part), Tacoma city, Washington",1134,323,300,912,815,815,589,583,5471
-1580000US5370000053062500,5.37E+15,"Census Tract 625, Pierce County (part), Tacoma city, Washington",1456,492,463,1207,1040,1043,784,588,7073
-1580000US5370000053062600,5.37E+15,"Census Tract 626, Pierce County (part), Tacoma city, Washington",669,162,305,570,365,395,308,203,2977
-1580000US5370000053062801,5.37E+15,"Census Tract 628.01, Pierce County (part), Tacoma city, Washington",1405,415,693,1251,774,699,456,437,6130
-1580000US5370000053062802,5.37E+15,"Census Tract 628.02 (part), Pierce County (part), Tacoma city, Washington",926,334,264,610,568,602,401,392,4097
-1580000US5370000053062900,5.37E+15,"Census Tract 629, Pierce County (part), Tacoma city, Washington",1577,522,800,1437,962,927,639,501,7365
-1580000US5370000053063000,5.37E+15,"Census Tract 630, Pierce County (part), Tacoma city, Washington",648,213,220,495,428,407,284,261,2956
-1580000US5370000053063100,5.37E+15,"Census Tract 631, Pierce County (part), Tacoma city, Washington",802,248,298,656,549,629,495,593,4270
-1580000US5370000053063200,5.37E+15,"Census Tract 632, Pierce County (part), Tacoma city, Washington",950,318,299,746,662,796,512,572,4855
-1580000US5370000053063300,5.37E+15,"Census Tract 633 (part), Pierce County (part), Tacoma city, Washington",1994,618,532,1150,1088,915,711,844,7852
-1580000US5370000053063400,5.37E+15,"Census Tract 634, Pierce County (part), Tacoma city, Washington",1623,557,568,1175,908,1075,833,853,7592
-1580000US5370000053063501,5.37E+15,"Census Tract 635.01, Pierce County (part), Tacoma city, Washington",824,301,288,600,513,608,505,525,4164
-1580000US5370000053063502,5.37E+15,"Census Tract 635.02, Pierce County (part), Tacoma city, Washington",1211,376,419,773,686,689,585,440,5179
-1580000US5370000053071601,5.37E+15,"Census Tract 716.01 (part), Pierce County (part), Tacoma city, Washington",21,6,5,13,7,4,2,1,59
-1580000US5370000053071703,5.37E+15,"Census Tract 717.03 (part), Pierce County (part), Tacoma city, Washington",520,127,319,420,212,171,140,272,2181
-1580000US5370000053071704,5.37E+15,"Census Tract 717.04 (part), Pierce County (part), Tacoma city, Washington",0,0,0,0,0,0,0,0,0
-1580000US5370000053071705,5.37E+15,"Census Tract 717.05 (part), Pierce County (part), Tacoma city, Washington",7,4,4,8,5,10,10,7,55
-1580000US5370000053071803,5.37E+15,"Census Tract 718.03 (part), Pierce County (part), Tacoma city, Washington",2,0,0,1,0,1,1,2,7
-1580000US5370000053072305,5.37E+15,"Census Tract 723.05 (part), Pierce County (part), Tacoma city, Washington",0,0,0,0,0,0,0,0,0
-1580000US5370000053072309,5.37E+15,"Census Tract 723.09 (part), Pierce County (part), Tacoma city, Washington",350,85,292,386,147,103,73,66,1502
-1580000US5370000053072310,5.37E+15,"Census Tract 723.10 (part), Pierce County (part), Tacoma city, Washington",7,5,7,8,12,13,17,40,109
-1580000US5370000053072311,5.37E+15,"Census Tract 723.11 (part), Pierce County (part), Tacoma city, Washington",0,1,0,0,0,1,6,8,16
-1580000US5370000053072312,5.37E+15,"Census Tract 723.12 (part), Pierce County (part), Tacoma city, Washington",329,58,136,215,123,108,64,134,1167
-1580000US5370000053940001,5.37E+15,"Census Tract 9400.01 (part), Pierce County (part), Tacoma city, Washington",224,59,19,44,162,148,73,44,773
-1580000US5370000053940002,5.37E+15,"Census Tract 9400.02 (part), Pierce County (part), Tacoma city, Washington",38,12,11,29,30,28,22,6,176
-1580000US5370000053940004,5.37E+15,"Census Tract 9400.04 (part), Pierce County (part), Tacoma city, Washington",0,0,0,0,0,0,0,4,4
-1580000US5370000053940005,5.37E+15,"Census Tract 9400.05, Pierce County (part), Tacoma city, Washington",1341,499,373,815,945,956,573,337,5839
-1580000US5370000053940006,5.37E+15,"Census Tract 9400.06, Pierce County (part), Tacoma city, Washington",996,231,139,372,243,175,124,167,2447
-1580000US5370000053940007,5.37E+15,"Census Tract 9400.07 (part), Pierce County (part), Tacoma city, Washington",819,253,218,502,399,426,280,225,3122
-1580000US5370000053940008,5.37E+15,"Census Tract 9400.08, Pierce County (part), Tacoma city, Washington",1238,466,388,665,961,965,670,549,5902
-1580000US5370000053940011,5.37E+15,"Census Tract 9400.11 (part), Pierce County (part), Tacoma city, Washington",703,250,138,342,485,795,786,593,4092
+GEO.display-label,GEO.id,GEO.id2,0-14,15-19,20-24,25-34,35-44,45-54,55-64,65+,ALL TOTAL
+Census Tract 602 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053060200,5.37E+15,17,67,329,656,324,209,134,57,1793
+Census Tract 603 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053060300,5.37E+15,431,164,127,442,396,446,490,861,3357
+Census Tract 604 Pierce County (part) Tacoma city Washington,1580000US5370000053060400,5.37E+15,703,206,147,510,605,640,611,474,3896
+Census Tract 605 Pierce County (part) Tacoma city Washington,1580000US5370000053060500,5.37E+15,675,207,261,347,535,690,727,481,3923
+Census Tract 606 Pierce County (part) Tacoma city Washington,1580000US5370000053060600,5.37E+15,840,263,326,893,805,856,729,550,5262
+Census Tract 607 Pierce County (part) Tacoma city Washington,1580000US5370000053060700,5.37E+15,768,1033,1376,797,743,755,655,396,6523
+Census Tract 608 Pierce County (part) Tacoma city Washington,1580000US5370000053060800,5.37E+15,839,252,285,778,731,789,650,616,4940
+Census Tract 609.03 Pierce County (part) Tacoma city Washington,1580000US5370000053060903,5.37E+15,404,168,153,312,348,433,497,728,3043
+Census Tract 609.04 Pierce County (part) Tacoma city Washington,1580000US5370000053060904,5.37E+15,1014,266,320,827,681,737,573,597,5015
+Census Tract 609.05 Pierce County (part) Tacoma city Washington,1580000US5370000053060905,5.37E+15,931,365,382,678,624,936,887,1556,6359
+Census Tract 609.06 Pierce County (part) Tacoma city Washington,1580000US5370000053060906,5.37E+15,296,134,122,190,250,309,302,442,2045
+Census Tract 610.01 Pierce County (part) Tacoma city Washington,1580000US5370000053061001,5.37E+15,505,221,154,394,445,631,578,863,3791
+Census Tract 610.02 Pierce County (part) Tacoma city Washington,1580000US5370000053061002,5.37E+15,561,244,383,696,501,599,486,717,4187
+Census Tract 611 Pierce County (part) Tacoma city Washington,1580000US5370000053061100,5.37E+15,1056,324,378,1029,838,822,693,1060,6200
+Census Tract 612 Pierce County (part) Tacoma city Washington,1580000US5370000053061200,5.37E+15,856,291,413,982,713,685,486,542,4968
+Census Tract 613 Pierce County (part) Tacoma city Washington,1580000US5370000053061300,5.37E+15,1146,334,389,865,655,630,431,358,4808
+Census Tract 614 Pierce County (part) Tacoma city Washington,1580000US5370000053061400,5.37E+15,599,238,519,977,775,736,384,214,4442
+Census Tract 615 Pierce County (part) Tacoma city Washington,1580000US5370000053061500,5.37E+15,317,146,560,1275,646,636,574,588,4742
+Census Tract 616.01 Pierce County (part) Tacoma city Washington,1580000US5370000053061601,5.37E+15,131,48,199,399,223,246,198,380,1824
+Census Tract 616.02 Pierce County (part) Tacoma city Washington,1580000US5370000053061602,5.37E+15,61,50,114,248,164,200,85,34,956
+Census Tract 617 Pierce County (part) Tacoma city Washington,1580000US5370000053061700,5.37E+15,972,338,347,876,649,635,402,359,4578
+Census Tract 618 Pierce County (part) Tacoma city Washington,1580000US5370000053061800,5.37E+15,635,198,197,533,421,425,252,219,2880
+Census Tract 619 Pierce County (part) Tacoma city Washington,1580000US5370000053061900,5.37E+15,340,116,127,342,242,283,265,246,1961
+Census Tract 620 Pierce County (part) Tacoma city Washington,1580000US5370000053062000,5.37E+15,894,262,277,656,601,662,476,400,4228
+Census Tract 623 Pierce County (part) Tacoma city Washington,1580000US5370000053062300,5.37E+15,1295,411,349,842,769,688,506,384,5244
+Census Tract 624 Pierce County (part) Tacoma city Washington,1580000US5370000053062400,5.37E+15,1134,323,300,912,815,815,589,583,5471
+Census Tract 625 Pierce County (part) Tacoma city Washington,1580000US5370000053062500,5.37E+15,1456,492,463,1207,1040,1043,784,588,7073
+Census Tract 626 Pierce County (part) Tacoma city Washington,1580000US5370000053062600,5.37E+15,669,162,305,570,365,395,308,203,2977
+Census Tract 628.01 Pierce County (part) Tacoma city Washington,1580000US5370000053062801,5.37E+15,1405,415,693,1251,774,699,456,437,6130
+Census Tract 628.02 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053062802,5.37E+15,926,334,264,610,568,602,401,392,4097
+Census Tract 629 Pierce County (part) Tacoma city Washington,1580000US5370000053062900,5.37E+15,1577,522,800,1437,962,927,639,501,7365
+Census Tract 630 Pierce County (part) Tacoma city Washington,1580000US5370000053063000,5.37E+15,648,213,220,495,428,407,284,261,2956
+Census Tract 631 Pierce County (part) Tacoma city Washington,1580000US5370000053063100,5.37E+15,802,248,298,656,549,629,495,593,4270
+Census Tract 632 Pierce County (part) Tacoma city Washington,1580000US5370000053063200,5.37E+15,950,318,299,746,662,796,512,572,4855
+Census Tract 633 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053063300,5.37E+15,1994,618,532,1150,1088,915,711,844,7852
+Census Tract 634 Pierce County (part) Tacoma city Washington,1580000US5370000053063400,5.37E+15,1623,557,568,1175,908,1075,833,853,7592
+Census Tract 635.01 Pierce County (part) Tacoma city Washington,1580000US5370000053063501,5.37E+15,824,301,288,600,513,608,505,525,4164
+Census Tract 635.02 Pierce County (part) Tacoma city Washington,1580000US5370000053063502,5.37E+15,1211,376,419,773,686,689,585,440,5179
+Census Tract 716.01 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053071601,5.37E+15,21,6,5,13,7,4,2,1,59
+Census Tract 717.03 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053071703,5.37E+15,520,127,319,420,212,171,140,272,2181
+Census Tract 717.04 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053071704,5.37E+15,0,0,0,0,0,0,0,0,0
+Census Tract 717.05 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053071705,5.37E+15,7,4,4,8,5,10,10,7,55
+Census Tract 718.03 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053071803,5.37E+15,2,0,0,1,0,1,1,2,7
+Census Tract 723.05 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053072305,5.37E+15,0,0,0,0,0,0,0,0,0
+Census Tract 723.09 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053072309,5.37E+15,350,85,292,386,147,103,73,66,1502
+Census Tract 723.10 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053072310,5.37E+15,7,5,7,8,12,13,17,40,109
+Census Tract 723.11 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053072311,5.37E+15,0,1,0,0,0,1,6,8,16
+Census Tract 723.12 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053072312,5.37E+15,329,58,136,215,123,108,64,134,1167
+Census Tract 9400.01 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053940001,5.37E+15,224,59,19,44,162,148,73,44,773
+Census Tract 9400.02 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053940002,5.37E+15,38,12,11,29,30,28,22,6,176
+Census Tract 9400.04 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053940004,5.37E+15,0,0,0,0,0,0,0,4,4
+Census Tract 9400.05 Pierce County (part) Tacoma city Washington,1580000US5370000053940005,5.37E+15,1341,499,373,815,945,956,573,337,5839
+Census Tract 9400.06 Pierce County (part) Tacoma city Washington,1580000US5370000053940006,5.37E+15,996,231,139,372,243,175,124,167,2447
+Census Tract 9400.07 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053940007,5.37E+15,819,253,218,502,399,426,280,225,3122
+Census Tract 9400.08 Pierce County (part) Tacoma city Washington,1580000US5370000053940008,5.37E+15,1238,466,388,665,961,965,670,549,5902
+Census Tract 9400.11 (part) Pierce County (part) Tacoma city Washington,1580000US5370000053940011,5.37E+15,703,250,138,342,485,795,786,593,4092
+Total,Total,Total,38100,13281,15732,31946,26773,28182,22014,22369,198397
