@@ -90,12 +90,13 @@ public class TractCSVFile extends File {
 		return tokens[mColumnCodes.get(columnCode)];
 	}
 	
-	public ArrayList<String> getColumn(int columnCode) {
+	public ArrayList<String> getColumnByCode(int columnCode) {
 		ArrayList<String> column = new ArrayList<String>();
 		Scanner scan = makeAScanner();
 		while(scan.hasNextLine()) {
 			column.add(getValueFromRowString(scan.nextLine(), columnCode));
 		}
+		scan.close();
 		return column;
 	}
 	
@@ -106,16 +107,17 @@ public class TractCSVFile extends File {
 	 */
 	public String getTractAtRow(int row) {
 		Scanner scan = makeAScanner();
+		String tract = "";
 		for(int i = 0; i < row; i++) {
 			if(scan.hasNextLine()) scan.nextLine();
 		}
 		if(scan.hasNextLine()) {
 			String curLine = scan.nextLine();
 			String firstToken = curLine.substring(0, curLine.indexOf(DELIMITER));
-			return firstToken;
-		} else {
-			return null;
+			tract = firstToken;
 		}
+		scan.close();
+		return tract;
 	}
 	
 	private Scanner makeAScanner() {

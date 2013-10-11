@@ -13,6 +13,7 @@ public class Trip {
 	private int mIdentifier;
 	private String mEndpointTract1;
 	private String mEndpointTract2;
+	private int mPickupTime;
 	
 	public Trip() {
 		mTripType = -1;
@@ -41,6 +42,14 @@ public class Trip {
 	
 	public void setSecondTract(String tract) {
 		mEndpointTract2 = tract;
+	}
+	
+	public void setPickupTime(int minutes) {
+		mPickupTime = minutes;
+	}
+	
+	public int getPickupTime() {
+		return mPickupTime;
 	}
 	
 	public String getFirstTract(String tract) {
@@ -73,6 +82,7 @@ public class Trip {
 				"\n  Age: " + mRiderAge +
 				"\n  Outbound? " + mIsOutbound +
 				"\n  First Tract: " + mEndpointTract1 +
-				"\n  Second Tract: " + mEndpointTract2;			
+				"\n  Second Tract: " + mEndpointTract2 +
+				"\n  Pickup Time: " + Utilities.minsToHrMin(mPickupTime);
 	}
 }

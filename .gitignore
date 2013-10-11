@@ -3,3 +3,5 @@
 *.project
 *.classpath
 *.settings
+# And ignore binaries #
+bin/

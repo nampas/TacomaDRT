@@ -42,11 +42,10 @@ public class PCAgeEmployment {
 		int columnLength = 0;
 		int total = 0;
 		
-		// Loop through all columns to calculate total
+		// Calculate combined column total
 		for(int i = 0; i < columnCodes.length; i++) {
-			ArrayList<String> curCol = isEmployment ? mEmploymentByTract.getColumn(columnCodes[i]) : mAgeByTract.getColumn(columnCodes[i]);
+			ArrayList<String> curCol = isEmployment ? mEmploymentByTract.getColumnByCode(columnCodes[i]) : mAgeByTract.getColumnByCode(columnCodes[i]);
 			total += Integer.valueOf(curCol.get(curCol.size()-1));
-			System.out.println("Column Total : " + total);
 			columns.add(curCol); // Add current column to local list to speed up loops below
 			if(i==0) columnLength = curCol.size();
 		}
@@ -55,7 +54,6 @@ public class PCAgeEmployment {
 		int randomVal = mRand.nextInt(total + 1);
 		int runningTotal = 0;
 		// When random value falls within running total, pick last tract
-		System.out.println("Column length: " + columnLength + ". Num columns: " + columns.size());
 		for(int i = 1; i < columnLength; i++) {
 			for(int j = 0; j < columns.size(); j++) {
 				if(!columns.get(j).get(i).contains("*") && !columns.get(j).get(i).contains("-"))
@@ -63,7 +61,6 @@ public class PCAgeEmployment {
 			}
 			if(randomVal < runningTotal) {
 				tract = isEmployment ? mEmploymentByTract.getTractAtRow(i) : mAgeByTract.getTractAtRow(i);
-				System.out.println("Picking tract: " + tract);
 				break;
 			}
 		}

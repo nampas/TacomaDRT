@@ -39,8 +39,13 @@ public class TripGenerator {
 		generateAges();
 		assignDirections();
 		generateEndpointTracts();
+		generatePickupTimes();
 		for(int i = 0; i < mTrips.size(); i++)
 			System.out.println(mTrips.get(i).toString());
+	}
+	
+	public ArrayList<Trip> getTrips() {
+		return mTrips;
 	}
 
 	/**
@@ -175,7 +180,20 @@ public class TripGenerator {
 			}
 		}
 	}
-
+	
+	//TODO: determine time distribution across day
+	/**
+	 * Generates a trip pickup time, with minute precision
+	 */
+	private void generatePickupTimes() {
+		int minRequestTime = Constants.BEGIN_OPERATION_HOUR * 60;
+		int maxRequestTime = Constants.END_OPERATION_HOUR * 60;
+		for(Trip t : mTrips) {
+			int request = mRandom.nextInt(maxRequestTime - minRequestTime + 1) + minRequestTime;
+			// int request = request & 5; // Round down to nearest multiple of 5
+			t.setPickupTime(request);
+		}
+	}
 
 	/**
 	 * Reads custom APTA data txt files, which associate age groups with

@@ -15,6 +15,12 @@ public class Constants {
 	//Total trips per day
 	public final static int TOTAL_TRIPS = 10;
 	
+	// Agency constants
+	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour
+	public final static int END_OPERATION_HOUR = 19; // (7:00 PM) Service ends at this hour
+	
+	public final static int VEHCILE_QUANTITY = 10; //TODO: determine how many, to be pinned to fixed route cost
+	
 	//***************************************
 	//           APTA Trip Types
 	//***************************************
@@ -46,8 +52,6 @@ public class Constants {
 	public final static String APTA_AGE_45_54_LBL = "45-54";
 	public final static String APTA_AGE_55_64_LBL = "55-64";
 	public final static String APTA_AGE_65_OVER_LBL = "65+";
-	
-	// Constants representing Census age groups
 	
 	//***************************************
 	//         PSRC Employment Groups

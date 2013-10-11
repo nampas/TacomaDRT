@@ -25,4 +25,14 @@ public class Utilities {
 		else
 			return Constants.APTA_AGE_65_OVER;
 	}
+	
+	// Converts a minute value to hh:mm format
+	public static String minsToHrMin(int mins) {
+		int hh = mins / 60;
+		int mm = mins % 60;
+		String str = hh + ":";
+		if(mm < 10) str += "0" + mm;
+		else str += mm;
+		return str;
+	}
 }
