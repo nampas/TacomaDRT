@@ -14,6 +14,7 @@ public class Trip {
 	private String mEndpointTract1;
 	private String mEndpointTract2;
 	private int mPickupTime;
+	private int mCallTime; // Time request was called in
 	
 	public Trip() {
 		mTripType = -1;
@@ -22,6 +23,8 @@ public class Trip {
 		mIdentifier = hashCode();
 		mEndpointTract1 = "Not set";
 		mEndpointTract2 = "Not set";
+		mPickupTime = -1;
+		mCallTime = -1;
 	}
 	
 	public void setTripType(int tripType) {
@@ -46,6 +49,10 @@ public class Trip {
 	
 	public void setPickupTime(int minutes) {
 		mPickupTime = minutes;
+	}
+	
+	public void setCalInTime(int minutes) {
+		mCallTime = minutes;
 	}
 	
 	public int getPickupTime() {
@@ -76,6 +83,10 @@ public class Trip {
 		return mIdentifier;
 	}
 	
+	public int getCallInTime() {
+		return mCallTime;
+	}
+	
 	public String toString() {
 		return "Trip: " + mIdentifier + 
 				"\n  Type: " + mTripType + 
@@ -83,6 +94,7 @@ public class Trip {
 				"\n  Outbound? " + mIsOutbound +
 				"\n  First Tract: " + mEndpointTract1 +
 				"\n  Second Tract: " + mEndpointTract2 +
-				"\n  Pickup Time: " + Utilities.minsToHrMin(mPickupTime);
+				"\n  Pickup Time: " + Utilities.minsToHrMin(mPickupTime) +
+				"\n  Request Made at: " + Utilities.minsToHrMin(mCallTime);
 	}
 }

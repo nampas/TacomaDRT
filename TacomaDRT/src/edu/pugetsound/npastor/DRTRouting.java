@@ -8,7 +8,7 @@ public class DRTRouting {
 	ArrayList<Vehicle> mVehicles;
 	
 	public DRTRouting() {
-		
+		mVehicles = generateVehicles();
 	}
 	
 	/**
@@ -17,5 +17,13 @@ public class DRTRouting {
 	 */
 	public void doRoute(ArrayList<Trip> requestedTrips) {
 		mRequestedTrips = requestedTrips;
+	}
+	
+	private ArrayList<Vehicle> generateVehicles() {
+		ArrayList<Vehicle> vehicles = new ArrayList<Vehicle>();
+		for(int i = 0; i < Constants.VEHCILE_QUANTITY; i++) {
+			vehicles.add(new Vehicle());
+		}
+		return vehicles;
 	}
 }

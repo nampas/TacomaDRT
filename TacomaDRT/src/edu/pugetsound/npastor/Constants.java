@@ -7,10 +7,11 @@ package edu.pugetsound.npastor;
 public class Constants {
 	
 	// Filenames and paths
-	public final static String APTA_DATA_FILE = "../files/APTAData.txt"; //APTA rider age and trip type distributions
-	public final static String PC_CENSUS_SHP = "../files/PCCensusTracts/pie10ct.shp"; //Pierce County census tract shapefile
-	public final static String PC_AGE_FILE = "../files/PCAgeEmployment/PCAgeTotals.csv"; //Pierce County age data by census tract, from census
-	public final static String PC_EMPLOYMENT_FILE = "../files/PCAgeEmployment/TacomaTractEmp2009.csv "; // Pierce County employment data, from PSRC
+	public final static String APTA_DATA_FILE = "/files/APTAData.txt"; //APTA rider age and trip type distributions
+	public final static String PC_CENSUS_SHP = "files/PCCensusTracts/pie10ct.shp"; //Pierce County census tract shapefile
+	public final static String PC_RAND_PTS_SHP = "files/RandomPoints/RandomPoints.shp"; //Random points within census tracts
+	public final static String PC_AGE_FILE = "/files/PCAgeEmployment/PCAgeTotals.csv"; //Pierce County age data by census tract, from census
+	public final static String PC_EMPLOYMENT_FILE = "/files/PCAgeEmployment/TacomaTractEmp2009.csv "; // Pierce County employment data, from PSRC
 	
 	//Total trips per day
 	public final static int TOTAL_TRIPS = 10;
@@ -18,8 +19,11 @@ public class Constants {
 	// Agency constants
 	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour
 	public final static int END_OPERATION_HOUR = 19; // (7:00 PM) Service ends at this hour
-	
+	public final static int BEGIN_REQUEST_WINDOW = 0; // Time when riders can begin to make requests
+	public final static int END_REQUEST_WINDOW = 18; // Cutoff time for making request known to agency for the day
+	public final static float CALL_REQUEST_BUFFER = 0.5f; // Minimum buffer between call in time and request time
 	public final static int VEHCILE_QUANTITY = 10; //TODO: determine how many, to be pinned to fixed route cost
+	public final static int VEHICLE_MPH = 26; // Vehicle speed
 	
 	//***************************************
 	//           APTA Trip Types

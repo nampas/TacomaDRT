@@ -6,11 +6,13 @@ public class Vehicle {
 
 	private int mVehicleId;
 	private int mCapacity;
+	private int mMPH;
 	private ArrayList<Trip> mPassengers;
 	
 	public Vehicle() {
 		mCapacity = Constants.VEHCILE_QUANTITY;
 		mPassengers = new ArrayList<Trip>();
+		mMPH = Constants.VEHICLE_MPH;
 		mVehicleId = hashCode();
 	}
 	

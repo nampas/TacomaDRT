@@ -182,16 +182,28 @@ public class TripGenerator {
 	}
 	
 	//TODO: determine time distribution across day
+	//TODO: determine when requests are made known to agency
 	/**
-	 * Generates a trip pickup time, with minute precision
+	 * Generates a trip pickup time and the time when the trip was made known to the agency.
+	 * Both in minute precision
 	 */
 	private void generatePickupTimes() {
 		int minRequestTime = Constants.BEGIN_OPERATION_HOUR * 60;
 		int maxRequestTime = Constants.END_OPERATION_HOUR * 60;
+		int minRequestWindow = Constants.BEGIN_REQUEST_WINDOW * 60;
+		int maxRequestWindow = Constants.END_REQUEST_WINDOW * 60;
+		
 		for(Trip t : mTrips) {
-			int request = mRandom.nextInt(maxRequestTime - minRequestTime + 1) + minRequestTime;
+//			int calledAt = mRandom.nextInt(maxRequestWindow - minRequestWindow + 1) + minRequestWindow;
+			int calledAt = 0;
+			
+			// Request time must be before operation ends and after buffer IF request was made during service hours
+			int minTime = calledAt > minRequestTime ? (int)Constants.CALL_REQUEST_BUFFER + calledAt : minRequestTime;
+			int request = mRandom.nextInt(maxRequestTime - minTime  + 1) + minTime;
+
 			// int request = request & 5; // Round down to nearest multiple of 5
 			t.setPickupTime(request);
+			t.setCalInTime(calledAt);
 		}
 	}
 
