@@ -1,4 +1,5 @@
-package edu.pugetsound.npastor;
+package edu.pugetsound.npastor.utils;
+
 
 public class Utilities {
 

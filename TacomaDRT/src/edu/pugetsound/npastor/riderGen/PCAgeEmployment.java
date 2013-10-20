@@ -1,7 +1,10 @@
-package edu.pugetsound.npastor;
+package edu.pugetsound.npastor.riderGen;
 
 import java.util.ArrayList;
 import java.util.Random;
+
+import edu.pugetsound.npastor.utils.Constants;
+import edu.pugetsound.npastor.utils.D;
 
 /**
  * TODO: Y NO 9400 CENSUS TRACTS IN PSRC EMPLOYMENT DATA?!?!
@@ -10,6 +13,8 @@ import java.util.Random;
  *
  */
 public class PCAgeEmployment {
+	
+	public static final String TAG = "PCAgeEmployment";
 	
 	private TractCSVFile mAgeByTract;
 	private TractCSVFile mEmploymentByTract;
@@ -24,8 +29,6 @@ public class PCAgeEmployment {
 		mEmploymentByTract.setColumnCodes(columnCodes);
 		columnCodes = generateAgeColumnCodes(mAgeByTract.getColumnLabels());
 		mAgeByTract.setColumnCodes(columnCodes);
-		System.out.println("Emp tract at row 3: " + mEmploymentByTract.getTractAtRow(3));
-		System.out.println("Age tract at row 3: " + mAgeByTract.getTractAtRow(3));
 	}
 	
 	/**
@@ -64,8 +67,6 @@ public class PCAgeEmployment {
 				break;
 			}
 		}
-//		System.out.println("Column total: " + total);
-//		System.out.println("End running total: " + runningTotal);
 		return tract;
 	}
 	

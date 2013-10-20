@@ -1,4 +1,4 @@
-package edu.pugetsound.npastor;
+package edu.pugetsound.npastor.riderGen;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Scanner;
+
+import edu.pugetsound.npastor.utils.Constants;
+import edu.pugetsound.npastor.utils.Trip;
+import edu.pugetsound.npastor.utils.Utilities;
 
 /**
  * Generates all daily trips on the DRT network
@@ -39,6 +43,7 @@ public class TripGenerator {
 		generateAges();
 		assignDirections();
 		generateEndpointTracts();
+		generateEndpoints();
 		generatePickupTimes();
 		for(int i = 0; i < mTrips.size(); i++)
 			System.out.println(mTrips.get(i).toString());
@@ -204,6 +209,14 @@ public class TripGenerator {
 			// int request = request & 5; // Round down to nearest multiple of 5
 			t.setPickupTime(request);
 			t.setCalInTime(calledAt);
+		}
+	}
+	
+	private void generateEndpoints() {
+		TractPointGenerator pointGen = new TractPointGenerator();
+		for(Trip t : mTrips) {
+			t.setFirstEndpoint(pointGen.randomPointInTract(t.getFirstTract()));
+			t.setSecondEndpoint(pointGen.randomPointInTract(t.getSecondTract()));
 		}
 	}
 

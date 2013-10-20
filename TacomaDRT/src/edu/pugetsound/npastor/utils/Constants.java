@@ -1,4 +1,4 @@
-package edu.pugetsound.npastor;
+package edu.pugetsound.npastor.utils;
 
 /**
  * Holds constants used throughout the program
@@ -6,14 +6,16 @@ package edu.pugetsound.npastor;
  */
 public class Constants {
 	
+	public final static boolean DEBUG = true;
+	
 	// Filenames and paths
-	public final static String APTA_DATA_FILE = "/files/APTAData.txt"; //APTA rider age and trip type distributions
+	public final static String APTA_DATA_FILE = "files/APTAData.txt"; //APTA rider age and trip type distributions
 	public final static String PC_CENSUS_SHP = "files/PCCensusTracts/pie10ct.shp"; //Pierce County census tract shapefile
 	public final static String PC_RAND_PTS_SHP = "files/RandomPoints/RandomPoints.shp"; //Random points within census tracts
-	public final static String PC_AGE_FILE = "/files/PCAgeEmployment/PCAgeTotals.csv"; //Pierce County age data by census tract, from census
-	public final static String PC_EMPLOYMENT_FILE = "/files/PCAgeEmployment/TacomaTractEmp2009.csv "; // Pierce County employment data, from PSRC
+	public final static String PC_AGE_FILE = "files/PCAgeEmployment/PCAgeTotals.csv"; //Pierce County age data by census tract, from census
+	public final static String PC_EMPLOYMENT_FILE = "files/PCAgeEmployment/TacomaTractEmp2009.csv "; // Pierce County employment data, from PSRC
 	
-	//Total trips per day
+	// Total trips per day
 	public final static int TOTAL_TRIPS = 10;
 	
 	// Agency constants

@@ -1,4 +1,4 @@
-package edu.pugetsound.npastor;
+package edu.pugetsound.npastor.riderGen;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -117,7 +117,20 @@ public class TractCSVFile extends File {
 			tract = firstToken;
 		}
 		scan.close();
+		
+		tract = parseTract(tract);
 		return tract;
+	}
+	
+	private String parseTract(String tractString) {
+		String tractNum;
+		String[] tokens = tractString.split(" ");
+		if(tokens.length == 1) {
+			tractNum = tractString;
+		} else {
+			tractNum = tokens[2];
+		}
+		return tractNum;
 	}
 	
 	private Scanner makeAScanner() {

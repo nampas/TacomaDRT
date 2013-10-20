@@ -1,4 +1,7 @@
-package edu.pugetsound.npastor;
+package edu.pugetsound.npastor.utils;
+
+import delaunay_triangulation.Point_dt;
+
 
 /**
  * Represents a DRT trip
@@ -13,6 +16,8 @@ public class Trip {
 	private int mIdentifier;
 	private String mEndpointTract1;
 	private String mEndpointTract2;
+	private Point_dt mEndpoint1;
+	private Point_dt mEndpoint2;
 	private int mPickupTime;
 	private int mCallTime; // Time request was called in
 	
@@ -55,15 +60,31 @@ public class Trip {
 		mCallTime = minutes;
 	}
 	
+	public void setFirstEndpoint(Point_dt endpoint) {
+		mEndpoint1 = endpoint;
+	}
+	
+	public void setSecondEndpoint(Point_dt endpoint) {
+		mEndpoint2 = endpoint;
+	}
+	
+	public Point_dt getFirstEndpoint() {
+		return mEndpoint1;
+	}
+	
+	public Point_dt getSecondEndpoint() {
+		return mEndpoint2;
+	}
+	
 	public int getPickupTime() {
 		return mPickupTime;
 	}
 	
-	public String getFirstTract(String tract) {
+	public String getFirstTract() {
 		return mEndpointTract1;
 	}
 	
-	public String getSecondTract(String tract) {
+	public String getSecondTract() {
 		return mEndpointTract2;
 	}
 	
@@ -92,8 +113,8 @@ public class Trip {
 				"\n  Type: " + mTripType + 
 				"\n  Age: " + mRiderAge +
 				"\n  Outbound? " + mIsOutbound +
-				"\n  First Tract: " + mEndpointTract1 +
-				"\n  Second Tract: " + mEndpointTract2 +
+				"\n  First Tract: " + mEndpointTract1 + ". At point: " + mEndpoint1 +
+				"\n  Second Tract: " + mEndpointTract2 + ". At point: " + mEndpoint2 +
 				"\n  Pickup Time: " + Utilities.minsToHrMin(mPickupTime) +
 				"\n  Request Made at: " + Utilities.minsToHrMin(mCallTime);
 	}

@@ -1,6 +1,9 @@
-package edu.pugetsound.npastor;
+package edu.pugetsound.npastor.routing;
 
 import java.util.ArrayList;
+
+import edu.pugetsound.npastor.utils.Constants;
+import edu.pugetsound.npastor.utils.Trip;
 
 public class DRTRouting {
 

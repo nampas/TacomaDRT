@@ -2,6 +2,9 @@ package edu.pugetsound.npastor;
 
 import java.util.Random;
 
+import edu.pugetsound.npastor.riderGen.TripGenerator;
+import edu.pugetsound.npastor.routing.DRTRouting;
+
 public class TacomaDRT {
 
 	//Note to self: Run from .\TacomaDRT\bin
@@ -10,6 +13,7 @@ public class TacomaDRT {
 	private DRTRouting mTripRouting;
 	
 	public static void main(String[] args) {
+		System.out.println(System.getProperty("user.dir"));
 		TacomaDRT drt = new TacomaDRT();
 		drt.runModel();
 	}
