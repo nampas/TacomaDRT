@@ -2,11 +2,18 @@ package edu.pugetsound.npastor.riderGen;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Scanner;
 
+import edu.pugetsound.npastor.TacomaDRT;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.D;
 import edu.pugetsound.npastor.utils.Trip;
@@ -49,6 +56,8 @@ public class TripGenerator {
 		generatePickupTimes();
 //		for(int i = 0; i < mTrips.size(); i++)
 //			D.info(TAG, mTrips.get(i).toString());
+		
+		writeTripsToFile();
 	}
 	
 	public ArrayList<Trip> getTrips() {
@@ -192,6 +201,37 @@ public class TripGenerator {
 		}
 	}
 	
+	/**
+	 * Writes the generated trips to file. 
+	 * TODO: Make these trips reloadable in a subsequent simulation
+	 */
+	private void writeTripsToFile() {
+		// Format the simulation start time
+		Date date = new Date(TacomaDRT.mStartTime);
+		DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss");
+		String dateFormatted = formatter.format(date);
+		
+		// Get filename and add current time and file extension
+		String filename = Constants.GENERATED_TRIPS_FILE + dateFormatted + ".txt";
+		D.info(TAG, "Writing trips to: " + filename);
+		
+		// Write to file
+		try {
+			FileWriter writer = new FileWriter(filename, false);
+			PrintWriter lineWriter = new PrintWriter(writer);
+			for(Trip t : mTrips) {
+				String curTrip = t.toString();
+				curTrip.replace("\n", ""); // Get rid of all line break;
+				lineWriter.println(curTrip);
+			}
+			lineWriter.close();
+			writer.close();
+		} catch (IOException ex) {
+			D.error(TAG, "Unable to write to file");
+			ex.printStackTrace();
+		}
+	}
+	
 	//TODO: determine time distribution across day
 	//TODO: determine when requests are made known to agency
 	/**
@@ -223,12 +263,9 @@ public class TripGenerator {
 	private void generateEndpoints() {
 		D.info(TAG, "Generating trip endpoints");
 		TractPointGenerator pointGen = new TractPointGenerator();
-		int i = 0;
 		for(Trip t : mTrips) {
-			if(i % 1000 == 0) D.info(TAG, "At trip " + i);
 			t.setFirstEndpoint(pointGen.randomPointInTract(t.getFirstTract()));
 			t.setSecondEndpoint(pointGen.randomPointInTract(t.getSecondTract()));
-			i++;
 		}
 	}
 

@@ -107,7 +107,6 @@ public class TractPointGenerator {
 
 			// If tract matches specified tract, pull out geometric data
 			if(fileTract.equals(tract)) {
-//				D.info(TAG, "Found a match: " + fileTract);
 				GeometryAttributeImpl featureGeometry = (GeometryAttributeImpl) feature.getDefaultGeometryProperty();
 				
 				// Get the shape data

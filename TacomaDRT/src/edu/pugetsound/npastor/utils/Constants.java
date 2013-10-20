@@ -14,9 +14,10 @@ public class Constants {
 	public final static String PC_RAND_PTS_SHP = "files/RandomPoints/RandomPoints.shp"; //Random points within census tracts
 	public final static String PC_AGE_FILE = "files/PCAgeEmployment/PCAgeTotals.csv"; //Pierce County age data by census tract, from census
 	public final static String PC_EMPLOYMENT_FILE = "files/PCAgeEmployment/TacomaTractEmp2009.csv "; // Pierce County employment data, from PSRC
+	public final static String GENERATED_TRIPS_FILE = "files/Trips/Trips";
 	
 	// Total trips per day
-	public final static int TOTAL_TRIPS = 3000;
+	public final static int TOTAL_TRIPS = 30;
 	
 	// Agency constants
 	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour

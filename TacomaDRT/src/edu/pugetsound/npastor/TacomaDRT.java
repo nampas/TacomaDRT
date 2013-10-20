@@ -14,6 +14,8 @@ public class TacomaDRT {
 	private TripGenerator mTripGen;
 	private DRTRouting mTripRouting;
 	
+	public static long mStartTime;
+	
 	public final static String TAG = "TacomaDRT";
 	
 	public static void main(String[] args) {
@@ -27,13 +29,13 @@ public class TacomaDRT {
 	}
 	
 	public void runModel() {
-		long startTime = System.currentTimeMillis();
+		mStartTime = System.currentTimeMillis();
 		
 		// Run the trip generation
 		mTripGen.generateTrips(); 
 		
 		long tripGenTime = System.currentTimeMillis();
-		float elapsedSecs = (float)(tripGenTime - startTime) / 1000;
+		float elapsedSecs = (float)(tripGenTime - mStartTime) / 1000;
 		int timeMins = (int)(elapsedSecs / 60);
 		float remainderSecs = elapsedSecs % 60.0f;
 		D.info(TAG, "Trip generation complete: " + Constants.TOTAL_TRIPS + " trips in " + elapsedSecs + " seconds (" + timeMins + ":" + remainderSecs + ")");
