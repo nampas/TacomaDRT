@@ -117,6 +117,7 @@ public class TractPointGenerator {
 				break;
 			}	
 		}
+		iterator.close(); // VERY IMPORTANT!! Out of memory errors otherwise on sizes > ~3300
 		return latLong;
 	}
 	

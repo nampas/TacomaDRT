@@ -16,7 +16,7 @@ public class Constants {
 	public final static String PC_EMPLOYMENT_FILE = "files/PCAgeEmployment/TacomaTractEmp2009.csv "; // Pierce County employment data, from PSRC
 	
 	// Total trips per day
-	public final static int TOTAL_TRIPS = 10;
+	public final static int TOTAL_TRIPS = 3000;
 	
 	// Agency constants
 	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour

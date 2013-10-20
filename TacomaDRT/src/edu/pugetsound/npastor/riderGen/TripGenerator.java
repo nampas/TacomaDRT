@@ -8,6 +8,7 @@ import java.util.Random;
 import java.util.Scanner;
 
 import edu.pugetsound.npastor.utils.Constants;
+import edu.pugetsound.npastor.utils.D;
 import edu.pugetsound.npastor.utils.Trip;
 import edu.pugetsound.npastor.utils.Utilities;
 
@@ -18,7 +19,8 @@ import edu.pugetsound.npastor.utils.Utilities;
  */
 public class TripGenerator {
 
-
+	public final static String TAG = "TripGenerator";
+	
 	private ArrayList<Trip> mTrips;
 	private AptaData mAptaData;
 	private PCAgeEmployment mPCData;
@@ -45,8 +47,8 @@ public class TripGenerator {
 		generateEndpointTracts();
 		generateEndpoints();
 		generatePickupTimes();
-		for(int i = 0; i < mTrips.size(); i++)
-			System.out.println(mTrips.get(i).toString());
+//		for(int i = 0; i < mTrips.size(); i++)
+//			D.info(TAG, mTrips.get(i).toString());
 	}
 	
 	public ArrayList<Trip> getTrips() {
@@ -58,45 +60,45 @@ public class TripGenerator {
 	 */
 	private void generateAges() {
 		// Will contain all the generated ages
+		D.info(TAG, "Generating trip ages");
 		ArrayList<Integer> ages = new ArrayList<Integer>();
 
 		Object[] keys = mAptaData.getAgeGroupPcts().keySet().toArray();
 		// Loop through the key set, process each age group
-		for(int i = 0; i < keys.length; i++) {
-			int curKey = (int) keys[i];
-			double percentage = mAptaData.getAgeGroupPct(curKey);
-			int groupTotal = (int) Math.ceil(percentage * Constants.TOTAL_TRIPS / 100); // Total riders in this group
-			switch(curKey) {
-			case Constants.APTA_AGE_0_14:
-				ages.addAll(generateAgesInRange(groupTotal, 0, 14));
-				break;
-			case Constants.APTA_AGE_15_19:
-				ages.addAll(generateAgesInRange(groupTotal, 15, 19));
-				break;
-			case Constants.APTA_AGE_20_24:
-				ages.addAll(generateAgesInRange(groupTotal, 20, 24));
-				break;
-			case Constants.APTA_AGE_25_34:
-				ages.addAll(generateAgesInRange(groupTotal, 25, 34));
-				break;
-			case Constants.APTA_AGE_35_44:
-				ages.addAll(generateAgesInRange(groupTotal, 35, 44));
-				break;
-			case Constants.APTA_AGE_45_54:
-				ages.addAll(generateAgesInRange(groupTotal, 45, 54));
-				break;
-			case Constants.APTA_AGE_55_64:
-				ages.addAll(generateAgesInRange(groupTotal, 55, 64));
-				break;
-			case Constants.APTA_AGE_65_OVER:
-				ages.addAll(generateAgesInRange(groupTotal, 65, 80)); //TODO: DETERMINE MAX AGE HERE
+		for(Object curKey : keys) {
+			double percentage = mAptaData.getAgeGroupPct((int)curKey);
+			int groupTotal = (int)Math.ceil(percentage * Constants.TOTAL_TRIPS / 100); // Total riders in this group
+			switch((int)curKey) {
+				case Constants.APTA_AGE_0_14:
+					ages.addAll(generateAgesInRange(groupTotal, 0, 14));
+					break;
+				case Constants.APTA_AGE_15_19:
+					ages.addAll(generateAgesInRange(groupTotal, 15, 19));
+					break;
+				case Constants.APTA_AGE_20_24:
+					ages.addAll(generateAgesInRange(groupTotal, 20, 24));
+					break;
+				case Constants.APTA_AGE_25_34:
+					ages.addAll(generateAgesInRange(groupTotal, 25, 34));
+					break;
+				case Constants.APTA_AGE_35_44:
+					ages.addAll(generateAgesInRange(groupTotal, 35, 44));
+					break;
+				case Constants.APTA_AGE_45_54:
+					ages.addAll(generateAgesInRange(groupTotal, 45, 54));
+					break;
+				case Constants.APTA_AGE_55_64:
+					ages.addAll(generateAgesInRange(groupTotal, 55, 64));
+					break;
+				case Constants.APTA_AGE_65_OVER:
+					ages.addAll(generateAgesInRange(groupTotal, 65, 80)); //TODO: DETERMINE MAX AGE HERE
 			}
 		}
-
+		D.info(TAG, "Total ages genererated: " + ages.size());
 		// Finally add ages to trips, but do it randomly
-		for(int i = 0; i < mTrips.size(); i++) {
+		for(Trip t : mTrips) {
 			int randomIndex = mRandom.nextInt(ages.size());
-			mTrips.get(i).setRiderAge(ages.get(randomIndex)); // Pick a random age out of ages list
+			t.setRiderAge(ages.get(randomIndex)); // Pick a random age out of ages list
 			ages.remove(randomIndex);
 		}
 	}
@@ -111,6 +113,8 @@ public class TripGenerator {
 	}
 
 	private void generateTripTypes() {
+		
+		D.info(TAG, "Generating trip types");
 		// Will contain all the generated ages
 		ArrayList<Integer> trips = new ArrayList<Integer>();
 
@@ -134,6 +138,7 @@ public class TripGenerator {
 	}
 
 	private void assignDirections() {
+		D.info(TAG, "Assigning trip directions");
 		// Half of list is inbound, other half is outbound
 		ArrayList<Boolean> directions = new ArrayList<Boolean>();
 		for(int i = 0; i < mTrips.size(); i++) {
@@ -151,6 +156,7 @@ public class TripGenerator {
 	}
 	
 	private void generateEndpointTracts() {
+		D.info(TAG, "Generating trip endpoint tracts");
 		for(Trip t: mTrips) {
 			int[] riderAgeGroup = {Utilities.getGroupForAge(t.getRiderAge())};
 			switch(t.getTripType()) {
@@ -193,6 +199,8 @@ public class TripGenerator {
 	 * Both in minute precision
 	 */
 	private void generatePickupTimes() {
+		
+		D.info(TAG, "Generating pickup times");
 		int minRequestTime = Constants.BEGIN_OPERATION_HOUR * 60;
 		int maxRequestTime = Constants.END_OPERATION_HOUR * 60;
 		int minRequestWindow = Constants.BEGIN_REQUEST_WINDOW * 60;
@@ -213,10 +221,14 @@ public class TripGenerator {
 	}
 	
 	private void generateEndpoints() {
+		D.info(TAG, "Generating trip endpoints");
 		TractPointGenerator pointGen = new TractPointGenerator();
+		int i = 0;
 		for(Trip t : mTrips) {
+			if(i % 1000 == 0) D.info(TAG, "At trip " + i);
 			t.setFirstEndpoint(pointGen.randomPointInTract(t.getFirstTract()));
 			t.setSecondEndpoint(pointGen.randomPointInTract(t.getSecondTract()));
+			i++;
 		}
 	}
 
@@ -228,6 +240,8 @@ public class TripGenerator {
 	 */
 	private class AptaData {
 
+		public static final String TAG = "TripGenerator.AptaData";
+		
 		private HashMap<Integer, Double> mRiderAgePcts; // Associates age groups with their percentages
 		private HashMap<Integer, Double> mTripTypePcts; // Associates trip types with their percentages 
 
@@ -239,6 +253,8 @@ public class TripGenerator {
 			mRiderAgePcts = new HashMap<Integer, Double>();
 			mTripTypePcts = new HashMap<Integer, Double>();
 			readAptaFile();
+			D.info(TAG, "Rider age mappings, group to percent: " + mRiderAgePcts.toString());
+			D.info(TAG, "Trip type mappings, group to percent: " + mTripTypePcts.toString());
 		}
 
 		/**
@@ -317,7 +333,7 @@ public class TripGenerator {
 				mRiderAgePcts.put(Constants.APTA_AGE_0_14, Double.valueOf(tokens[1]));
 			else if(tokens[0].equals(Constants.APTA_AGE_15_19_LBL))
 				mRiderAgePcts.put(Constants.APTA_AGE_15_19, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals(Constants.APTA_AGE_20_24))
+			else if(tokens[0].equals(Constants.APTA_AGE_20_24_LBL))
 				mRiderAgePcts.put(Constants.APTA_AGE_20_24, Double.valueOf(tokens[1]));
 			else if(tokens[0].equals(Constants.APTA_AGE_25_34_LBL))
 				mRiderAgePcts.put(Constants.APTA_AGE_25_34, Double.valueOf(tokens[1]));

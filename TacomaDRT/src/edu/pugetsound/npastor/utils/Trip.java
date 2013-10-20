@@ -110,11 +110,11 @@ public class Trip {
 	
 	public String toString() {
 		return "Trip: " + mIdentifier + 
-				"\n  Type: " + mTripType + 
+				"\n  Type: " + Utilities.getTripTypeString(mTripType) + 
 				"\n  Age: " + mRiderAge +
 				"\n  Outbound? " + mIsOutbound +
-				"\n  First Tract: " + mEndpointTract1 + ". At point: " + mEndpoint1 +
-				"\n  Second Tract: " + mEndpointTract2 + ". At point: " + mEndpoint2 +
+				"\n  First Tract: " + mEndpointTract1 + ". At" + mEndpoint1 +
+				"\n  Second Tract: " + mEndpointTract2 + ". At" + mEndpoint2 +
 				"\n  Pickup Time: " + Utilities.minsToHrMin(mPickupTime) +
 				"\n  Request Made at: " + Utilities.minsToHrMin(mCallTime);
 	}

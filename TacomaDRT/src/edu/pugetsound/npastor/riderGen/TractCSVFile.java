@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import edu.pugetsound.npastor.utils.D;
+
 /**
  * Represents a CSV file, and provides basic access functions
  * 
@@ -15,7 +17,9 @@ import java.util.Scanner;
  */
 public class TractCSVFile extends File {
 
-	private static final String DELIMITER = ",";
+	public static final String TAG = "TractCSVFile";
+	
+	private static final String COMMA_DELIMITER = ",";
 	private ArrayList<String> mColumnLabels;
 	private HashMap<Integer, Integer> mColumnCodes; //Maps column codes to column locations
 	
@@ -31,7 +35,7 @@ public class TractCSVFile extends File {
 		Scanner scan = makeAScanner();
 		if(scan.hasNextLine()) {
 			String headers = scan.nextLine();
-			String[] tokens = headers.split(DELIMITER);
+			String[] tokens = headers.split(COMMA_DELIMITER);
 			for(int i = 0; i < tokens.length; i++) {
 				mColumnLabels.add(tokens[i]);
 			}
@@ -62,7 +66,7 @@ public class TractCSVFile extends File {
 		Scanner scan = makeAScanner();
 		while(scan.hasNextLine()) {
 			String curLine = scan.nextLine();
-			String[] tokens = curLine.split(DELIMITER);
+			String[] tokens = curLine.split(COMMA_DELIMITER);
 			if(tokens[0].equals(censusTract)) {
 				return tokens[mColumnCodes.get(columnCode)];
 			}
@@ -70,24 +74,10 @@ public class TractCSVFile extends File {
 		return null;
 	}
 	
-//	private String getValueAtRow(int row, int columnCode) {
-//		Scanner scan = makeAScanner();
-//		for(int i = 0; i < row; i++) {
-//			if(scan.hasNextLine())
-//				scan.nextLine();
-//		}
-//		if(scan.hasNextLine()) {
-//			String curString = scan.nextLine();
-//			String[] tokens = curString.split(DELIMITER);
-//			return tokens[mColumnCodes.get(columnCode)];
-//		} else {
-//			return null;
-//		}
-//	}
-	
 	private String getValueFromRowString(String row, int columnCode) {
-		String[] tokens = row.split(DELIMITER);
-		return tokens[mColumnCodes.get(columnCode)];
+		String[] tokens = row.split(COMMA_DELIMITER);
+		String val = tokens[mColumnCodes.get(columnCode)];
+		return val;
 	}
 	
 	public ArrayList<String> getColumnByCode(int columnCode) {
@@ -113,7 +103,7 @@ public class TractCSVFile extends File {
 		}
 		if(scan.hasNextLine()) {
 			String curLine = scan.nextLine();
-			String firstToken = curLine.substring(0, curLine.indexOf(DELIMITER));
+			String firstToken = curLine.substring(0, curLine.indexOf(COMMA_DELIMITER));
 			tract = firstToken;
 		}
 		scan.close();

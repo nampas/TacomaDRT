@@ -25,10 +25,12 @@ public class PCAgeEmployment {
 		mRand = new Random();
 		mAgeByTract = new TractCSVFile(Constants.PC_AGE_FILE);
 		mEmploymentByTract = new TractCSVFile(Constants.PC_EMPLOYMENT_FILE);
-		ArrayList<Integer> columnCodes = generateEmpColumnCodes(mEmploymentByTract.getColumnLabels());
-		mEmploymentByTract.setColumnCodes(columnCodes);
-		columnCodes = generateAgeColumnCodes(mAgeByTract.getColumnLabels());
-		mAgeByTract.setColumnCodes(columnCodes);
+		
+		// Associate column codes (defined in constants) with column indices
+		ArrayList<Integer> empColumnCodes = generateEmpColumnCodes(mEmploymentByTract.getColumnLabels());
+		ArrayList<Integer> ageColumnCodes = generateAgeColumnCodes(mAgeByTract.getColumnLabels());
+		mEmploymentByTract.setColumnCodes(empColumnCodes);
+		mAgeByTract.setColumnCodes(ageColumnCodes);
 	}
 	
 	/**
@@ -48,7 +50,7 @@ public class PCAgeEmployment {
 		// Calculate combined column total
 		for(int i = 0; i < columnCodes.length; i++) {
 			ArrayList<String> curCol = isEmployment ? mEmploymentByTract.getColumnByCode(columnCodes[i]) : mAgeByTract.getColumnByCode(columnCodes[i]);
-			total += Integer.valueOf(curCol.get(curCol.size()-1));
+			total += Integer.valueOf(curCol.get(curCol.size()-1)); // Total is held at last last row
 			columns.add(curCol); // Add current column to local list to speed up loops below
 			if(i==0) columnLength = curCol.size();
 		}
@@ -109,7 +111,7 @@ public class PCAgeEmployment {
 				columnCodes.add(i, Constants.APTA_AGE_0_14);
 			else if(curLabel.equals(Constants.APTA_AGE_15_19_LBL))
 				columnCodes.add(i, Constants.APTA_AGE_15_19);
-			else if(curLabel.equals(Constants.APTA_AGE_20_24))
+			else if(curLabel.equals(Constants.APTA_AGE_20_24_LBL))
 				columnCodes.add(i, Constants.APTA_AGE_20_24);
 			else if(curLabel.equals(Constants.APTA_AGE_25_34_LBL))
 				columnCodes.add(i, Constants.APTA_AGE_25_34);
