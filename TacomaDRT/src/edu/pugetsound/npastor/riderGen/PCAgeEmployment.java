@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import edu.pugetsound.npastor.utils.Constants;
-import edu.pugetsound.npastor.utils.D;
+import edu.pugetsound.npastor.utils.Log;
 
 /**
  * TODO: Y NO 9400 CENSUS TRACTS IN PSRC EMPLOYMENT DATA?!?!

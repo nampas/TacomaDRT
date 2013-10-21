@@ -5,7 +5,7 @@ import java.util.Random;
 import edu.pugetsound.npastor.riderGen.TripGenerator;
 import edu.pugetsound.npastor.routing.DRTRouting;
 import edu.pugetsound.npastor.utils.Constants;
-import edu.pugetsound.npastor.utils.D;
+import edu.pugetsound.npastor.utils.Log;
 
 public class TacomaDRT {
 
@@ -38,7 +38,7 @@ public class TacomaDRT {
 		float elapsedSecs = (float)(tripGenTime - mStartTime) / 1000;
 		int timeMins = (int)(elapsedSecs / 60);
 		float remainderSecs = elapsedSecs % 60.0f;
-		D.info(TAG, "Trip generation complete: " + Constants.TOTAL_TRIPS + " trips in " + elapsedSecs + " seconds (" + timeMins + ":" + remainderSecs + ")");
+		Log.info(TAG, "Trip generation complete: " + Constants.TOTAL_TRIPS + " trips in " + elapsedSecs + " seconds (" + timeMins + ":" + remainderSecs + ")");
 		
 		// Run the routing!
 		mTripRouting.doRoute(mTripGen.getTrips());

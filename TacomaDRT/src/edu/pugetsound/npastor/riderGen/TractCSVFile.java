@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import edu.pugetsound.npastor.utils.D;
+import edu.pugetsound.npastor.utils.Log;
 
 /**
  * Represents a CSV file, and provides basic access functions

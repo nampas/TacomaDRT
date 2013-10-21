@@ -15,7 +15,7 @@ import java.util.Scanner;
 
 import edu.pugetsound.npastor.TacomaDRT;
 import edu.pugetsound.npastor.utils.Constants;
-import edu.pugetsound.npastor.utils.D;
+import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 import edu.pugetsound.npastor.utils.Utilities;
 
@@ -69,7 +69,7 @@ public class TripGenerator {
 	 */
 	private void generateAges() {
 		// Will contain all the generated ages
-		D.info(TAG, "Generating trip ages");
+		Log.info(TAG, "Generating trip ages");
 		ArrayList<Integer> ages = new ArrayList<Integer>();
 
 		Object[] keys = mAptaData.getAgeGroupPcts().keySet().toArray();
@@ -103,7 +103,7 @@ public class TripGenerator {
 					ages.addAll(generateAgesInRange(groupTotal, 65, 80)); //TODO: DETERMINE MAX AGE HERE
 			}
 		}
-		D.info(TAG, "Total ages genererated: " + ages.size());
+		Log.info(TAG, "Total ages genererated: " + ages.size());
 		// Finally add ages to trips, but do it randomly
 		for(Trip t : mTrips) {
 			int randomIndex = mRandom.nextInt(ages.size());
@@ -123,7 +123,7 @@ public class TripGenerator {
 
 	private void generateTripTypes() {
 		
-		D.info(TAG, "Generating trip types");
+		Log.info(TAG, "Generating trip types");
 		// Will contain all the generated ages
 		ArrayList<Integer> trips = new ArrayList<Integer>();
 
@@ -147,7 +147,7 @@ public class TripGenerator {
 	}
 
 	private void assignDirections() {
-		D.info(TAG, "Assigning trip directions");
+		Log.info(TAG, "Assigning trip directions");
 		// Half of list is inbound, other half is outbound
 		ArrayList<Boolean> directions = new ArrayList<Boolean>();
 		for(int i = 0; i < mTrips.size(); i++) {
@@ -165,7 +165,7 @@ public class TripGenerator {
 	}
 	
 	private void generateEndpointTracts() {
-		D.info(TAG, "Generating trip endpoint tracts");
+		Log.info(TAG, "Generating trip endpoint tracts");
 		for(Trip t: mTrips) {
 			int[] riderAgeGroup = {Utilities.getGroupForAge(t.getRiderAge())};
 			switch(t.getTripType()) {
@@ -213,7 +213,7 @@ public class TripGenerator {
 		
 		// Get filename and add current time and file extension
 		String filename = Constants.GENERATED_TRIPS_FILE + dateFormatted + ".txt";
-		D.info(TAG, "Writing trips to: " + filename);
+		Log.info(TAG, "Writing trips to: " + filename);
 		
 		// Write to file
 		try {
@@ -227,7 +227,7 @@ public class TripGenerator {
 			lineWriter.close();
 			writer.close();
 		} catch (IOException ex) {
-			D.error(TAG, "Unable to write to file");
+			Log.error(TAG, "Unable to write to file");
 			ex.printStackTrace();
 		}
 	}
@@ -240,7 +240,7 @@ public class TripGenerator {
 	 */
 	private void generatePickupTimes() {
 		
-		D.info(TAG, "Generating pickup times");
+		Log.info(TAG, "Generating pickup times");
 		int minRequestTime = Constants.BEGIN_OPERATION_HOUR * 60;
 		int maxRequestTime = Constants.END_OPERATION_HOUR * 60;
 		int minRequestWindow = Constants.BEGIN_REQUEST_WINDOW * 60;
@@ -261,7 +261,7 @@ public class TripGenerator {
 	}
 	
 	private void generateEndpoints() {
-		D.info(TAG, "Generating trip endpoints");
+		Log.info(TAG, "Generating trip endpoints");
 		TractPointGenerator pointGen = new TractPointGenerator();
 		for(Trip t : mTrips) {
 			t.setFirstEndpoint(pointGen.randomPointInTract(t.getFirstTract()));
@@ -290,8 +290,8 @@ public class TripGenerator {
 			mRiderAgePcts = new HashMap<Integer, Double>();
 			mTripTypePcts = new HashMap<Integer, Double>();
 			readAptaFile();
-			D.info(TAG, "Rider age mappings, group to percent: " + mRiderAgePcts.toString());
-			D.info(TAG, "Trip type mappings, group to percent: " + mTripTypePcts.toString());
+			Log.info(TAG, "Rider age mappings, group to percent: " + mRiderAgePcts.toString());
+			Log.info(TAG, "Trip type mappings, group to percent: " + mTripTypePcts.toString());
 		}
 
 		/**

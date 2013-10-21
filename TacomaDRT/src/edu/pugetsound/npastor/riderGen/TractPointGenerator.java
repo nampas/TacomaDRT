@@ -37,7 +37,7 @@ import delaunay_triangulation.Point_dt;
 import delaunay_triangulation.Triangle_dt;
 
 import edu.pugetsound.npastor.utils.Constants;
-import edu.pugetsound.npastor.utils.D;
+import edu.pugetsound.npastor.utils.Log;
 
 
 /**
@@ -74,15 +74,15 @@ public class TractPointGenerator {
 			CoordinateReferenceSystem fileCRS = mFeatureSource.getSchema().getCoordinateReferenceSystem();
 			mProjectionTransform = CRS.findMathTransform(fileCRS, DefaultGeographicCRS.WGS84, true);
 		} catch(MalformedURLException ex) {
-			D.error(TAG, "Error opening census tract file.");
+			Log.error(TAG, "Error opening census tract file.");
 			ex.printStackTrace();
 			System.exit(1);
 		} catch(IOException ex) {
-			D.error(TAG, "Error opening census tract file.");
+			Log.error(TAG, "Error opening census tract file.");
 			ex.printStackTrace();
 			System.exit(1);
 		} catch(FactoryException ex) {
-			D.error(TAG, "Error creating transformation from file CRS to lat/long projection");
+			Log.error(TAG, "Error creating transformation from file CRS to lat/long projection");
 			ex.printStackTrace();
 			System.exit(1);
 		}
@@ -135,7 +135,7 @@ public class TractPointGenerator {
 			Triangle_dt chosenTri = generateWeightedTriangle(triangles);
 			return generatePointInTriangle(chosenTri);
 		} catch (TransformException ex) {
-			D.error(TAG, "Unable to transform polygon into long/lat");
+			Log.error(TAG, "Unable to transform polygon into long/lat");
 			ex.printStackTrace();
 			System.exit(1);
 		}

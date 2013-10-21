@@ -9,9 +9,11 @@ public class DRTRouting {
 
 	ArrayList<Trip> mRequestedTrips;
 	ArrayList<Vehicle> mVehicles;
+	Routefinder mRoutefinder;
 	
 	public DRTRouting() {
 		mVehicles = generateVehicles();
+		mRoutefinder = new Routefinder();
 	}
 	
 	/**
@@ -20,6 +22,9 @@ public class DRTRouting {
 	 */
 	public void doRoute(ArrayList<Trip> requestedTrips) {
 		mRequestedTrips = requestedTrips;
+		for(Trip t : requestedTrips) {
+			mRoutefinder.findRoute(t.getFirstEndpoint(), t.getSecondEndpoint());
+		}
 	}
 	
 	private ArrayList<Vehicle> generateVehicles() {
@@ -27,6 +32,7 @@ public class DRTRouting {
 		for(int i = 0; i < Constants.VEHCILE_QUANTITY; i++) {
 			vehicles.add(new Vehicle());
 		}
+		
 		return vehicles;
 	}
 }
