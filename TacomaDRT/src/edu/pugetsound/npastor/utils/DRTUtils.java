@@ -4,10 +4,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import edu.pugetsound.npastor.TacomaDRT;
-
-
-public class Utilities {
+public class DRTUtils {
 
 	/**
 	 * Returns age group code which the specified age falls in
@@ -54,7 +51,11 @@ public class Utilities {
 		return tripString;
 	}
 	
-	// Converts a minute value to hh:mm format
+	/**
+	 * Convert minutes to HH:mm format
+	 * @param mins Desired time in minutes
+	 * @return Formatted String representation of specified time
+	 */
 	public static String minsToHrMin(int mins) {
 		int hh = mins / 60;
 		int mm = mins % 60;
@@ -64,10 +65,15 @@ public class Utilities {
 		return str;
 	}
 	
+	/**
+	 * Formats a millisecond time to "yyyy-MM-dd'_'HH-mm-ss" format
+	 * @param millis desired time in milliseconds
+	 * @return Formatted String representation of specified time
+	 */
 	public static String formatMillis(long millis) {
-		// Format the simulation start time
+		
 		Date date = new Date(millis);
-		DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss");
+		DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'_'HH-mm-ss");
 		String dateFormatted = formatter.format(date);
 		return dateFormatted;
 	}

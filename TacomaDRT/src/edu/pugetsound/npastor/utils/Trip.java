@@ -10,6 +10,9 @@ import delaunay_triangulation.Point_dt;
  */
 public class Trip {
 
+	
+	public final String TAG = "Trip";
+	public final static String TRACT_NOT_SET = "Not set";
 	private int mTripType;
 	private int mRiderAge;
 	private boolean mIsOutbound;
@@ -26,8 +29,8 @@ public class Trip {
 		mRiderAge = -1;
 		mIsOutbound = true;
 		mIdentifier = hashCode();
-		mEndpointTract1 = "Not set";
-		mEndpointTract2 = "Not set";
+		mEndpointTract1 = TRACT_NOT_SET;
+		mEndpointTract2 = TRACT_NOT_SET;
 		mPickupTime = -1;
 		mCallTime = -1;
 	}
@@ -110,12 +113,12 @@ public class Trip {
 	
 	public String toString() {
 		return "Trip: " + mIdentifier + 
-				"\n  Type: " + Utilities.getTripTypeString(mTripType) + 
+				"\n  Type: " + DRTUtils.getTripTypeString(mTripType) + 
 				"\n  Age: " + mRiderAge +
 				"\n  Outbound? " + mIsOutbound +
 				"\n  First Tract: " + mEndpointTract1 + ". At" + mEndpoint1 +
 				"\n  Second Tract: " + mEndpointTract2 + ". At" + mEndpoint2 +
-				"\n  Pickup Time: " + Utilities.minsToHrMin(mPickupTime) +
-				"\n  Request Made at: " + Utilities.minsToHrMin(mCallTime);
+				"\n  Pickup Time: " + DRTUtils.minsToHrMin(mPickupTime) +
+				"\n  Request Made at: " + DRTUtils.minsToHrMin(mCallTime);
 	}
 }

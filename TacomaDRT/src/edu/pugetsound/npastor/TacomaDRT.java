@@ -1,11 +1,12 @@
 package edu.pugetsound.npastor;
 
-import java.util.Random;
+import java.io.File;
 
 import edu.pugetsound.npastor.riderGen.TripGenerator;
 import edu.pugetsound.npastor.routing.DRTRouting;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.Log;
+import edu.pugetsound.npastor.utils.DRTUtils;
 
 public class TacomaDRT {
 
@@ -13,6 +14,7 @@ public class TacomaDRT {
 	//execute: java edu/pugetsound/npastor/TacomaDRT
 	private TripGenerator mTripGen;
 	private DRTRouting mTripRouting;
+	private static String mSimulationDirectory;
 	public static long mStartTime;
 	
 	public final static String TAG = "TacomaDRT";
@@ -29,6 +31,7 @@ public class TacomaDRT {
 	
 	public void runModel() {
 		mStartTime = System.currentTimeMillis();
+		setSimulationDirectory();
 		
 		// Run the trip generation
 		mTripGen.generateTrips(); 
@@ -41,5 +44,17 @@ public class TacomaDRT {
 		
 		// Run the routing!
 		mTripRouting.doRoute(mTripGen.getTrips());
+	}
+	
+	private void setSimulationDirectory() {
+		mSimulationDirectory = Constants.SIM_BASE_DIRECTORY + "/sim" + DRTUtils.formatMillis(mStartTime);
+		boolean result = new File(mSimulationDirectory).mkdirs();
+		if(!result) {
+			Log.error(TAG, "Unable to create simulation base directory at: " + mSimulationDirectory);
+		}
+	}
+	
+	public static String getSimulationDirectory() {
+		return mSimulationDirectory;
 	}
 }

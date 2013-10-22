@@ -1,6 +1,5 @@
 package edu.pugetsound.npastor.riderGen;
 
-import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -16,6 +15,7 @@ import org.geotools.feature.GeometryAttributeImpl;
 import org.geotools.geometry.DirectPosition1D;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.JTS;
+import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.Feature;
@@ -29,7 +29,11 @@ import org.opengis.referencing.operation.TransformException;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.CoordinateSequence;
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryCollection;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.MultiPolygon;
+import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.triangulate.DelaunayTriangulationBuilder;
 
 import delaunay_triangulation.BoundingBox;
 import delaunay_triangulation.Delaunay_Triangulation;
@@ -128,8 +132,10 @@ public class TractPointGenerator {
 		try {
 			// First we project the point to long/lat
 			Geometry projectedPoly = JTS.transform(polygon, mProjectionTransform);
+
 			// Then pick a random point
 			ArrayList<Triangle_dt> triangles = triangulatePolygon(projectedPoly);
+//			ArrayList<Triangle_dt> triangles = JTSTriangulate(projectedPoly);
 			Triangle_dt chosenTri = generateWeightedTriangle(triangles);
 			return generatePointInTriangle(chosenTri);
 		} catch (TransformException ex) {
@@ -153,8 +159,10 @@ public class TractPointGenerator {
 		Coordinate[] coords = polygon.getCoordinates();
 		
 		// Add all points from polygon
+		boolean isFirstCoord = true;
 		for(Coordinate c : coords) {
-			triangulate.insertPoint(new Point_dt(c.x, c.y));
+			if(isFirstCoord) isFirstCoord = false;
+			else triangulate.insertPoint(new Point_dt(c.x, c.y));
 		}
 		Iterator<Triangle_dt> iter = triangulate.trianglesIterator();
 		
@@ -173,8 +181,9 @@ public class TractPointGenerator {
 		
 		double totalArea = 0;
 		Point_dt p1, p2, p3, baseMp; // Vertices and base midpoint
-		double base, height;
+		double base, height; // Base and height lengths
 		ArrayList<TriangleWrapper> triangleWrap = new ArrayList<TriangleWrapper>(); // So that we don't need to calculate area twice
+		
 		// First calculate total polygon area
 		for(Triangle_dt tr : triangles) {
 			if(tr.isHalfplane()) break; // Only consider if this is a triangle
@@ -207,26 +216,47 @@ public class TractPointGenerator {
 	
 	/**
 	 * Generates a random point within a triangle
+	 * Adapted from: http://parametricplayground.blogspot.com/2011/02/random-points-distributed-inside.html
 	 * @param triangle The triangle in which to generate a point
 	 * @return The point
 	 */
 	private Point_dt generatePointInTriangle(Triangle_dt triangle) {
-		boolean validPoint = false;
-		Point_dt p = new Point_dt();
-		// TODO: Generate a point using the method described here: http://mathworld.wolfram.com/TrianglePointPicking.html
-		// Loop until we generate a point inside the triangle
-		while(!validPoint) {
+	
+		// Point "weight" coefficients
+		double a = mRand.nextDouble();
+		double b = mRand.nextDouble() * (1 - a);
+		double c = 1 - a - b;
+		
+		// Points
+		Point_dt A = triangle.p1();
+		Point_dt B = triangle.p2();
+		Point_dt C = triangle.p3();
+		
+		double resultX = (a * A.x()) + (b * B.x()) + (c * C.x());
+		double resultY = (a * A.y()) + (b * B.y()) + (c * C.y());
 			
-			BoundingBox bb = triangle.getBoundingBox();
-			double x = mRand.nextDouble() * bb.getHeight() + bb.getMinPoint().x();
-			double y = mRand.nextDouble() * bb.getWidth() + bb.getMinPoint().y();
-			p = new Point_dt(x, y);
-			
-			if(triangle.contains(p))
-				validPoint = true;
+		return new Point_dt(resultX, resultY, A.z());
+	}
+	
+	private ArrayList<Triangle_dt> JTSTriangulate(Geometry polygon) {
+		
+		ArrayList<Triangle_dt> triangles = new ArrayList<Triangle_dt>();
+		
+		DelaunayTriangulationBuilder triangulate = new DelaunayTriangulationBuilder();
+		triangulate.setTolerance(0.0);
+		triangulate.setSites(polygon);
+		GeometryCollection geos = (GeometryCollection) triangulate.getTriangles(new GeometryFactory());
+		
+		for(int i = 0; i < geos.getNumGeometries(); i++) {
+			Geometry triangle = geos.getGeometryN(0);
+			Coordinate[] coords = triangle.getCoordinates();
+			Point_dt p1 = new Point_dt(coords[0].x, coords[0].y);
+			Point_dt p2 = new Point_dt(coords[1].x, coords[1].y);
+			Point_dt p3 = new Point_dt(coords[2].x, coords[2].y);
+			triangles.add(new Triangle_dt(p1, p2, p3));
 		}
-			
-		return p;
+		
+		return triangles;
 	}
 	
 	/*
@@ -250,3 +280,5 @@ public class TractPointGenerator {
 		}
 	}	
 }
+
+

@@ -5,5 +5,5 @@
 *.settings
 # And ignore binaries #
 bin/
-# Ignore trip logs #
-Trips/
+# Ignore simulation logs #
+Simulations/

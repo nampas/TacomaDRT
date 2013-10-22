@@ -72,6 +72,19 @@ public class PCAgeEmployment {
 		return tract;
 	}
 	
+	/**
+	 * Returns a random census tract
+	 * @return Random census tract
+	 */
+	public String getRandomTract() {
+		String tract = "";
+		ArrayList<String> labelColumn = mEmploymentByTract.getColumnByCode(TractCSVFile.TRACT_LABEL_COLUMN);
+		
+		int tractRow = mRand.nextInt(labelColumn.size()) + 1;
+		tract = mEmploymentByTract.getTractAtRow(tractRow);
+		return tract;
+	}
+	
 	private ArrayList<Integer> generateEmpColumnCodes(ArrayList<String> columnLabels) {
 		ArrayList<Integer> columnCodes = new ArrayList<Integer>(columnLabels.size());
 		for(int i = 0; i < columnLabels.size(); i++) {

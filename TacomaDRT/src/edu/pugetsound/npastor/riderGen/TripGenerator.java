@@ -38,7 +38,7 @@ import edu.pugetsound.npastor.TacomaDRT;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
-import edu.pugetsound.npastor.utils.Utilities;
+import edu.pugetsound.npastor.utils.DRTUtils;
 
 /**
  * Generates all daily trips on the DRT network
@@ -75,8 +75,8 @@ public class TripGenerator {
 		generateEndpointTracts();
 		generateEndpoints();
 		generatePickupTimes();
-		for(int i = 0; i < mTrips.size(); i++)
-			Log.info(TAG, mTrips.get(i).toString());
+//		for(int i = 0; i < mTrips.size(); i++)
+//			Log.info(TAG, mTrips.get(i).toString());
 		
 		writeTripsToFile();
 		writeTripGeoToShp();
@@ -189,7 +189,7 @@ public class TripGenerator {
 	private void generateEndpointTracts() {
 		Log.info(TAG, "Generating trip endpoint tracts");
 		for(Trip t: mTrips) {
-			int[] riderAgeGroup = {Utilities.getGroupForAge(t.getRiderAge())};
+			int[] riderAgeGroup = {DRTUtils.getGroupForAge(t.getRiderAge())};
 			switch(t.getTripType()) {
 				case Constants.TRIP_COMMUTE:
 					int[] commuteCode = {Constants.PSRC_TOTAL};
@@ -203,9 +203,13 @@ public class TripGenerator {
 					break;
 				case Constants.TRIP_OTHER:
 					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
+					//TODO: should this be random?
+					t.setSecondTract(mPCData.getRandomTract());
 					break;
 				case Constants.TRIP_PERSONAL_BUSINESS:
 					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
+					//TODO: should this be random?
+					t.setSecondTract(mPCData.getRandomTract());
 					break;
 				case Constants.TRIP_SCHOOL:
 					int [] schoolCode = {Constants.PSRC_EDU};
@@ -219,6 +223,8 @@ public class TripGenerator {
 					break;
 				case Constants.TRIP_SOCIAL:
 					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
+					//TODO: should this be weighted for total population level?
+					t.setSecondTract(mPCData.getWeightedTract(riderAgeGroup, false));
 			}
 		}
 	}
@@ -266,10 +272,10 @@ public class TripGenerator {
 	 */
 	private void writeTripsToFile() {
 		// Format the simulation start time
-		String dateFormatted = Utilities.formatMillis(TacomaDRT.mStartTime);
+		String dateFormatted = DRTUtils.formatMillis(TacomaDRT.mStartTime);
 		
 		// Get filename and add current time and file extension
-		String filename = Constants.GENERATED_TRIPS_FILE + dateFormatted + ".txt";
+		String filename = TacomaDRT.getSimulationDirectory() + Constants.TRIPS_PREFIX_TXT + dateFormatted + ".txt";
 		Log.info(TAG, "Writing trips to: " + filename);
 		
 		// Write to file
@@ -314,10 +320,8 @@ public class TripGenerator {
         	Point firstEndpoint = geometryFactory.createPoint(new Coordinate(t.getFirstEndpoint().x(), t.getFirstEndpoint().y(), 0.0));
         	Point secondEndpoint = geometryFactory.createPoint(new Coordinate(t.getSecondEndpoint().x(), t.getSecondEndpoint().y(), 0.0));
         	
-        	Log.info(TAG, firstEndpoint.getCoordinate() + "    " + secondEndpoint.getCoordinate());
-        	
         	// Add both feature to collection
-        	if(t.getFirstTract() != "Not set") {
+        	if(t.getFirstTract() != Trip.TRACT_NOT_SET) {
 	            featureBuilder.add(firstEndpoint); // Geo data
 	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Trip identifier
 	            featureBuilder.add(t.getFirstTract()); // Tract
@@ -325,7 +329,7 @@ public class TripGenerator {
 	            ((DefaultFeatureCollection)collection).add(firstFeature);
         	}
             
-        	if(t.getSecondTract() != "Not set") {
+        	if(t.getSecondTract() != Trip.TRACT_NOT_SET) {
 	            featureBuilder.add(secondEndpoint); // Location
 	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Name
 	            featureBuilder.add(t.getSecondTract()); // Tract
@@ -346,8 +350,8 @@ public class TripGenerator {
 		SimpleFeatureCollection collection = createGeoFeatureCollection(featureType);
 		
 		// Format time and create filename
-		String dateFormatted = Utilities.formatMillis(TacomaDRT.mStartTime);
-		String filename = Constants.TRIP_SHP + dateFormatted + ".shp";
+		String dateFormatted = DRTUtils.formatMillis(TacomaDRT.mStartTime);
+		String filename = TacomaDRT.getSimulationDirectory() + Constants.TRIP_PREFIX_SHP + dateFormatted + ".shp";
         File shpFile = new File(filename);
 
         Log.info(TAG, "Writing trips to shapefile at: " + filename);

@@ -18,6 +18,7 @@ import edu.pugetsound.npastor.utils.Log;
 public class TractCSVFile extends File {
 
 	public static final String TAG = "TractCSVFile";
+	public final static int TRACT_LABEL_COLUMN = -101;
 	
 	private static final String COMMA_DELIMITER = ",";
 	private ArrayList<String> mColumnLabels;
@@ -76,7 +77,9 @@ public class TractCSVFile extends File {
 	
 	private String getValueFromRowString(String row, int columnCode) {
 		String[] tokens = row.split(COMMA_DELIMITER);
-		String val = tokens[mColumnCodes.get(columnCode)];
+		String val;
+		if(columnCode == TRACT_LABEL_COLUMN) val = tokens[0];
+		else val = tokens[mColumnCodes.get(columnCode)];
 		return val;
 	}
 	
