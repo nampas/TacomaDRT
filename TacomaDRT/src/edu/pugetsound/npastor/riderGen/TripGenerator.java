@@ -7,26 +7,21 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.MalformedURLException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
 
-import org.geotools.data.DataUtilities;
 import org.geotools.data.DefaultTransaction;
+import org.geotools.data.FeatureStore;
 import org.geotools.data.Transaction;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
-import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.feature.DefaultFeatureCollection;
-import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureCollections;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
@@ -34,7 +29,6 @@ import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.feature.type.AttributeType;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -103,9 +97,9 @@ public class TripGenerator {
 		Object[] keys = mAptaData.getAgeGroupPcts().keySet().toArray();
 		// Loop through the key set, process each age group
 		for(Object curKey : keys) {
-			double percentage = mAptaData.getAgeGroupPct((int)curKey);
+			double percentage = mAptaData.getAgeGroupPct((Integer)curKey);
 			int groupTotal = (int)Math.ceil(percentage * Constants.TOTAL_TRIPS / 100); // Total riders in this group
-			switch((int)curKey) {
+			switch((Integer)curKey) {
 				case Constants.APTA_AGE_0_14:
 					ages.addAll(generateAgesInRange(groupTotal, 0, 14));
 					break;
@@ -158,7 +152,7 @@ public class TripGenerator {
 		Object[] keys = mAptaData.getTripTypePcts().keySet().toArray();
 		// Loop through the key set, process each trip type
 		for(int i = 0; i < keys.length; i++) {
-			int curKey = (int) keys[i];
+			int curKey = (Integer) keys[i];
 			double percentage = mAptaData.getTripTypePct(curKey);
 			int groupTotal = (int) Math.ceil(percentage * Constants.TOTAL_TRIPS / 100); // Total riders in this group
 			for(int j = 0; j < groupTotal; j++) {
@@ -295,27 +289,20 @@ public class TripGenerator {
 		}
 	}
 	
-	private SimpleFeatureCollection createGeoFeatureCollection() {
-		
+	private SimpleFeatureType buildFeatureType() {
 		// Build feature type
-//        SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
-//        builder.setName("Location");
-//        builder.setCRS(DefaultGeographicCRS.WGS84); // <- Coordinate reference system
-//        builder.add("Location", Point.class);
-//        builder.add("Tract", Double.class);
-//        builder.length(15).add("Name", String.class); // <- 15 chars width for name field
-//        final SimpleFeatureType featureType = builder.buildFeatureType();
-//        
-		
-		SimpleFeatureType featureType = null;
-        try {
-          featureType = DataUtilities.createType("Location",
-                "location:Point:srid=4326," + // <- the geometry attribute: Point type
-                        "tract:String," + // <- a String attribute
-                        "trip:String" // a number attribute
-        ); } catch (Exception ex) { Log.error(TAG, "No idea"); }
+        SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
+        builder.setName("TripEndpoints");
+        builder.setCRS(DefaultGeographicCRS.WGS84);
+        builder.add("Location", Point.class); // Geo data
+        builder.length(15).add("Trip", String.class); // Trip identifier
+        builder.add("Tract", Double.class); // Tract number the point falls in
         
-        
+        final SimpleFeatureType featureType = builder.buildFeatureType();
+        return featureType;
+	}
+	
+	private SimpleFeatureCollection createGeoFeatureCollection(SimpleFeatureType featureType) {
 		
         // New collection with feature type
 		SimpleFeatureCollection collection = FeatureCollections.newCollection();
@@ -324,22 +311,24 @@ public class TripGenerator {
         
         // Loop through trips, adding endpoints
         for(Trip t : mTrips) {
-        	Point firstEndpoint = geometryFactory.createPoint(new Coordinate(t.getFirstEndpoint().x(), t.getFirstEndpoint().y()));
-        	Point secondEndpoint = geometryFactory.createPoint(new Coordinate(t.getSecondEndpoint().x(), t.getSecondEndpoint().y()));
+        	Point firstEndpoint = geometryFactory.createPoint(new Coordinate(t.getFirstEndpoint().x(), t.getFirstEndpoint().y(), 0.0));
+        	Point secondEndpoint = geometryFactory.createPoint(new Coordinate(t.getSecondEndpoint().x(), t.getSecondEndpoint().y(), 0.0));
+        	
+        	Log.info(TAG, firstEndpoint.getCoordinate() + "    " + secondEndpoint.getCoordinate());
         	
         	// Add both feature to collection
         	if(t.getFirstTract() != "Not set") {
-	            featureBuilder.add(firstEndpoint); // Location
+	            featureBuilder.add(firstEndpoint); // Geo data
+	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Trip identifier
 	            featureBuilder.add(t.getFirstTract()); // Tract
-	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Name
 	            SimpleFeature firstFeature = featureBuilder.buildFeature(null);
 	            ((DefaultFeatureCollection)collection).add(firstFeature);
         	}
             
         	if(t.getSecondTract() != "Not set") {
 	            featureBuilder.add(secondEndpoint); // Location
-	            featureBuilder.add(t.getSecondTract()); // Tract
 	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Name
+	            featureBuilder.add(t.getSecondTract()); // Tract
 	            SimpleFeature secondFeature = featureBuilder.buildFeature(null);
 	            ((DefaultFeatureCollection)collection).add(secondFeature);
         	}
@@ -353,7 +342,8 @@ public class TripGenerator {
 	 */
 	private void writeTripGeoToShp() {
 
-		SimpleFeatureCollection collection = createGeoFeatureCollection();
+		SimpleFeatureType featureType = buildFeatureType();
+		SimpleFeatureCollection collection = createGeoFeatureCollection(featureType);
 		
 		// Format time and create filename
 		String dateFormatted = Utilities.formatMillis(TacomaDRT.mStartTime);
@@ -371,28 +361,27 @@ public class TripGenerator {
 	        
 	        // Build the data store, which will hold our collection
 	        ShapefileDataStore dataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
-	        dataStore.createSchema(collection.getSchema());
+	        dataStore.createSchema(featureType);
 	        
 	        // Finally, write the features to the shapefile
 	        Transaction transaction = new DefaultTransaction("create");
 	        String typeName = dataStore.getTypeNames()[0];
 	        SimpleFeatureSource featureSource = dataStore.getFeatureSource(typeName);
-
-	        if (featureSource instanceof SimpleFeatureStore) {
+	        
+	        if (featureSource instanceof FeatureStore) {
 	            SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
 	            featureStore.setTransaction(transaction);
                 featureStore.addFeatures(collection);
                 transaction.commit();
+                Log.info(TAG,  "Data committed to file");
 	        }
 	        transaction.close();
         } catch (MalformedURLException ex) {
         	Log.error(TAG, "Unable to save trips to shapefile");
         	ex.printStackTrace();
-        	return;
         } catch (IOException ex) {
         	Log.error(TAG, "Unable to open or write to shapefile");
         	ex.printStackTrace();
-        	return;
         }
 	}
 

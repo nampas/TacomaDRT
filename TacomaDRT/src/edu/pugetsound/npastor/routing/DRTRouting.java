@@ -14,6 +14,7 @@ public class DRTRouting {
 	public DRTRouting() {
 		mVehicles = generateVehicles();
 		mRoutefinder = new Routefinder();
+		doAPrioriRouting();
 	}
 	
 	/**
@@ -32,7 +33,13 @@ public class DRTRouting {
 		for(int i = 0; i < Constants.VEHCILE_QUANTITY; i++) {
 			vehicles.add(new Vehicle());
 		}
-		
 		return vehicles;
+	}
+	
+	/**
+	 * Executes all routing with requests known at time that service begins
+	 */
+	private void doAPrioriRouting() {
+		
 	}
 }

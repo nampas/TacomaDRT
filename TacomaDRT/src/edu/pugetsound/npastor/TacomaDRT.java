@@ -13,7 +13,6 @@ public class TacomaDRT {
 	//execute: java edu/pugetsound/npastor/TacomaDRT
 	private TripGenerator mTripGen;
 	private DRTRouting mTripRouting;
-	
 	public static long mStartTime;
 	
 	public final static String TAG = "TacomaDRT";
