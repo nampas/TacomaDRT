@@ -5,13 +5,40 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
+import java.net.MalformedURLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
+
+import org.geotools.data.DataUtilities;
+import org.geotools.data.DefaultTransaction;
+import org.geotools.data.Transaction;
+import org.geotools.data.shapefile.ShapefileDataStore;
+import org.geotools.data.shapefile.ShapefileDataStoreFactory;
+import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.data.simple.SimpleFeatureSource;
+import org.geotools.data.simple.SimpleFeatureStore;
+import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.FeatureCollection;
+import org.geotools.feature.FeatureCollections;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.geotools.geometry.jts.JTSFactoryFinder;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.AttributeType;
+
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Point;
 
 import edu.pugetsound.npastor.TacomaDRT;
 import edu.pugetsound.npastor.utils.Constants;
@@ -54,10 +81,11 @@ public class TripGenerator {
 		generateEndpointTracts();
 		generateEndpoints();
 		generatePickupTimes();
-//		for(int i = 0; i < mTrips.size(); i++)
-//			D.info(TAG, mTrips.get(i).toString());
+		for(int i = 0; i < mTrips.size(); i++)
+			Log.info(TAG, mTrips.get(i).toString());
 		
 		writeTripsToFile();
+		writeTripGeoToShp();
 	}
 	
 	public ArrayList<Trip> getTrips() {
@@ -201,37 +229,6 @@ public class TripGenerator {
 		}
 	}
 	
-	/**
-	 * Writes the generated trips to file. 
-	 * TODO: Make these trips reloadable in a subsequent simulation
-	 */
-	private void writeTripsToFile() {
-		// Format the simulation start time
-		Date date = new Date(TacomaDRT.mStartTime);
-		DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss");
-		String dateFormatted = formatter.format(date);
-		
-		// Get filename and add current time and file extension
-		String filename = Constants.GENERATED_TRIPS_FILE + dateFormatted + ".txt";
-		Log.info(TAG, "Writing trips to: " + filename);
-		
-		// Write to file
-		try {
-			FileWriter writer = new FileWriter(filename, false);
-			PrintWriter lineWriter = new PrintWriter(writer);
-			for(Trip t : mTrips) {
-				String curTrip = t.toString();
-				curTrip.replace("\n", ""); // Get rid of all line break;
-				lineWriter.println(curTrip);
-			}
-			lineWriter.close();
-			writer.close();
-		} catch (IOException ex) {
-			Log.error(TAG, "Unable to write to file");
-			ex.printStackTrace();
-		}
-	}
-	
 	//TODO: determine time distribution across day
 	//TODO: determine when requests are made known to agency
 	/**
@@ -267,6 +264,136 @@ public class TripGenerator {
 			t.setFirstEndpoint(pointGen.randomPointInTract(t.getFirstTract()));
 			t.setSecondEndpoint(pointGen.randomPointInTract(t.getSecondTract()));
 		}
+	}
+	
+	/**
+	 * Writes the generated trips to file. 
+	 * TODO: Make these trips reloadable in a subsequent simulation
+	 */
+	private void writeTripsToFile() {
+		// Format the simulation start time
+		String dateFormatted = Utilities.formatMillis(TacomaDRT.mStartTime);
+		
+		// Get filename and add current time and file extension
+		String filename = Constants.GENERATED_TRIPS_FILE + dateFormatted + ".txt";
+		Log.info(TAG, "Writing trips to: " + filename);
+		
+		// Write to file
+		try {
+			FileWriter writer = new FileWriter(filename, false);
+			PrintWriter lineWriter = new PrintWriter(writer);
+			for(Trip t : mTrips) {
+				String curTrip = t.toString();
+				curTrip.replace("\n", ""); // Get rid of all line break;
+				lineWriter.println(curTrip);
+			}
+			lineWriter.close();
+			writer.close();
+		} catch (IOException ex) {
+			Log.error(TAG, "Unable to write to file");
+			ex.printStackTrace();
+		}
+	}
+	
+	private SimpleFeatureCollection createGeoFeatureCollection() {
+		
+		// Build feature type
+//        SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
+//        builder.setName("Location");
+//        builder.setCRS(DefaultGeographicCRS.WGS84); // <- Coordinate reference system
+//        builder.add("Location", Point.class);
+//        builder.add("Tract", Double.class);
+//        builder.length(15).add("Name", String.class); // <- 15 chars width for name field
+//        final SimpleFeatureType featureType = builder.buildFeatureType();
+//        
+		
+		SimpleFeatureType featureType = null;
+        try {
+          featureType = DataUtilities.createType("Location",
+                "location:Point:srid=4326," + // <- the geometry attribute: Point type
+                        "tract:String," + // <- a String attribute
+                        "trip:String" // a number attribute
+        ); } catch (Exception ex) { Log.error(TAG, "No idea"); }
+        
+        
+		
+        // New collection with feature type
+		SimpleFeatureCollection collection = FeatureCollections.newCollection();
+		GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory(null);
+        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
+        
+        // Loop through trips, adding endpoints
+        for(Trip t : mTrips) {
+        	Point firstEndpoint = geometryFactory.createPoint(new Coordinate(t.getFirstEndpoint().x(), t.getFirstEndpoint().y()));
+        	Point secondEndpoint = geometryFactory.createPoint(new Coordinate(t.getSecondEndpoint().x(), t.getSecondEndpoint().y()));
+        	
+        	// Add both feature to collection
+        	if(t.getFirstTract() != "Not set") {
+	            featureBuilder.add(firstEndpoint); // Location
+	            featureBuilder.add(t.getFirstTract()); // Tract
+	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Name
+	            SimpleFeature firstFeature = featureBuilder.buildFeature(null);
+	            ((DefaultFeatureCollection)collection).add(firstFeature);
+        	}
+            
+        	if(t.getSecondTract() != "Not set") {
+	            featureBuilder.add(secondEndpoint); // Location
+	            featureBuilder.add(t.getSecondTract()); // Tract
+	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Name
+	            SimpleFeature secondFeature = featureBuilder.buildFeature(null);
+	            ((DefaultFeatureCollection)collection).add(secondFeature);
+        	}
+        }
+        return collection;
+	}
+	
+	/**
+	 * Writes the trip geographic data to a shapefile
+	 * Adapted from: http://docs.geotools.org/latest/tutorials/feature/csv2shp.html#write-the-feature-data-to-the-shapefile
+	 */
+	private void writeTripGeoToShp() {
+
+		SimpleFeatureCollection collection = createGeoFeatureCollection();
+		
+		// Format time and create filename
+		String dateFormatted = Utilities.formatMillis(TacomaDRT.mStartTime);
+		String filename = Constants.TRIP_SHP + dateFormatted + ".shp";
+        File shpFile = new File(filename);
+
+        Log.info(TAG, "Writing trips to shapefile at: " + filename);
+        
+        ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
+
+        try {
+	        Map<String, Serializable> params = new HashMap<String, Serializable>();
+	        params.put("url", shpFile.toURI().toURL());
+	        params.put("create spatial index", Boolean.TRUE);
+	        
+	        // Build the data store, which will hold our collection
+	        ShapefileDataStore dataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
+	        dataStore.createSchema(collection.getSchema());
+	        
+	        // Finally, write the features to the shapefile
+	        Transaction transaction = new DefaultTransaction("create");
+	        String typeName = dataStore.getTypeNames()[0];
+	        SimpleFeatureSource featureSource = dataStore.getFeatureSource(typeName);
+
+	        if (featureSource instanceof SimpleFeatureStore) {
+	            SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
+	            featureStore.setTransaction(transaction);
+                featureStore.addFeatures(collection);
+                transaction.commit();
+	        }
+	        transaction.close();
+        } catch (MalformedURLException ex) {
+        	Log.error(TAG, "Unable to save trips to shapefile");
+        	ex.printStackTrace();
+        	return;
+        } catch (IOException ex) {
+        	Log.error(TAG, "Unable to open or write to shapefile");
+        	ex.printStackTrace();
+        	return;
+        }
 	}
 
 	/**

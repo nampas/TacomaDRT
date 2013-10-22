@@ -22,9 +22,9 @@ public class DRTRouting {
 	 */
 	public void doRoute(ArrayList<Trip> requestedTrips) {
 		mRequestedTrips = requestedTrips;
-		for(Trip t : requestedTrips) {
-			mRoutefinder.findRoute(t.getFirstEndpoint(), t.getSecondEndpoint());
-		}
+//		for(Trip t : requestedTrips) {
+//			mRoutefinder.findRoute(t.getFirstEndpoint(), t.getSecondEndpoint());
+//		}
 	}
 	
 	private ArrayList<Vehicle> generateVehicles() {

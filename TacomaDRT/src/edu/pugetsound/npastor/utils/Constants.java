@@ -15,6 +15,7 @@ public class Constants {
 	public final static String PC_AGE_FILE = "files/PCAgeEmployment/PCAgeTotals.csv"; //Pierce County age data by census tract, from census
 	public final static String PC_EMPLOYMENT_FILE = "files/PCAgeEmployment/TacomaTractEmp2009.csv "; // Pierce County employment data, from PSRC
 	public final static String GENERATED_TRIPS_FILE = "files/Trips/Trips";
+	public final static String TRIP_SHP = "files/TripShp/TripShp";
 	
 	// Total trips per day
 	public final static int TOTAL_TRIPS = 30;

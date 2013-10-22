@@ -1,5 +1,11 @@
 package edu.pugetsound.npastor.utils;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import edu.pugetsound.npastor.TacomaDRT;
+
 
 public class Utilities {
 
@@ -56,5 +62,13 @@ public class Utilities {
 		if(mm < 10) str += "0" + mm;
 		else str += mm;
 		return str;
+	}
+	
+	public static String formatMillis(long millis) {
+		// Format the simulation start time
+		Date date = new Date(millis);
+		DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss");
+		String dateFormatted = formatter.format(date);
+		return dateFormatted;
 	}
 }

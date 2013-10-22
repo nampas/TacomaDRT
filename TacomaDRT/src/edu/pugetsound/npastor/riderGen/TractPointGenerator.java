@@ -55,7 +55,6 @@ public class TractPointGenerator {
 	public final String TRACT_PROPERTY_NAME = "NAME10";
 	
 	ShapefileDataStore mCensusFile;
-    FeatureSource mFeatureSource;
     FeatureCollection mFeatureCollection;
     MathTransform mProjectionTransform;
 
@@ -67,11 +66,11 @@ public class TractPointGenerator {
 		
 		try {
 			mCensusFile = new ShapefileDataStore(file.toURI().toURL());
-			mFeatureSource = mCensusFile.getFeatureSource();
-			mFeatureCollection = mFeatureSource.getFeatures();
+			FeatureSource featureSource = mCensusFile.getFeatureSource();
+			mFeatureCollection = featureSource.getFeatures();
 			
 			// Make the transformation from file CRS to long/lat CRS
-			CoordinateReferenceSystem fileCRS = mFeatureSource.getSchema().getCoordinateReferenceSystem();
+			CoordinateReferenceSystem fileCRS = featureSource.getSchema().getCoordinateReferenceSystem();
 			mProjectionTransform = CRS.findMathTransform(fileCRS, DefaultGeographicCRS.WGS84, true);
 		} catch(MalformedURLException ex) {
 			Log.error(TAG, "Error opening census tract file.");
@@ -82,7 +81,7 @@ public class TractPointGenerator {
 			ex.printStackTrace();
 			System.exit(1);
 		} catch(FactoryException ex) {
-			Log.error(TAG, "Error creating transformation from file CRS to lat/long projection");
+			Log.error(TAG, "Error creating transformation from file CRS to WGS84 projection");
 			ex.printStackTrace();
 			System.exit(1);
 		}
@@ -111,12 +110,11 @@ public class TractPointGenerator {
 				
 				// Get the shape data
 				MultiPolygon geo = (MultiPolygon) featureGeometry.getValue();
-
 				latLong = randomPointInPoly(geo);
 				break;
 			}	
 		}
-		iterator.close(); // VERY IMPORTANT!! Out of memory errors otherwise on sizes > ~3300
+		iterator.close(); // VERY IMPORTANT!! Out of memory errors otherwise on simulation sizes > ~3300
 		return latLong;
 	}
 	
