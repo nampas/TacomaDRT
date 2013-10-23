@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.Set;
 
 import org.geotools.data.DefaultTransaction;
 import org.geotools.data.FeatureStore;
@@ -37,6 +38,8 @@ import com.vividsolutions.jts.geom.Point;
 import edu.pugetsound.npastor.TacomaDRT;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.Log;
+import edu.pugetsound.npastor.utils.RiderChars;
+import edu.pugetsound.npastor.utils.RiderChars.DayDivision;
 import edu.pugetsound.npastor.utils.Trip;
 import edu.pugetsound.npastor.utils.DRTUtils;
 
@@ -50,13 +53,13 @@ public class TripGenerator {
 	public final static String TAG = "TripGenerator";
 	
 	private ArrayList<Trip> mTrips;
-	private AptaData mAptaData;
+	private RiderChars mRiderChars;
 	private PCAgeEmployment mPCData;
 	private Random mRandom;
 
 	public TripGenerator() {
 		mTrips = new ArrayList<Trip>();
-		mAptaData = new AptaData();
+		mRiderChars = new RiderChars();
 		mPCData = new PCAgeEmployment();
 		mRandom = new Random();
 	}
@@ -75,8 +78,8 @@ public class TripGenerator {
 		generateEndpointTracts();
 		generateEndpoints();
 		generatePickupTimes();
-//		for(int i = 0; i < mTrips.size(); i++)
-//			Log.info(TAG, mTrips.get(i).toString());
+		for(int i = 0; i < mTrips.size(); i++)
+			Log.info(TAG, mTrips.get(i).toString());
 		
 		writeTripsToFile();
 		writeTripGeoToShp();
@@ -94,10 +97,10 @@ public class TripGenerator {
 		Log.info(TAG, "Generating trip ages");
 		ArrayList<Integer> ages = new ArrayList<Integer>();
 
-		Object[] keys = mAptaData.getAgeGroupPcts().keySet().toArray();
+		Object[] keys = mRiderChars.getAgeGroupPcts().keySet().toArray();
 		// Loop through the key set, process each age group
 		for(Object curKey : keys) {
-			double percentage = mAptaData.getAgeGroupPct((Integer)curKey);
+			double percentage = mRiderChars.getAgeGroupPct((Integer)curKey);
 			int groupTotal = (int)Math.ceil(percentage * Constants.TOTAL_TRIPS / 100); // Total riders in this group
 			switch((Integer)curKey) {
 				case Constants.APTA_AGE_0_14:
@@ -149,11 +152,11 @@ public class TripGenerator {
 		// Will contain all the generated ages
 		ArrayList<Integer> trips = new ArrayList<Integer>();
 
-		Object[] keys = mAptaData.getTripTypePcts().keySet().toArray();
+		Object[] keys = mRiderChars.getTripTypePcts().keySet().toArray();
 		// Loop through the key set, process each trip type
 		for(int i = 0; i < keys.length; i++) {
 			int curKey = (Integer) keys[i];
-			double percentage = mAptaData.getTripTypePct(curKey);
+			double percentage = mRiderChars.getTripTypePct(curKey);
 			int groupTotal = (int) Math.ceil(percentage * Constants.TOTAL_TRIPS / 100); // Total riders in this group
 			for(int j = 0; j < groupTotal; j++) {
 				trips.add(curKey);
@@ -238,23 +241,78 @@ public class TripGenerator {
 	private void generatePickupTimes() {
 		
 		Log.info(TAG, "Generating pickup times");
-		int minRequestTime = Constants.BEGIN_OPERATION_HOUR * 60;
-		int maxRequestTime = Constants.END_OPERATION_HOUR * 60;
+		int minRequestedTime = Constants.BEGIN_OPERATION_HOUR * 60;
+		int maxRequestedTime = Constants.END_OPERATION_HOUR * 60;
 		int minRequestWindow = Constants.BEGIN_REQUEST_WINDOW * 60;
 		int maxRequestWindow = Constants.END_REQUEST_WINDOW * 60;
 		
+		Double[] percentByHour = buildDayDistribution();
+		
 		for(Trip t : mTrips) {
+			
+			int requestHour = 0;
+			double random = mRandom.nextDouble() * 100;
+			double runningTotal = 0;
+			for(int i = Constants.BEGIN_OPERATION_HOUR; i < Constants.END_OPERATION_HOUR; i++) {
+				runningTotal += percentByHour[i];
+				if(random < runningTotal) {
+					requestHour = i;
+					break;
+				}
+			}
+			
+			int requestTime = requestHour * 60 + mRandom.nextInt(60);
+			
+			
 //			int calledAt = mRandom.nextInt(maxRequestWindow - minRequestWindow + 1) + minRequestWindow;
 			int calledAt = 0;
 			
 			// Request time must be before operation ends and after buffer IF request was made during service hours
-			int minTime = calledAt > minRequestTime ? (int)Constants.CALL_REQUEST_BUFFER + calledAt : minRequestTime;
-			int request = mRandom.nextInt(maxRequestTime - minTime  + 1) + minTime;
+//			int minTime = calledAt > minRequestedTime ? (int)Constants.CALL_REQUEST_BUFFER + calledAt : minRequestedTime;
+//			int request = mRandom.nextInt(maxRequestedTime - minTime  + 1) + minTime;
 
 			// int request = request & 5; // Round down to nearest multiple of 5
-			t.setPickupTime(request);
+			t.setPickupTime(requestTime);
 			t.setCalInTime(calledAt);
 		}
+	}
+	
+	// Using trip distribution data from RiderChars file, makes a list of trip distribution by hour
+	private Double[] buildDayDistribution() {
+		Double[] percentByHour = new Double[24];
+		HashMap<Integer, DayDivision> tripsByPeriod = mRiderChars.getTripDistributiions();
+		
+		// First do peak periods
+		DayDivision morningPeak = tripsByPeriod.get(Constants.MORN_PEAK_PERIOD);
+		int hrLength = morningPeak.getLength();
+		for(int i = 0; i < hrLength; i++) {
+			percentByHour[i + morningPeak.getStart()] = morningPeak.getPercentage() / hrLength;
+		}
+		DayDivision afternoonPeak = tripsByPeriod.get(Constants.AFTNOON_PEAK_PERIOD);
+		hrLength = afternoonPeak.getLength();
+		for(int i = 0; i < hrLength; i++) {
+			percentByHour[i + afternoonPeak.getStart()] = afternoonPeak.getPercentage() / hrLength;
+		}
+		
+		// Then fill in the rest of the day
+		DayDivision nonPeak = tripsByPeriod.get(Constants.MORNING_PERIOD);
+		hrLength = morningPeak.getStart() - Constants.BEGIN_OPERATION_HOUR;
+		for(int i = 0; i < hrLength; i++) {
+			percentByHour[Constants.BEGIN_OPERATION_HOUR + i] = nonPeak.getPercentage() / hrLength;
+		}
+		nonPeak = tripsByPeriod.get(Constants.DAY_PERIOD);
+		hrLength = afternoonPeak.getStart() - morningPeak.getStart() - morningPeak.getLength();
+		Log.info(TAG, "HR LENGTH " + hrLength);
+		for(int i = 0; i < hrLength; i++) {
+			percentByHour[morningPeak.getStart() + morningPeak.getLength() + i] = nonPeak.getPercentage() / hrLength;
+		}
+		nonPeak = tripsByPeriod.get(Constants.EVENING_PERIOD);
+		hrLength = Constants.END_OPERATION_HOUR - afternoonPeak.getStart() - afternoonPeak.getLength();
+		for(int i = 0; i < hrLength; i++) {
+			percentByHour[afternoonPeak.getStart() + afternoonPeak.getLength() + i] = nonPeak.getPercentage() / hrLength;
+		}
+
+		return percentByHour;
 	}
 	
 	private void generateEndpoints() {
@@ -387,121 +445,5 @@ public class TripGenerator {
         	Log.error(TAG, "Unable to open or write to shapefile");
         	ex.printStackTrace();
         }
-	}
-
-	/**
-	 * Reads custom APTA data txt files, which associate age groups with
-	 * trip percentages and trip types with percentages
-	 * 
-	 * @author Nathan Pastor
-	 */
-	private class AptaData {
-
-		public static final String TAG = "TripGenerator.AptaData";
-		
-		private HashMap<Integer, Double> mRiderAgePcts; // Associates age groups with their percentages
-		private HashMap<Integer, Double> mTripTypePcts; // Associates trip types with their percentages 
-
-		/**
-		 * Creates new instance of AptaData. This will read from the APTA
-		 * data file whose address is hardcoded in Constants.java
-		 */
-		public AptaData() {
-			mRiderAgePcts = new HashMap<Integer, Double>();
-			mTripTypePcts = new HashMap<Integer, Double>();
-			readAptaFile();
-			Log.info(TAG, "Rider age mappings, group to percent: " + mRiderAgePcts.toString());
-			Log.info(TAG, "Trip type mappings, group to percent: " + mTripTypePcts.toString());
-		}
-
-		/**
-		 * Returns map associating rider age groups with their percentages
-		 * @return Map associating rider age groups with percentages
-		 */
-		public HashMap<Integer, Double> getAgeGroupPcts() {
-			return mRiderAgePcts;
-		}
-
-		/**
-		 * Returns map associating trip types with their percentages
-		 * @return Map associating trip types groups with percentages
-		 */
-		public HashMap<Integer, Double> getTripTypePcts() {
-			return mTripTypePcts;
-		}
-
-		/**
-		 * Returns the percentage of total transit riders that the specified 
-		 * age group constitutes
-		 * @param ageGroupCode Integer representing age group, defined in Constants.java
-		 * @return Percentage of total transit riders that the specified age group constitutes
-		 */
-		public Double getAgeGroupPct(int ageGroup) {
-			return mRiderAgePcts.get(ageGroup);
-		}
-
-		/**
-		 * Returns the percentage of total trips riders that the specified 
-		 * trip type constitutes
-		 * @param ageGroupCode Integer representing trip type, defined in Constants.java
-		 * @return Percentage of total transit trips that the specified trip type constitutes
-		 */
-		public Double getTripTypePct(int tripType) {
-			return mTripTypePcts.get(tripType);
-		}
-
-		//Parses APTA data file
-		private void readAptaFile() {
-			try {
-				Scanner fScan = new Scanner(new File(Constants.APTA_DATA_FILE)); //Uses hardcoded address
-				while(fScan.hasNextLine()) {
-					String curLine = fScan.nextLine();
-					parseFileLine(curLine);
-				}
-				fScan.close();
-			} catch (FileNotFoundException ex) {
-				//TODO: error handling
-				ex.printStackTrace();
-			}
-
-		}
-
-		//Parses a line of the file
-		private void parseFileLine(String line) {
-			String[] tokens = line.split(" ");
-
-			// Check trip types
-			if(tokens[0].equals("commute"))
-				mTripTypePcts.put(Constants.TRIP_COMMUTE, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("school"))
-				mTripTypePcts.put(Constants.TRIP_SCHOOL, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("social"))
-				mTripTypePcts.put(Constants.TRIP_SOCIAL, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("shopping/dining"))
-				mTripTypePcts.put(Constants.TRIP_SHOPPING_DINING, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("medical/dental"))
-				mTripTypePcts.put(Constants.TRIP_MEDICAL_DENTAL, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("personal_business"))
-				mTripTypePcts.put(Constants.TRIP_PERSONAL_BUSINESS, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals("other"))
-				mTripTypePcts.put(Constants.TRIP_OTHER, Double.valueOf(tokens[1]));
-			// Check age groups
-			else if(tokens[0].equals(Constants.APTA_AGE_0_14_LBL))
-				mRiderAgePcts.put(Constants.APTA_AGE_0_14, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals(Constants.APTA_AGE_15_19_LBL))
-				mRiderAgePcts.put(Constants.APTA_AGE_15_19, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals(Constants.APTA_AGE_20_24_LBL))
-				mRiderAgePcts.put(Constants.APTA_AGE_20_24, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals(Constants.APTA_AGE_25_34_LBL))
-				mRiderAgePcts.put(Constants.APTA_AGE_25_34, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals(Constants.APTA_AGE_35_44_LBL))
-				mRiderAgePcts.put(Constants.APTA_AGE_35_44, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals(Constants.APTA_AGE_45_54_LBL))
-				mRiderAgePcts.put(Constants.APTA_AGE_45_54, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals(Constants.APTA_AGE_55_64_LBL))
-				mRiderAgePcts.put(Constants.APTA_AGE_55_64, Double.valueOf(tokens[1]));
-			else if(tokens[0].equals(Constants.APTA_AGE_65_OVER_LBL))
-				mRiderAgePcts.put(Constants.APTA_AGE_65_OVER, Double.valueOf(tokens[1]));
-		}
 	}
 }

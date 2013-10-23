@@ -156,13 +156,15 @@ public class TractPointGenerator {
 		ArrayList<Triangle_dt> triangles = new ArrayList<Triangle_dt>();
 		// Use Delaunay Triangulation library
 		Delaunay_Triangulation triangulate = new Delaunay_Triangulation();
-		Coordinate[] coords = polygon.getCoordinates();
+		ArrayList<Coordinate> coordinates = new ArrayList<Coordinate>();
 		
-		// Add all points from polygon
-		boolean isFirstCoord = true;
-		for(Coordinate c : coords) {
-			if(isFirstCoord) isFirstCoord = false;
-			else triangulate.insertPoint(new Point_dt(c.x, c.y));
+
+		// Account for multipolygon case
+		for(int i = 0; i < polygon.getNumGeometries(); i++) {
+			Coordinate[] curCoords = polygon.getGeometryN(i).getCoordinates();
+			for(Coordinate c: curCoords) {
+				triangulate.insertPoint(new Point_dt(c.x, c.y));
+			}
 		}
 		Iterator<Triangle_dt> iter = triangulate.trianglesIterator();
 		
@@ -179,21 +181,21 @@ public class TractPointGenerator {
 	 */
 	private Triangle_dt generateWeightedTriangle(ArrayList<Triangle_dt> triangles) {
 		
-		double totalArea = 0;
-		Point_dt p1, p2, p3, baseMp; // Vertices and base midpoint
-		double base, height; // Base and height lengths
 		ArrayList<TriangleWrapper> triangleWrap = new ArrayList<TriangleWrapper>(); // So that we don't need to calculate area twice
-		
+		double totalArea = 0;
 		// First calculate total polygon area
 		for(Triangle_dt tr : triangles) {
+			
+			Point_dt p1, p2, p3, baseMp; // Vertices and base midpoint
+			double base, height; // Base and height lengths
 			if(tr.isHalfplane()) break; // Only consider if this is a triangle
 			p1 = tr.p1();
 			p2 = tr.p2();
 			p3 = tr.p3();			
 			base = p1.distance(p2);
 			// Calculate base midpoint
-			double mpX = Math.abs(p1.x() - p2.x() / 2);
-			double mpY = Math.abs(p1.y() - p2.y() / 2);
+			double mpX = Math.abs(p1.x() - p2.x()) / 2.0d;
+			double mpY = Math.abs(p1.y() - p2.y()) / 2.0d;
 			baseMp = new Point_dt(mpX, mpY);
 			height = baseMp.distance(p3);
 			// Add triangle area to cumulative area

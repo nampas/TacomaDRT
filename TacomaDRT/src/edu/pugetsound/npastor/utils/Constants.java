@@ -9,7 +9,7 @@ public class Constants {
 	public final static boolean DEBUG = true;
 	
 	// Filenames and paths
-	public final static String APTA_DATA_FILE = "files/APTAData.txt"; //APTA rider age and trip type distributions
+	public final static String RIDER_CHARS_FILE = "files/RiderCharacteristics.txt"; //Contains APTA rider age and trip type distributions, trip distributions across day and more
 	public final static String PC_CENSUS_SHP = "files/PCCensusTracts/pie10ct.shp"; //Pierce County census tract shapefile
 	public final static String PC_RAND_PTS_SHP = "files/RandomPoints/RandomPoints.shp"; //Random points within census tracts
 	public final static String PC_AGE_FILE = "files/PCAgeEmployment/PCAgeTotals.csv"; //Pierce County age data by census tract, from census
@@ -86,4 +86,21 @@ public class Constants {
 	public static final String PSRC_GOVT_LBL = "Government";
 	public static final String PSRC_EDU_LBL = "Education";
 	public static final String PSRC_TOTAL_LBL = "Total";
+	
+	//*****************************************
+	//      Trip Distributions Across Day
+	//*****************************************
+	public final static int MORNING_PERIOD = 50;
+	public final static int MORN_PEAK_PERIOD = 51;
+	public final static int DAY_PERIOD = 52;
+	public final static int AFTNOON_PEAK_PERIOD = 53;
+	public final static int EVENING_PERIOD = 54;
+	
+	public static final String MORNING_LBL = "morning";
+	public static final String MORN_PEAK_PERIOD_LBL = "morning_peak";
+	public static final String DAY_LBL = "day";
+	public final static String AFTNOON_PEAK_PERIOD_LBL = "afternoon_peak";
+	public static final String EVENING_LBL = "evening";
+	
+	
 }

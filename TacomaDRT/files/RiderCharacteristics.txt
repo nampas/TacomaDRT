@@ -17,7 +17,14 @@ AgeGroup Percentage
 55-64 9.8
 65+ 6.7
 
-TransitFrequnc/Rider/Week Percentage
+day_period/daily_percentage/(start_time_hrs/length_hrs)for peak periods
+morning 2.5
+morning_peak 35.0 7 3
+day 25
+afternoon_peak 35.0 15 3
+evening 2.5
+
+TransitFrequncy/Rider/Week Percentage
 one- 6.2
 one 6.0
 two 6.6
@@ -26,3 +33,5 @@ four 8.1
 five 35.5
 six 12.7
 seven 17.3
+
+
