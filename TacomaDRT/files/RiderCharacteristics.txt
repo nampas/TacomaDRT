@@ -17,7 +17,7 @@ AgeGroup Percentage
 55-64 9.8
 65+ 6.7
 
-day_period/daily_percentage/(start_time_hrs/length_hrs)for peak periods
+DayPeriod/dailyPercentage/ (startTimeHrs/lengthHrs) <- for peak periods
 morning 2.5
 morning_peak 35.0 7 3
 day 25
@@ -33,5 +33,10 @@ four 8.1
 five 35.5
 six 12.7
 seven 17.3
+
+DynamicRequests/Percentage
+dynamic_requests 100
+
+
 
 

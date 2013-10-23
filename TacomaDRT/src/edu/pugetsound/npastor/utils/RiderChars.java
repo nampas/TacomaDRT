@@ -18,6 +18,7 @@ public class RiderChars {
 	private HashMap<Integer, Double> mRiderAgePcts; // Associates age groups with their percentages
 	private HashMap<Integer, Double> mTripTypePcts; // Associates trip types with their percentages 
 	private HashMap<Integer, DayDivision> mDayDistributions; // Associates day time perios with their percentages
+	private double mDynamicRequestPct;
 
 	/**
 	 * Creates new instance of RiderChars. This will read from the rider characteristics
@@ -70,6 +71,10 @@ public class RiderChars {
 	 */
 	public Double getTripTypePct(int tripType) {
 		return mTripTypePcts.get(tripType);
+	}
+	
+	public Double getDynamicRequestPct() {
+		return mDynamicRequestPct;
 	}
 
 	//Parses APTA data file
@@ -136,6 +141,9 @@ public class RiderChars {
 			mDayDistributions.put(Constants.AFTNOON_PEAK_PERIOD, parseDayDivision(tokens));
 		else if(tokens[0].equals(Constants.EVENING_LBL))
 			mDayDistributions.put(Constants.EVENING_PERIOD, parseDayDivision(tokens));
+		// Percentage of dynamic requests (made during day)
+		else if(tokens[0].equals(Constants.DYNAMIC_REQUESTS_PCT))
+			mDynamicRequestPct = Double.valueOf(tokens[1]);
 			
 	}
 	

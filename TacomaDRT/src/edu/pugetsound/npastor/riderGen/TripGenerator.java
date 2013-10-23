@@ -241,39 +241,43 @@ public class TripGenerator {
 	private void generatePickupTimes() {
 		
 		Log.info(TAG, "Generating pickup times");
-		int minRequestedTime = Constants.BEGIN_OPERATION_HOUR * 60;
-		int maxRequestedTime = Constants.END_OPERATION_HOUR * 60;
-		int minRequestWindow = Constants.BEGIN_REQUEST_WINDOW * 60;
+		int minRequestableTime = Constants.BEGIN_OPERATION_HOUR * 60;
 		int maxRequestWindow = Constants.END_REQUEST_WINDOW * 60;
 		
 		Double[] percentByHour = buildDayDistribution();
+		double percentDynamicRequests = mRiderChars.getDynamicRequestPct();
 		
 		for(Trip t : mTrips) {
+			int requestTime = 0;
+			int callInTime = 0;
+			// First calculate request time
 			
-			int requestHour = 0;
 			double random = mRandom.nextDouble() * 100;
 			double runningTotal = 0;
 			for(int i = Constants.BEGIN_OPERATION_HOUR; i < Constants.END_OPERATION_HOUR; i++) {
 				runningTotal += percentByHour[i];
 				if(random < runningTotal) {
-					requestHour = i;
+					requestTime = i;
 					break;
 				}
+			} 
+			requestTime = requestTime * 60 + mRandom.nextInt(60);
+			
+			// Then set time at which trip was requested
+			double requestVal = mRandom.nextDouble() * 100;
+			if(requestVal < percentDynamicRequests) {
+				// Max request time will be the agency determined cutoff, or the requested time minus the buffer
+				int maxRequestTime = Math.min(requestTime - Constants.CALL_REQUEST_BUFFER_MINS, maxRequestWindow);
+				if(maxRequestTime < minRequestableTime) {
+					//TODO: fix this!!
+					Log.info(TAG, "Dynamic request: max request time is less than minimum requestable time. Unsatisfiable condition");
+				} else {
+					int windowMins = maxRequestTime - minRequestableTime;
+					callInTime = mRandom.nextInt(windowMins + 1) + minRequestableTime;
+				}
 			}
-			
-			int requestTime = requestHour * 60 + mRandom.nextInt(60);
-			
-			
-//			int calledAt = mRandom.nextInt(maxRequestWindow - minRequestWindow + 1) + minRequestWindow;
-			int calledAt = 0;
-			
-			// Request time must be before operation ends and after buffer IF request was made during service hours
-//			int minTime = calledAt > minRequestedTime ? (int)Constants.CALL_REQUEST_BUFFER + calledAt : minRequestedTime;
-//			int request = mRandom.nextInt(maxRequestedTime - minTime  + 1) + minTime;
-
-			// int request = request & 5; // Round down to nearest multiple of 5
 			t.setPickupTime(requestTime);
-			t.setCalInTime(calledAt);
+			t.setCalInTime(callInTime);
 		}
 	}
 	
@@ -302,7 +306,6 @@ public class TripGenerator {
 		}
 		nonPeak = tripsByPeriod.get(Constants.DAY_PERIOD);
 		hrLength = afternoonPeak.getStart() - morningPeak.getStart() - morningPeak.getLength();
-		Log.info(TAG, "HR LENGTH " + hrLength);
 		for(int i = 0; i < hrLength; i++) {
 			percentByHour[morningPeak.getStart() + morningPeak.getLength() + i] = nonPeak.getPercentage() / hrLength;
 		}

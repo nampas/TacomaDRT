@@ -28,9 +28,12 @@ public class Constants {
 	public final static int END_OPERATION_HOUR = 19; // (7:00 PM) Service ends at this hour
 	public final static int BEGIN_REQUEST_WINDOW = 0; // Time when riders can begin to make requests
 	public final static int END_REQUEST_WINDOW = 18; // Cutoff time for making request known to agency for the day
-	public final static float CALL_REQUEST_BUFFER = 0.5f; // Minimum buffer between call in time and request time
+	public final static int CALL_REQUEST_BUFFER_MINS = 30; // Minimum buffer between call in time and request time
 	public final static int VEHCILE_QUANTITY = 10; //TODO: determine how many, to be pinned to fixed route cost
 	public final static int VEHICLE_MPH = 26; // Vehicle speed
+	
+	// Dynamic requests
+	public final static String DYNAMIC_REQUESTS_PCT = "dynamic_requests";
 	
 	//***************************************
 	//           APTA Trip Types
