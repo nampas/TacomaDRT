@@ -134,8 +134,8 @@ public class TractPointGenerator {
 			Geometry projectedPoly = JTS.transform(polygon, mProjectionTransform);
 
 			// Then pick a random point
-			ArrayList<Triangle_dt> triangles = triangulatePolygon(projectedPoly);
-//			ArrayList<Triangle_dt> triangles = JTSTriangulate(projectedPoly);
+//			ArrayList<Triangle_dt> triangles = triangulatePolygon(projectedPoly);
+			ArrayList<Triangle_dt> triangles = JTSTriangulate(projectedPoly);
 			Triangle_dt chosenTri = generateWeightedTriangle(triangles);
 			return generatePointInTriangle(chosenTri);
 		} catch (TransformException ex) {
@@ -250,7 +250,7 @@ public class TractPointGenerator {
 		GeometryCollection geos = (GeometryCollection) triangulate.getTriangles(new GeometryFactory());
 		
 		for(int i = 0; i < geos.getNumGeometries(); i++) {
-			Geometry triangle = geos.getGeometryN(0);
+			Geometry triangle = geos.getGeometryN(i);
 			Coordinate[] coords = triangle.getCoordinates();
 			Point_dt p1 = new Point_dt(coords[0].x, coords[0].y);
 			Point_dt p2 = new Point_dt(coords[1].x, coords[1].y);

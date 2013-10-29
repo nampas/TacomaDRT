@@ -5,5 +5,6 @@
 *.settings
 # And ignore binaries #
 bin/
+target/
 # Ignore simulation logs #
 Simulations/
