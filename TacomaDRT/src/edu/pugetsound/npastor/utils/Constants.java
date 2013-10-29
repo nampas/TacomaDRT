@@ -30,7 +30,7 @@ public class Constants {
 	public final static int END_REQUEST_WINDOW = 18; // Cutoff time for making request known to agency for the day
 	public final static int CALL_REQUEST_BUFFER_MINS = 30; // Minimum buffer between call in time and request time
 	public final static int VEHCILE_QUANTITY = 10; //TODO: determine how many, to be pinned to fixed route cost
-	public final static int VEHICLE_MPH = 26; // Vehicle speed
+	public final static int VEHICLE_MPH = 26; // TODO: Vehicle speed
 	
 	// Dynamic requests
 	public final static String DYNAMIC_REQUESTS_PCT = "dynamic_requests";

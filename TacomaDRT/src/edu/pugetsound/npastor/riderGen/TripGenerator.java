@@ -1,27 +1,14 @@
 package edu.pugetsound.npastor.riderGen;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Serializable;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
-import java.util.Scanner;
-import java.util.Set;
 
-import org.geotools.data.DefaultTransaction;
-import org.geotools.data.FeatureStore;
-import org.geotools.data.Transaction;
-import org.geotools.data.shapefile.ShapefileDataStore;
-import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
-import org.geotools.data.simple.SimpleFeatureSource;
-import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.FeatureCollections;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
@@ -37,11 +24,12 @@ import com.vividsolutions.jts.geom.Point;
 
 import edu.pugetsound.npastor.TacomaDRT;
 import edu.pugetsound.npastor.utils.Constants;
+import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.RiderChars;
 import edu.pugetsound.npastor.utils.RiderChars.DayDivision;
+import edu.pugetsound.npastor.utils.ShapefileWriter;
 import edu.pugetsound.npastor.utils.Trip;
-import edu.pugetsound.npastor.utils.DRTUtils;
 
 /**
  * Generates all daily trips on the DRT network
@@ -403,7 +391,6 @@ public class TripGenerator {
 	
 	/**
 	 * Writes the trip geographic data to a shapefile
-	 * Adapted from: http://docs.geotools.org/latest/tutorials/feature/csv2shp.html#write-the-feature-data-to-the-shapefile
 	 */
 	private void writeTripGeoToShp() {
 
@@ -414,39 +401,8 @@ public class TripGenerator {
 		String dateFormatted = DRTUtils.formatMillis(TacomaDRT.mStartTime);
 		String filename = TacomaDRT.getSimulationDirectory() + Constants.TRIP_PREFIX_SHP + dateFormatted + ".shp";
         File shpFile = new File(filename);
-
-        Log.info(TAG, "Writing trips to shapefile at: " + filename);
         
-        ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
-
-        try {
-	        Map<String, Serializable> params = new HashMap<String, Serializable>();
-	        params.put("url", shpFile.toURI().toURL());
-	        params.put("create spatial index", Boolean.TRUE);
-	        
-	        // Build the data store, which will hold our collection
-	        ShapefileDataStore dataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
-	        dataStore.createSchema(featureType);
-	        
-	        // Finally, write the features to the shapefile
-	        Transaction transaction = new DefaultTransaction("create");
-	        String typeName = dataStore.getTypeNames()[0];
-	        SimpleFeatureSource featureSource = dataStore.getFeatureSource(typeName);
-	        
-	        if (featureSource instanceof FeatureStore) {
-	            SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
-	            featureStore.setTransaction(transaction);
-                featureStore.addFeatures(collection);
-                transaction.commit();
-                Log.info(TAG,  "Data committed to file");
-	        }
-	        transaction.close();
-        } catch (MalformedURLException ex) {
-        	Log.error(TAG, "Unable to save trips to shapefile");
-        	ex.printStackTrace();
-        } catch (IOException ex) {
-        	Log.error(TAG, "Unable to open or write to shapefile");
-        	ex.printStackTrace();
-        }
+        ShapefileWriter shpWriter = new ShapefileWriter();
+        shpWriter.writeShapefile(featureType, collection, shpFile);
 	}
 }

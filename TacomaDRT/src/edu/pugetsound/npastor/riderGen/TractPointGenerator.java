@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
 import org.geotools.data.FeatureSource;
@@ -12,34 +13,29 @@ import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.GeometryAttributeImpl;
-import org.geotools.geometry.DirectPosition1D;
-import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.JTS;
-import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.Feature;
-import org.opengis.geometry.DirectPosition;
-import org.opengis.geometry.Envelope;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 
 import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.CoordinateSequence;
+import com.vividsolutions.jts.geom.CoordinateSequenceFactory;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.MultiPolygon;
-import com.vividsolutions.jts.geom.Point;
-import com.vividsolutions.jts.triangulate.DelaunayTriangulationBuilder;
+import com.vividsolutions.jts.geom.Polygon;
+import com.vividsolutions.jts.triangulate.ConformingDelaunayTriangulationBuilder;
+import com.vividsolutions.jts.triangulate.Segment;
 
-import delaunay_triangulation.BoundingBox;
 import delaunay_triangulation.Delaunay_Triangulation;
 import delaunay_triangulation.Point_dt;
 import delaunay_triangulation.Triangle_dt;
-
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.Log;
 
@@ -154,11 +150,10 @@ public class TractPointGenerator {
 	private ArrayList<Triangle_dt> triangulatePolygon(Geometry polygon) {
 		
 		ArrayList<Triangle_dt> triangles = new ArrayList<Triangle_dt>();
-		// Use Delaunay Triangulation library
+		
 		Delaunay_Triangulation triangulate = new Delaunay_Triangulation();
 		ArrayList<Coordinate> coordinates = new ArrayList<Coordinate>();
 		
-
 		// Account for multipolygon case
 		for(int i = 0; i < polygon.getNumGeometries(); i++) {
 			Coordinate[] curCoords = polygon.getGeometryN(i).getCoordinates();
@@ -225,9 +220,13 @@ public class TractPointGenerator {
 	private Point_dt generatePointInTriangle(Triangle_dt triangle) {
 	
 		// Point "weight" coefficients
-		double a = mRand.nextDouble();
-		double b = mRand.nextDouble() * (1 - a);
-		double c = 1 - a - b;
+//		double a = mRand.nextDouble();
+//		double b = mRand.nextDouble() * (1 - a);
+//		double c = 1 - a - b;
+		
+		double a = 0.33;
+		double b = 0.33;
+		double c = 0.34;
 		
 		// Points
 		Point_dt A = triangle.p1();
@@ -240,15 +239,29 @@ public class TractPointGenerator {
 		return new Point_dt(resultX, resultY, A.z());
 	}
 	
+	/**
+	 * Creates a constrained triangulation of the specified geometry
+	 * @param polygon
+	 * @return
+	 */
 	private ArrayList<Triangle_dt> JTSTriangulate(Geometry polygon) {
 		
 		ArrayList<Triangle_dt> triangles = new ArrayList<Triangle_dt>();
+			
+		// Triangulation builder 
+		ConformingDelaunayTriangulationBuilder triangulate = new ConformingDelaunayTriangulationBuilder();
+		triangulate.setSites(polygon); // Set vertices
+		triangulate.setTolerance(0.0); // No point snapping: maximum precision
 		
-		DelaunayTriangulationBuilder triangulate = new DelaunayTriangulationBuilder();
-		triangulate.setTolerance(0.0);
-		triangulate.setSites(polygon);
+		// Generate the constraining edges
+		Geometry segments = generateTriangulationConstraints(polygon);
+//		triangulate.setConstraints(segments);
+
+		// Triangulate!
 		GeometryCollection geos = (GeometryCollection) triangulate.getTriangles(new GeometryFactory());
 		
+		// Add all triangles to the return list
+		Log.info(TAG, "Triangles: " + geos.getNumGeometries());
 		for(int i = 0; i < geos.getNumGeometries(); i++) {
 			Geometry triangle = geos.getGeometryN(i);
 			Coordinate[] coords = triangle.getCoordinates();
@@ -259,6 +272,32 @@ public class TractPointGenerator {
 		}
 		
 		return triangles;
+	}
+	
+	private Geometry generateTriangulationConstraints(Geometry polygon) {
+		
+		GeometryFactory geoFact = new GeometryFactory();
+		
+		ArrayList<Coordinate> constraintCoords = new ArrayList<Coordinate>();
+		
+		
+		// Iterate through all points. All edges are constraining, because they form the exterior
+		Coordinate[] coordinates = polygon.getCoordinates();
+		constraintCoords.add(coordinates[0]);
+		for(int i = 1; i < coordinates.length; i++) {
+			if(!coordinates[i].equals(constraintCoords.get(constraintCoords.size()-1))) {
+				constraintCoords.add(coordinates[i]);
+			} else {
+				Log.info(TAG, "Skipping an equals");
+			}
+		}
+		
+		coordinates = new Coordinate[constraintCoords.size()];
+		constraintCoords.toArray(coordinates);
+		
+		LinearRing shell = geoFact.createLinearRing(coordinates);
+		Polygon segments = geoFact.createPolygon(shell, null);
+		return segments;
 	}
 	
 	/*

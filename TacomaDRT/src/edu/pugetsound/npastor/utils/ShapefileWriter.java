@@ -35,12 +35,13 @@ import edu.pugetsound.npastor.TacomaDRT;
 public class ShapefileWriter {
 	
 	public static final String TAG = "ShapefileWriter";
-	
-	public static final int TRIP_GEO_SHP = 0;
-	
+
 	/**
 	 * Writes the geographic data to a shapefile
 	 * Adapted from: http://docs.geotools.org/latest/tutorials/feature/csv2shp.html#write-the-feature-data-to-the-shapefile
+	 * @param featureType The feature type of the collection
+	 * @param collection A collection of feature types
+	 * @param shpFile A file descripter. This specifies name and destination of the file
 	 */
 	public void writeShapefile(SimpleFeatureType featureType, SimpleFeatureCollection collection, File shpFile) {
 		
