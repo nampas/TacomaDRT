@@ -3,9 +3,6 @@ package edu.pugetsound.npastor.riderGen;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Random;
 
 import org.geotools.data.FeatureSource;
@@ -23,19 +20,12 @@ import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 
 import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.CoordinateSequenceFactory;
 import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.MultiPolygon;
-import com.vividsolutions.jts.geom.Polygon;
-import com.vividsolutions.jts.triangulate.ConformingDelaunayTriangulationBuilder;
-import com.vividsolutions.jts.triangulate.Segment;
+import com.vividsolutions.jts.geom.Point;
 
-import delaunay_triangulation.Delaunay_Triangulation;
 import delaunay_triangulation.Point_dt;
-import delaunay_triangulation.Triangle_dt;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.Log;
 
@@ -129,11 +119,8 @@ public class TractPointGenerator {
 			// First we project the point to long/lat
 			Geometry projectedPoly = JTS.transform(polygon, mProjectionTransform);
 
-			// Then pick a random point
-//			ArrayList<Triangle_dt> triangles = triangulatePolygon(projectedPoly);
-			ArrayList<Triangle_dt> triangles = JTSTriangulate(projectedPoly);
-			Triangle_dt chosenTri = generateWeightedTriangle(triangles);
-			return generatePointInTriangle(chosenTri);
+			// Then get a point in the polygon
+			return boundingBoxMethod(projectedPoly);
 		} catch (TransformException ex) {
 			Log.error(TAG, "Unable to transform polygon into long/lat");
 			ex.printStackTrace();
@@ -143,183 +130,51 @@ public class TractPointGenerator {
 	}
 
 	/**
-	 * Splits the specified polygon into triangles
-	 * @param polygon The polygon to split into triangles
-	 * @return A list of triangles
+	 * Generates a random point inside the polygon using the bounding box method.
+	 * Points are generated randomly within the bounding box, and the the first point
+	 * which also lies within polygon is returned
+	 * @param polygon Polygon in which to make random point
+	 * @return A random point within the polygon
 	 */
-	private ArrayList<Triangle_dt> triangulatePolygon(Geometry polygon) {
+	private Point_dt boundingBoxMethod(Geometry polygon) {
+		Geometry boundingBox = polygon.getEnvelope();
+		Coordinate[] boundingCoords = boundingBox.getCoordinates();
 		
-		ArrayList<Triangle_dt> triangles = new ArrayList<Triangle_dt>();
-		
-		Delaunay_Triangulation triangulate = new Delaunay_Triangulation();
-		ArrayList<Coordinate> coordinates = new ArrayList<Coordinate>();
-		
-		// Account for multipolygon case
-		for(int i = 0; i < polygon.getNumGeometries(); i++) {
-			Coordinate[] curCoords = polygon.getGeometryN(i).getCoordinates();
-			for(Coordinate c: curCoords) {
-				triangulate.insertPoint(new Point_dt(c.x, c.y));
-			}
-		}
-		Iterator<Triangle_dt> iter = triangulate.trianglesIterator();
-		
-		while(iter.hasNext()) 
-			triangles.add(iter.next());
-		
-		return triangles;
-	}
-	
-	/**
-	 * Picks a triangle, weighted according to the triangle areas
-	 * @param triangles List of triangles
-	 * @return A random triangle, weighted according to its area
-	 */
-	private Triangle_dt generateWeightedTriangle(ArrayList<Triangle_dt> triangles) {
-		
-		ArrayList<TriangleWrapper> triangleWrap = new ArrayList<TriangleWrapper>(); // So that we don't need to calculate area twice
-		double totalArea = 0;
-		// First calculate total polygon area
-		for(Triangle_dt tr : triangles) {
-			
-			Point_dt p1, p2, p3, baseMp; // Vertices and base midpoint
-			double base, height; // Base and height lengths
-			if(tr.isHalfplane()) break; // Only consider if this is a triangle
-			p1 = tr.p1();
-			p2 = tr.p2();
-			p3 = tr.p3();			
-			base = p1.distance(p2);
-			// Calculate base midpoint
-			double mpX = Math.abs(p1.x() - p2.x()) / 2.0d;
-			double mpY = Math.abs(p1.y() - p2.y()) / 2.0d;
-			baseMp = new Point_dt(mpX, mpY);
-			height = baseMp.distance(p3);
-			// Add triangle area to cumulative area
-			double area = (height * base) / 2;
-			totalArea += area;
-			triangleWrap.add(new TriangleWrapper(tr, area));
-		}
-		
-		// Pick random number between 0 and total area
-		double random = mRand.nextDouble() * totalArea;
-		double runningTotal = 0;
-		// Loop through triangles again, break when the random number falls within running total
-		for(TriangleWrapper tr : triangleWrap) {
-			runningTotal += tr.getArea();
-			if(random < runningTotal)
-				return tr.getDtTriangle();
-		}
-		return null;
-	}
-	
-	/**
-	 * Generates a random point within a triangle
-	 * Adapted from: http://parametricplayground.blogspot.com/2011/02/random-points-distributed-inside.html
-	 * @param triangle The triangle in which to generate a point
-	 * @return The point
-	 */
-	private Point_dt generatePointInTriangle(Triangle_dt triangle) {
-	
-		// Point "weight" coefficients
-//		double a = mRand.nextDouble();
-//		double b = mRand.nextDouble() * (1 - a);
-//		double c = 1 - a - b;
-		
-		double a = 0.33;
-		double b = 0.33;
-		double c = 0.34;
-		
-		// Points
-		Point_dt A = triangle.p1();
-		Point_dt B = triangle.p2();
-		Point_dt C = triangle.p3();
-		
-		double resultX = (a * A.x()) + (b * B.x()) + (c * C.x());
-		double resultY = (a * A.y()) + (b * B.y()) + (c * C.y());
-			
-		return new Point_dt(resultX, resultY, A.z());
-	}
-	
-	/**
-	 * Creates a constrained triangulation of the specified geometry
-	 * @param polygon
-	 * @return
-	 */
-	private ArrayList<Triangle_dt> JTSTriangulate(Geometry polygon) {
-		
-		ArrayList<Triangle_dt> triangles = new ArrayList<Triangle_dt>();
-			
-		// Triangulation builder 
-		ConformingDelaunayTriangulationBuilder triangulate = new ConformingDelaunayTriangulationBuilder();
-		triangulate.setSites(polygon); // Set vertices
-		triangulate.setTolerance(0.0); // No point snapping: maximum precision
-		
-		// Generate the constraining edges
-		Geometry segments = generateTriangulationConstraints(polygon);
-//		triangulate.setConstraints(segments);
-
-		// Triangulate!
-		GeometryCollection geos = (GeometryCollection) triangulate.getTriangles(new GeometryFactory());
-		
-		// Add all triangles to the return list
-		Log.info(TAG, "Triangles: " + geos.getNumGeometries());
-		for(int i = 0; i < geos.getNumGeometries(); i++) {
-			Geometry triangle = geos.getGeometryN(i);
-			Coordinate[] coords = triangle.getCoordinates();
-			Point_dt p1 = new Point_dt(coords[0].x, coords[0].y);
-			Point_dt p2 = new Point_dt(coords[1].x, coords[1].y);
-			Point_dt p3 = new Point_dt(coords[2].x, coords[2].y);
-			triangles.add(new Triangle_dt(p1, p2, p3));
-		}
-		
-		return triangles;
-	}
-	
-	private Geometry generateTriangulationConstraints(Geometry polygon) {
-		
-		GeometryFactory geoFact = new GeometryFactory();
-		
-		ArrayList<Coordinate> constraintCoords = new ArrayList<Coordinate>();
-		
-		
-		// Iterate through all points. All edges are constraining, because they form the exterior
-		Coordinate[] coordinates = polygon.getCoordinates();
-		constraintCoords.add(coordinates[0]);
-		for(int i = 1; i < coordinates.length; i++) {
-			if(!coordinates[i].equals(constraintCoords.get(constraintCoords.size()-1))) {
-				constraintCoords.add(coordinates[i]);
+		// Determine range of values
+		double maxX = 0;
+		double minX = 0;
+		double maxY = 0;
+		double minY = 0;
+		for(int i = 0; i < boundingCoords.length; i++) {
+			Coordinate c = boundingCoords[i];
+			if(i == 0) { // Iniitalize values
+				maxX = c.x;
+				minX = c.x;
+				maxY = c.y;
+				minY = c.y;
 			} else {
-				Log.info(TAG, "Skipping an equals");
-			}
+				maxX = Math.max(maxX, c.x);
+				minX = Math.min(minX, c.x);
+				maxY = Math.max(maxY, c.y);
+				minY = Math.min(minY, c.y);
+			}			
 		}
 		
-		coordinates = new Coordinate[constraintCoords.size()];
-		constraintCoords.toArray(coordinates);
+		Point point = null;
+		GeometryFactory geoFact = new GeometryFactory();
+		// Determine bounding box range
+		double xRange = Math.abs(maxX - minX);
+		double yRange = Math.abs(maxY - minY);
+		// Loop until we have a random point inside the polygon
+		while(true) {
+			double randX = mRand.nextDouble() * xRange + minX;
+			double randY = mRand.nextDouble() * yRange + minY;
+			point = geoFact.createPoint(new Coordinate(randX, randY));
+			if(polygon.contains(point)) break;
+		}
 		
-		LinearRing shell = geoFact.createLinearRing(coordinates);
-		Polygon segments = geoFact.createPolygon(shell, null);
-		return segments;
+		return new Point_dt(point.getX(), point.getY());
 	}
-	
-	/*
-	 * Wrapper class for associating area with Triangle_dt objects 
-	 */
-	private class TriangleWrapper {
-		Triangle_dt mTriangle;
-		double mArea;
-		
-		public TriangleWrapper(Triangle_dt triangle, double area) {
-			mTriangle = triangle;
-			mArea = area;
-		}
-		
-		public double getArea() {
-			return mArea;
-		}
-
-		public Triangle_dt getDtTriangle() {
-			return mTriangle;
-		}
-	}	
 }
 
 
