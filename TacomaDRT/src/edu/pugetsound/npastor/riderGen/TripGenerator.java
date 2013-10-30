@@ -350,8 +350,8 @@ public class TripGenerator {
         builder.setName("TripEndpoints");
         builder.setCRS(DefaultGeographicCRS.WGS84);
         builder.add("Location", Point.class); // Geo data
-        builder.add("Trip", Integer.class); // Trip identifier
-        builder.add("Tract", Double.class); // Tract number the point falls in
+        builder.add("Trip", String.class); // Trip identifier
+        builder.add("Tract", String.class); // Tract number the point falls in
         
         final SimpleFeatureType featureType = builder.buildFeatureType();
         return featureType;
@@ -372,16 +372,16 @@ public class TripGenerator {
         	// Add both feature to collection
         	if(t.getFirstTract() != Trip.TRACT_NOT_SET) {
 	            featureBuilder.add(firstEndpoint); // Geo data
-	            featureBuilder.add(t.getIdentifier()); // Trip identifier
-	            featureBuilder.add(t.getFirstTract()); // Tract
+	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Trip identifier
+	            featureBuilder.add(String.valueOf(t.getFirstTract())); // Tract
 	            SimpleFeature firstFeature = featureBuilder.buildFeature(null);
 	            ((DefaultFeatureCollection)collection).add(firstFeature);
         	}
             
         	if(t.getSecondTract() != Trip.TRACT_NOT_SET) {
-	            featureBuilder.add(secondEndpoint); // Location
-	            featureBuilder.add(t.getIdentifier()); // Name
-	            featureBuilder.add(t.getSecondTract()); // Tract
+	            featureBuilder.add(secondEndpoint); // Location 
+	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Trip identifier
+	            featureBuilder.add(String.valueOf(t.getSecondTract())); // Tract
 	            SimpleFeature secondFeature = featureBuilder.buildFeature(null);
 	            ((DefaultFeatureCollection)collection).add(secondFeature);
         	}
