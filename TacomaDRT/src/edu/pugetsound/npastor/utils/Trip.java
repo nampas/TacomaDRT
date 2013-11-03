@@ -1,6 +1,8 @@
 package edu.pugetsound.npastor.utils;
 
-import delaunay_triangulation.Point_dt;
+import java.awt.geom.Point2D;
+
+import com.graphhopper.GHResponse;
 
 
 /**
@@ -10,17 +12,18 @@ import delaunay_triangulation.Point_dt;
  */
 public class Trip {
 
-	
 	public final String TAG = "Trip";
 	public final static String TRACT_NOT_SET = "Not set";
+	
 	private int mTripType;
 	private int mRiderAge;
 	private boolean mIsOutbound;
-	private int mIdentifier;
+	private int mIdentifier; // Unique trip identifier
 	private String mEndpointTract1;
 	private String mEndpointTract2;
-	private Point_dt mEndpoint1;
-	private Point_dt mEndpoint2;
+	private Point2D mEndpoint1;
+	private Point2D mEndpoint2;
+	private GHResponse mRoute;
 	private int mPickupTime;
 	private int mCallTime; // Time request was called in
 	
@@ -31,6 +34,9 @@ public class Trip {
 		mIdentifier = hashCode();
 		mEndpointTract1 = TRACT_NOT_SET;
 		mEndpointTract2 = TRACT_NOT_SET;
+		mEndpoint1 = new Point2D.Double();
+		mEndpoint2 = new Point2D.Double();
+		mRoute = null;
 		mPickupTime = -1;
 		mCallTime = -1;
 	}
@@ -63,19 +69,27 @@ public class Trip {
 		mCallTime = minutes;
 	}
 	
-	public void setFirstEndpoint(Point_dt endpoint) {
+	public void setFirstEndpoint(Point2D endpoint) {
 		mEndpoint1 = endpoint;
 	}
 	
-	public void setSecondEndpoint(Point_dt endpoint) {
+	public void setSecondEndpoint(Point2D endpoint) {
 		mEndpoint2 = endpoint;
 	}
 	
-	public Point_dt getFirstEndpoint() {
+	public void setRoute(GHResponse route) {
+		mRoute = route;
+	}
+	
+	public GHResponse getRoute() {
+		return mRoute;
+	}
+	
+	public Point2D getFirstEndpoint() {
 		return mEndpoint1;
 	}
 	
-	public Point_dt getSecondEndpoint() {
+	public Point2D getSecondEndpoint() {
 		return mEndpoint2;
 	}
 	
@@ -99,6 +113,10 @@ public class Trip {
 		return mTripType;
 	}
 	
+	/**
+	 * Returns direction
+	 * @return True if outbound, false otherwise
+	 */
 	public boolean getDirection() {
 		return mIsOutbound;
 	}
@@ -116,8 +134,8 @@ public class Trip {
 				"\n  Type: " + DRTUtils.getTripTypeString(mTripType) + 
 				"\n  Age: " + mRiderAge +
 				"\n  Outbound? " + mIsOutbound +
-				"\n  First Tract: " + mEndpointTract1 + ". At" + mEndpoint1 +
-				"\n  Second Tract: " + mEndpointTract2 + ". At" + mEndpoint2 +
+				"\n  First Tract: " + mEndpointTract1 + ". At " + mEndpoint1 +
+				"\n  Second Tract: " + mEndpointTract2 + ". At " + mEndpoint2 +
 				"\n  Pickup Time: " + DRTUtils.minsToHrMin(mPickupTime) +
 				"\n  Request Made at: " + DRTUtils.minsToHrMin(mCallTime);
 	}

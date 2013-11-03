@@ -18,11 +18,14 @@ import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
+import com.graphhopper.GHResponse;
+import com.graphhopper.util.PointList;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 
-import edu.pugetsound.npastor.TacomaDRT;
+import edu.pugetsound.npastor.TacomaDRTMain;
+import edu.pugetsound.npastor.routing.Routefinder;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
@@ -66,9 +69,10 @@ public class TripGenerator {
 		generateEndpointTracts();
 		generateEndpoints();
 		generatePickupTimes();
-		for(int i = 0; i < mTrips.size(); i++)
-			Log.info(TAG, mTrips.get(i).toString());
+//		for(int i = 0; i < mTrips.size(); i++)
+//			Log.info(TAG, mTrips.get(i).toString());
 		
+		generateDirections();
 		writeTripsToFile();
 		writeTripGeoToShp();
 	}
@@ -235,6 +239,7 @@ public class TripGenerator {
 		Double[] percentByHour = buildDayDistribution();
 		double percentDynamicRequests = mRiderChars.getDynamicRequestPct();
 		
+		int unsatisfiableConditions = 0;
 		for(Trip t : mTrips) {
 			int requestTime = 0;
 			int callInTime = 0;
@@ -250,7 +255,7 @@ public class TripGenerator {
 				}
 			} 
 			requestTime = requestTime * 60 + mRandom.nextInt(60);
-			
+	
 			// Then set time at which trip was requested
 			double requestVal = mRandom.nextDouble() * 100;
 			if(requestVal < percentDynamicRequests) {
@@ -258,7 +263,7 @@ public class TripGenerator {
 				int maxRequestTime = Math.min(requestTime - Constants.CALL_REQUEST_BUFFER_MINS, maxRequestWindow);
 				if(maxRequestTime < minRequestableTime) {
 					//TODO: fix this!!
-					Log.info(TAG, "Dynamic request: max request time is less than minimum requestable time. Unsatisfiable condition");
+					unsatisfiableConditions++;
 				} else {
 					int windowMins = maxRequestTime - minRequestableTime;
 					callInTime = mRandom.nextInt(windowMins + 1) + minRequestableTime;
@@ -267,6 +272,8 @@ public class TripGenerator {
 			t.setPickupTime(requestTime);
 			t.setCalInTime(callInTime);
 		}
+		Log.info(TAG, "Dynamic request: There were " + unsatisfiableConditions + 
+				" times where max request time is less than minimum requestable time. Unsatisfiable condition");
 	}
 	
 	// Using trip distribution data from RiderChars file, makes a list of trip distribution by hour
@@ -309,9 +316,29 @@ public class TripGenerator {
 	private void generateEndpoints() {
 		Log.info(TAG, "Generating trip endpoints");
 		TractPointGenerator pointGen = new TractPointGenerator();
-		for(Trip t : mTrips) {
+		for(int i = 0; i < mTrips.size(); i++) {
+			Trip t = mTrips.get(i);
 			t.setFirstEndpoint(pointGen.randomPointInTract(t.getFirstTract()));
 			t.setSecondEndpoint(pointGen.randomPointInTract(t.getSecondTract()));
+			if(i % 500 == 0)
+				Log.info(TAG, "  At trip " + i);
+		}
+	}
+	
+	/**
+	 * Generates directions between trip endpoints
+	 */
+	private void generateDirections() {
+		Log.info(TAG, "Generating trip directions");
+		Routefinder router = new Routefinder();
+		for(Trip t : mTrips) {
+			GHResponse routeResponse;
+			if(t.getDirection())
+				routeResponse = router.findRoute(t.getFirstEndpoint(), t.getSecondEndpoint());
+			else 
+				routeResponse = router.findRoute(t.getSecondEndpoint(), t.getFirstEndpoint());
+			
+			t.setRoute(routeResponse);
 		}
 	}
 	
@@ -321,10 +348,10 @@ public class TripGenerator {
 	 */
 	private void writeTripsToFile() {
 		// Format the simulation start time
-		String dateFormatted = DRTUtils.formatMillis(TacomaDRT.mStartTime);
+		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mStartTime);
 		
 		// Get filename and add current time and file extension
-		String filename = TacomaDRT.getSimulationDirectory() + Constants.TRIPS_PREFIX_TXT + dateFormatted + ".txt";
+		String filename = TacomaDRTMain.getSimulationDirectory() + Constants.TRIPS_PREFIX_TXT + dateFormatted + ".txt";
 		Log.info(TAG, "Writing trips to: " + filename);
 		
 		// Write to file
@@ -338,6 +365,7 @@ public class TripGenerator {
 			}
 			lineWriter.close();
 			writer.close();
+			Log.info(TAG, "  File succesfully writen at:" + filename);
 		} catch (IOException ex) {
 			Log.error(TAG, "Unable to write to file");
 			ex.printStackTrace();
@@ -348,7 +376,7 @@ public class TripGenerator {
 		// Build feature type
         SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
         builder.setName("TripEndpoints");
-        builder.setCRS(DefaultGeographicCRS.WGS84);
+        builder.setCRS(DefaultGeographicCRS.WGS84); // long/lat projection system
         builder.add("Location", Point.class); // Geo data
         builder.add("Trip", String.class); // Trip identifier
         builder.add("Tract", String.class); // Tract number the point falls in
@@ -366,8 +394,8 @@ public class TripGenerator {
         
         // Loop through trips, adding endpoints
         for(Trip t : mTrips) {
-        	Point firstEndpoint = geometryFactory.createPoint(new Coordinate(t.getFirstEndpoint().x(), t.getFirstEndpoint().y(), 0.0));
-        	Point secondEndpoint = geometryFactory.createPoint(new Coordinate(t.getSecondEndpoint().x(), t.getSecondEndpoint().y(), 0.0));
+        	Point firstEndpoint = geometryFactory.createPoint(new Coordinate(t.getFirstEndpoint().getX(), t.getFirstEndpoint().getY(), 0.0));
+        	Point secondEndpoint = geometryFactory.createPoint(new Coordinate(t.getSecondEndpoint().getX(), t.getSecondEndpoint().getY(), 0.0));
         	
         	// Add both feature to collection
         	if(t.getFirstTract() != Trip.TRACT_NOT_SET) {
@@ -385,6 +413,18 @@ public class TripGenerator {
 	            SimpleFeature secondFeature = featureBuilder.buildFeature(null);
 	            ((DefaultFeatureCollection)collection).add(secondFeature);
         	}
+        	
+        	// Writing trip waypoints to trip geo file (for debugging mostly, this will clutter up the file)
+//        	PointList points = t.getRoute().getPoints();
+//    		for(int i = 0; i < points.getSize(); i++) {
+//    			Point waypoint = geometryFactory.createPoint(new Coordinate(points.getLongitude(i), points.getLatitude(i), 0.0));
+//    			featureBuilder.add(waypoint); // Location 
+//   	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Trip identifier
+//   	            featureBuilder.add("Waypoint"); // Tract
+//   	            SimpleFeature secondFeature = featureBuilder.buildFeature(null);
+//   	            ((DefaultFeatureCollection)collection).add(secondFeature);
+//    		}
+    		
         }
         return collection;
 	}
@@ -394,12 +434,13 @@ public class TripGenerator {
 	 */
 	private void writeTripGeoToShp() {
 
+		// Build feature type and feature collection
 		SimpleFeatureType featureType = buildFeatureType();
 		SimpleFeatureCollection collection = createGeoFeatureCollection(featureType);
 		
 		// Format time and create filename
-		String dateFormatted = DRTUtils.formatMillis(TacomaDRT.mStartTime);
-		String filename = TacomaDRT.getSimulationDirectory() + Constants.TRIP_PREFIX_SHP + dateFormatted + ".shp";
+		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mStartTime);
+		String filename = TacomaDRTMain.getSimulationDirectory() + Constants.TRIP_PREFIX_SHP + dateFormatted + ".shp";
         File shpFile = new File(filename);
         
         ShapefileWriter shpWriter = new ShapefileWriter();

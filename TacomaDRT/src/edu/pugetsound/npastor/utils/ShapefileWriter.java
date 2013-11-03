@@ -30,7 +30,7 @@ import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 
-import edu.pugetsound.npastor.TacomaDRT;
+import edu.pugetsound.npastor.TacomaDRTMain;
 
 public class ShapefileWriter {
 	
@@ -68,7 +68,7 @@ public class ShapefileWriter {
 	            featureStore.setTransaction(transaction);
                 featureStore.addFeatures(collection);
                 transaction.commit();
-                Log.info(TAG,  "Data committed to file");
+                Log.info(TAG, "  File succesfully writen at:" + shpFile.getPath());
 	        }
 	        transaction.close();
         } catch (MalformedURLException ex) {

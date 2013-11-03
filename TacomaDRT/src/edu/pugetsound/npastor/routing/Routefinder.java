@@ -1,15 +1,17 @@
 package edu.pugetsound.npastor.routing;
 
+import java.awt.geom.Point2D;
+
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
 import com.graphhopper.GraphHopperAPI;
+import com.graphhopper.util.PointList;
 
-import delaunay_triangulation.Point_dt;
 import edu.pugetsound.npastor.utils.Log;
 
 /**
- * For finding quickets routes between two points
+ * For finding quickest driving distances between two points
  * @author Nathan P
  *
  */
@@ -17,13 +19,14 @@ public class Routefinder {
 	
 	public static final String TAG = "Routefinder";
 
-	// Supported pathfinding algorithms
+	// GraphHopper supported pathfinding algorithms
 	public static final String A_STAR_BI = "astarbi";
 	public static final String A_STAR = "astar";
 	public static final String DIJKSTRA = "dijkstra";
 	public static final String DIJKSTRA_BI = "dijkstrabi";
-	public static final String DIJKSTRA_NAT = "dijkstraNative";
+	public static final String DIJKSTRA_NATIVE = "dijkstraNative";
 	
+	// The pathfinding algorithm we'll use
 	public static final String ROUTE_ALGORITHM = A_STAR_BI;
 	
 	GraphHopperAPI mRouter;
@@ -31,14 +34,24 @@ public class Routefinder {
 	public Routefinder() {
 		mRouter = new GraphHopper().forServer();
 		((GraphHopper) mRouter).setCHShortcuts("fastest");
+		
+		// Load the pre-built Tacoma street graph
 		mRouter.load("files/tac-gh");
 	}
 	
-	public void findRoute(Point_dt origin, Point_dt destination) {
-		GHRequest routeRequest = new GHRequest(origin.y(), origin.x(), destination.y(), destination.x());
+	public GHResponse findRoute(Point2D origin, Point2D destination) {
+		// Build request and set pathfinding algorithm
+		GHRequest routeRequest = new GHRequest(origin.getY(), origin.getX(), destination.getY(), destination.getX());
 		routeRequest.setAlgorithm(A_STAR_BI);
-		Log.info(TAG, "Routing between points: " + origin + "  " + destination);
+	
+		// Do routing
 		GHResponse routeResponse = mRouter.route(routeRequest);
 		Log.info(TAG, "Distance in meters: " + routeResponse.getDistance() + ". Seconds to complete: " + routeResponse.getTime());
+		PointList points = routeResponse.getPoints();
+		for(int i = 0; i < points.getSize(); i++) {
+			System.out.println(points.getLatitude(i) + "  " + points.getLongitude(i));
+		}
+		
+		return routeResponse;
 	}
 }

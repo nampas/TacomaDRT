@@ -1,5 +1,6 @@
 package edu.pugetsound.npastor.riderGen;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -25,7 +26,6 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Point;
 
-import delaunay_triangulation.Point_dt;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.Log;
 
@@ -82,9 +82,9 @@ public class TractPointGenerator {
 	 * @param tract The tract in which to generate a point
 	 * @return The point, returned as long/lat coordinates
 	 */
-	public Point_dt randomPointInTract(String tract) {
+	public Point2D randomPointInTract(String tract) {
 
-		Point_dt latLong = new Point_dt();
+		Point2D latLong = new Point2D.Double();
 		
 		// Iterate through file to find correct census tract
 		FeatureIterator iterator = mFeatureCollection.features();
@@ -113,7 +113,7 @@ public class TractPointGenerator {
 	 * @param polygon The polygon
 	 * @return The point
 	 */
-	private Point_dt randomPointInPoly(Geometry polygon) {
+	private Point2D randomPointInPoly(Geometry polygon) {
 		
 		try {
 			// First we project the point to long/lat
@@ -136,7 +136,7 @@ public class TractPointGenerator {
 	 * @param polygon Polygon in which to make random point
 	 * @return A random point within the polygon
 	 */
-	private Point_dt boundingBoxMethod(Geometry polygon) {
+	private Point2D boundingBoxMethod(Geometry polygon) {
 		Geometry boundingBox = polygon.getEnvelope();
 		Coordinate[] boundingCoords = boundingBox.getCoordinates();
 		
@@ -173,7 +173,7 @@ public class TractPointGenerator {
 			if(polygon.contains(point)) break;
 		}
 		
-		return new Point_dt(point.getX(), point.getY());
+		return new Point2D.Double(point.getX(), point.getY());
 	}
 }
 
