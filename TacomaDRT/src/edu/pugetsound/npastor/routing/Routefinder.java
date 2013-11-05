@@ -46,12 +46,6 @@ public class Routefinder {
 	
 		// Do routing
 		GHResponse routeResponse = mRouter.route(routeRequest);
-		Log.info(TAG, "Distance in meters: " + routeResponse.getDistance() + ". Seconds to complete: " + routeResponse.getTime());
-		PointList points = routeResponse.getPoints();
-		for(int i = 0; i < points.getSize(); i++) {
-			System.out.println(points.getLatitude(i) + "  " + points.getLongitude(i));
-		}
-		
 		return routeResponse;
 	}
 }

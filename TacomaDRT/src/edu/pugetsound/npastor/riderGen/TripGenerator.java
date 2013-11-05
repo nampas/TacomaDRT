@@ -348,7 +348,7 @@ public class TripGenerator {
 	 */
 	private void writeTripsToFile() {
 		// Format the simulation start time
-		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mStartTime);
+		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mTripGenStartTime);
 		
 		// Get filename and add current time and file extension
 		String filename = TacomaDRTMain.getSimulationDirectory() + Constants.TRIPS_PREFIX_TXT + dateFormatted + ".txt";
@@ -439,7 +439,7 @@ public class TripGenerator {
 		SimpleFeatureCollection collection = createGeoFeatureCollection(featureType);
 		
 		// Format time and create filename
-		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mStartTime);
+		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mTripGenStartTime);
 		String filename = TacomaDRTMain.getSimulationDirectory() + Constants.TRIP_PREFIX_SHP + dateFormatted + ".shp";
         File shpFile = new File(filename);
         

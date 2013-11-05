@@ -15,9 +15,10 @@ public class TacomaDRTMain {
 	private TripGenerator mTripGen;
 	private DRTSimulation mSimulation;
 	private static String mSimulationDirectory;
-	public static long mStartTime;
+	public static long mTripGenStartTime;
+	public static long mSimStartTime;
 	
-	public final static String TAG = "TacomaDRT";
+	public final static String TAG = "TacomaDRTMain";
 	
 	public static void main(String[] args) {
 		TacomaDRTMain drt = new TacomaDRTMain();
@@ -29,25 +30,40 @@ public class TacomaDRTMain {
 	}
 	
 	public void runModel() {
-		mStartTime = System.currentTimeMillis();
+		mTripGenStartTime = System.currentTimeMillis();
 		setSimulationDirectory();
 		
 		// Run the trip generation
 		mTripGen.generateTrips(); 
 		
-		long tripGenTime = System.currentTimeMillis();
-		float elapsedSecs = (float)(tripGenTime - mStartTime) / 1000;
-		int timeMins = (int)(elapsedSecs / 60);
-		float remainderSecs = elapsedSecs % 60.0f;
-		Log.info(TAG, "Trip generation complete: " + Constants.TOTAL_TRIPS + " trips in " + elapsedSecs + " seconds (" + timeMins + ":" + remainderSecs + ")");
+		// Print trip gen time
+		long tripGenEndTime = System.currentTimeMillis();
+		String message = "Trip generation complete: " + Constants.TOTAL_TRIPS + " trips in ";
+		printTime(message, tripGenEndTime, mTripGenStartTime);
 		
 		// Run the simulation!
+		mSimStartTime = System.currentTimeMillis();
 		mSimulation = new DRTSimulation(mTripGen.getTrips());
 		mSimulation.runSimulation();
+		
+		// Print simulation time
+		long simEndTime = System.currentTimeMillis();
+		message = "Simulation finished in ";
+		printTime(message, simEndTime, mSimStartTime);
+		
+		// Print total time
+		printTime("Entire model finished in ", simEndTime, mTripGenStartTime);
+	}
+	
+	private void printTime(String message, long endTimeMillis, long startTimeMillis) {
+		float elapsedSecs = (float)(endTimeMillis - startTimeMillis) / 1000;
+		int timeMins = (int)(elapsedSecs / 60);
+		float remainderSecs = elapsedSecs % 60.0f;
+		Log.info(TAG, message + elapsedSecs + " seconds (" + timeMins + ":" + remainderSecs + ")");
 	}
 	
 	private void setSimulationDirectory() {
-		mSimulationDirectory = Constants.SIM_BASE_DIRECTORY + "/sim" + DRTUtils.formatMillis(mStartTime);
+		mSimulationDirectory = Constants.SIM_BASE_DIRECTORY + "/sim" + DRTUtils.formatMillis(mTripGenStartTime);
 		boolean result = new File(mSimulationDirectory).mkdirs();
 		if(!result) {
 			Log.error(TAG, "Unable to create simulation base directory at: " + mSimulationDirectory);

@@ -46,7 +46,7 @@ public class DRTSimulation {
 	
 	private void generateVehicles() {
 		for(int i = 0; i < Constants.VEHCILE_QUANTITY; i++) {
-			mVehiclePlans.add(new Vehicle());
+			mVehiclePlans.add(new Vehicle(i+1));
 		}
 	}
 	

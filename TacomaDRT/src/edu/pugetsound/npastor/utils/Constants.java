@@ -21,7 +21,7 @@ public class Constants {
 	public final static String TRIP_PREFIX_SHP = "/tripgeo_";
 	
 	// Total trips per day
-	public final static int TOTAL_TRIPS = 1;
+	public final static int TOTAL_TRIPS = 100;
 	
 	// Agency constants
 	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour
