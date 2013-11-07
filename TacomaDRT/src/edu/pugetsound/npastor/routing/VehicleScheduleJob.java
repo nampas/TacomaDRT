@@ -7,7 +7,7 @@ import edu.pugetsound.npastor.utils.Trip;
  * @author Nathan P
  *
  */
-public class VehicleScheduleJob implements Comparable<VehicleScheduleJob> {
+public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Cloneable {
 
 	public static final int JOB_TYPE_PICKUP = 0;
 	public static final int JOB_TYPE_DROPOFF = 3;
@@ -56,4 +56,13 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob> {
 		return returnVal;
 	}
 	
+	// Note this is not a "perfect" clone. We won't bother deep copying the behemoth that is the Trip class.
+	// However, all primitive types ARE copied, which is all we really need to for our purposes anyway.
+	@Override
+	public VehicleScheduleJob clone() {
+		int type = mType;
+		double startTime = mStartTime;
+		double duration = mDuration;
+		return new VehicleScheduleJob(mTrip, startTime, duration, type);
+	}
 }

@@ -19,9 +19,10 @@ public class Constants {
 	public final static String SIM_BASE_DIRECTORY = "files/Simulations";
 	public final static String TRIPS_PREFIX_TXT = "/trips_";
 	public final static String TRIP_PREFIX_SHP = "/tripgeo_";
+	public final static String LOG_PREFIX_TXT = "/log_";
 	
 	// Total trips per day
-	public final static int TOTAL_TRIPS = 100;
+	public final static int TOTAL_TRIPS = 50;
 	
 	// Agency constants
 	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour

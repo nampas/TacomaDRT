@@ -8,20 +8,21 @@ import edu.pugetsound.npastor.utils.Trip;
 
 public class Vehicle {
 
+	//TODO: what is capacity?
+	public static final int VEHICLE_CAPACITY = 20;
+	
 	private int mVehicleId;
-	private int mCapacity;
 	private int mMPH;
 	private ArrayList<Trip> mPassengers;
-	private VehicleSchedule mSchedule;
+	private ArrayList<VehicleScheduleJob> mSchedule;
 	private int mIdentifier;
 	
 	
 	public Vehicle(int id) {
-		mCapacity = Constants.VEHCILE_QUANTITY;
 		mPassengers = new ArrayList<Trip>();
 		mMPH = Constants.VEHICLE_MPH;
 		mVehicleId = hashCode();
-		mSchedule = new VehicleSchedule(this);
+		mSchedule = new ArrayList<VehicleScheduleJob>();
 		mIdentifier = id;
 	}
 	
@@ -45,11 +46,7 @@ public class Vehicle {
 		return mPassengers.size();
 	}
 	
-	public int getCapacity() {
-		return mCapacity;
-	}
-	
-	public VehicleSchedule getSchedule() {
+	public ArrayList<VehicleScheduleJob> getSchedule() {
 		return mSchedule;
 	}
 	

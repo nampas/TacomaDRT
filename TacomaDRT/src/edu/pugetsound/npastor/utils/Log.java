@@ -1,5 +1,11 @@
 package edu.pugetsound.npastor.utils;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+import edu.pugetsound.npastor.TacomaDRTMain;
+
 /**
  * A print utility, for error and debugging messages.
  * @author Nathan Pastor
@@ -7,14 +13,23 @@ package edu.pugetsound.npastor.utils;
  */
 public class Log {
 
+	public static final String TAG = "Log";
+	
+	private static final int MSG_BUFFER_LENGTH = 20; // Need to balance costs of buffer size and write-to-disk operations
+	private static String[] mMessageBuffer = new String[MSG_BUFFER_LENGTH];
+	private static int mBufferPos = 0;
+	
 	/**
 	 * Prints debug strings if debug mode is enabled (Constants.DEBUG)
 	 * @param tag Message tag (usually class name)
 	 * @param message Debug message
 	 */
 	public static void info(String tag, String message) {
-		if(Constants.DEBUG) 
-			System.out.println(tag + " : " + message);
+		if(Constants.DEBUG) {
+			String msg = tag + " : " + message;
+			System.out.println(msg);
+			addMsgToBuffer(msg);
+		}
 	}
 	
 	/**
@@ -23,6 +38,42 @@ public class Log {
 	 * @param message Error message
 	 */
 	public static void error(String tag, String message) {
-		System.err.println("ERROR: " + tag + " : " + message);
+		String msg = "ERROR: " + tag + " : " + message;
+		System.err.println(msg);
+		addMsgToBuffer(msg);
+	}
+		
+	private static void addMsgToBuffer(String message) {
+		mMessageBuffer[mBufferPos] = message;
+		mBufferPos++;
+		if(mBufferPos == MSG_BUFFER_LENGTH) {
+			mBufferPos = 0;
+			writeBufferToLogFile();
+		}
+	}
+	
+	public static void writeBufferToLogFile() {
+		// Format the simulation start time
+		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mTripGenStartTime);
+		
+		// Get filename and add current time and file extension
+		String filename = TacomaDRTMain.getSimulationDirectory() + Constants.LOG_PREFIX_TXT + dateFormatted + ".txt";
+		
+		// Write to file
+		try {
+			FileWriter writer = new FileWriter(filename, true);
+			PrintWriter lineWriter = new PrintWriter(writer);
+			for(String msg : mMessageBuffer) {
+				if(msg != null)
+					lineWriter.println(msg);
+			}
+			lineWriter.close();
+			writer.close();
+			System.out.println(TAG + " : Log file succesfully writen at: " + filename);
+			mMessageBuffer = new String[MSG_BUFFER_LENGTH];
+		} catch (IOException ex) {
+			System.err.println(TAG +  " : Unable to write to file");
+			ex.printStackTrace();
+		}
 	}
 }

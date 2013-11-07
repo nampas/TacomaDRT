@@ -20,14 +20,14 @@ public class Routefinder {
 	public static final String TAG = "Routefinder";
 
 	// GraphHopper supported pathfinding algorithms
-	public static final String A_STAR_BI = "astarbi";
-	public static final String A_STAR = "astar";
-	public static final String DIJKSTRA = "dijkstra";
-	public static final String DIJKSTRA_BI = "dijkstrabi";
-	public static final String DIJKSTRA_NATIVE = "dijkstraNative";
+	private static final String A_STAR_BI = "astarbi";
+	private static final String A_STAR = "astar";
+	private static final String DIJKSTRA = "dijkstra";
+	private static final String DIJKSTRA_BI = "dijkstrabi";
+	private static final String DIJKSTRA_NATIVE = "dijkstraNative";
 	
 	// The pathfinding algorithm we'll use
-	public static final String ROUTE_ALGORITHM = A_STAR_BI;
+	private static final String ROUTE_ALGORITHM = A_STAR_BI;
 	
 	GraphHopperAPI mRouter;
 	
@@ -42,7 +42,7 @@ public class Routefinder {
 	public GHResponse findRoute(Point2D origin, Point2D destination) {
 		// Build request and set pathfinding algorithm
 		GHRequest routeRequest = new GHRequest(origin.getY(), origin.getX(), destination.getY(), destination.getX());
-		routeRequest.setAlgorithm(A_STAR_BI);
+		routeRequest.setAlgorithm(ROUTE_ALGORITHM);
 	
 		// Do routing
 		GHResponse routeResponse = mRouter.route(routeRequest);

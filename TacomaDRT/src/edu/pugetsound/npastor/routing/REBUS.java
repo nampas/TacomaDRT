@@ -61,15 +61,15 @@ public class REBUS {
 		Log.info(TAG, "*************************************");
 		Log.info(TAG, "      Scheduling " + mJobQueue.size() + " job(s)");
 		Log.info(TAG, "*************************************");
-		ArrayList<Trip> unscheduledTrips = new ArrayList<Trip>();
+		ArrayList<Trip> rejectedTrips = new ArrayList<Trip>();
 		while(!mJobQueue.isEmpty()) {
 			REBUSJob job = mJobQueue.poll();
 			if(!scheduleJob(job, plan)) {
 				// If job was not successfully scheduled, add to list of failed jobs
-				unscheduledTrips.add(job.getTrip());
+				rejectedTrips.add(job.getTrip());
 			}
 		}
-		return unscheduledTrips;
+		return rejectedTrips;
 	}
 	
 	/**
@@ -92,14 +92,17 @@ public class REBUS {
 			// Keep track of the most optimal insertion of the job
 			ScheduleResult optimalScheduling = null;
 			
-			// We evaluate the job in every vehicle at every location
+			// Evaluate the job in every vehicle
 			for(Vehicle vehicle : plan) {
 				ScheduleResult result = evaluateTripInSchedule(pickupJob, dropoffJob, vehicle.getSchedule());
 				// Replace the most optimal scheduling if this result has a smaller score (disturbs objective function less)
 				if(result.mSolutionFound && (optimalScheduling == null || result.mOptimalScore < optimalScheduling.mOptimalScore))
 					optimalScheduling = result;
 			}
-			if(optimalScheduling != null) scheduleSuccessful = true;
+			if(optimalScheduling != null) {
+				scheduleSuccessful = true;
+				//TODO: actually do the scheduling
+			}
 		} else {
 			scheduleSuccessful = true;
 		}
@@ -107,14 +110,113 @@ public class REBUS {
 		return scheduleSuccessful;
 	}
 	
-	private ScheduleResult evaluateTripInSchedule(VehicleScheduleJob pickup, VehicleScheduleJob dropoff, VehicleSchedule schedule) {
+	/**
+	 * Evaluates the given trip (specified as pickup and dropoff events) in the given schedule. This will NOT schedule the jobs.
+	 * @param pickup The trip's pickup job
+	 * @param dropoff The trip's dropoff job
+	 * @param schedule The schedule to evaluate
+	 * @return A ScheduleResult object containing the results of the evaluation. If multiple feasible solution was found, this will
+	 *         contain the solution that disturbs the objective function the least (miminizes mJobCost). If no feasible solution was
+	 *         found, mSolutionFound will be set to false
+	 */
+	private ScheduleResult evaluateTripInSchedule(VehicleScheduleJob pickupJob, VehicleScheduleJob dropoffJob, ArrayList<VehicleScheduleJob> schedule) {
+		
+		// Initialize the result
 		ScheduleResult result = new ScheduleResult();
 		result.mSchedule = schedule;
 		result.mSolutionFound = false;
 		
-		//TODO: REBUS YAYYY
+		// Copy the list so we don't mess it up
+		ArrayList<VehicleScheduleJob> scheduleCopy  = new ArrayList<VehicleScheduleJob>();
+		for(int i = 0; i < schedule.size(); i++) {
+			scheduleCopy.add(schedule.get(i).clone());
+		}
+		
+		int pickupIndex = 1; //s1 in Madsen's notation
+		int dropoffIndex = 2; //s2 in Madsen's notation
+		
+		// FOLLOWING COMMENTS ARE MADSEN'S REBUS PSEUDO CODE
+		// Step 1: Place s1, s2 just after this first stop T0 in the scheduleCopy, and update the scheduleCopy
+		scheduleCopy.add(pickupIndex, pickupJob);
+		scheduleCopy.add(dropoffIndex, dropoffJob);
+		updateSchedule(scheduleCopy, pickupIndex, dropoffIndex);
+		
+		// Step 2: While all insertions have not been evaluated, do
+		while(pickupIndex < scheduleCopy.size() - 2) {
+			// a) if s2 is before the last stop T1 in the scheduleCopy...
+			if(scheduleCopy.get(dropoffIndex+1).getType() == VehicleScheduleJob.JOB_TYPE_END) {
+				// then move s1 one stop to the right... 
+				scheduleCopy.set(pickupIndex, scheduleCopy.get(pickupIndex+1)); // (swap elements, save time!)
+				pickupIndex++;
+				scheduleCopy.set(pickupIndex, pickupJob);
+				// and place s2 just after s1...
+				scheduleCopy.remove(dropoffIndex);
+				dropoffIndex = pickupIndex + 1;
+				scheduleCopy.add(dropoffIndex, dropoffJob);
+				// and update the scheduleCopy.
+				updateSchedule(scheduleCopy, pickupIndex, dropoffIndex);
+			//    else, move s2 one step to the right
+			} else {
+				scheduleCopy.set(dropoffIndex, scheduleCopy.get(dropoffIndex+1)); // (swap elements)
+				dropoffIndex++;
+				scheduleCopy.set(dropoffIndex, dropoffJob);
+			}
+			// b) Check for feasibility 
+			if(checkFeasibility(scheduleCopy)) {
+				// i. if the insertion if feasible, then calculate the change in the objective,
+				//    and compare to the previously found insertions
+				double objFuncChange = calculateObjFuncChange(scheduleCopy);
+				if(objFuncChange < result.mOptimalScore) {
+					
+				}
+			} else {
+				// ii. If the insertion is not feasible, check for the following situations:
+				// TODO: all off this
+			}
+		}
+
 		
 		return result;
+	}
+	
+	private void updateSchedule(ArrayList<VehicleScheduleJob> schedule, int pickupIndex, int dropoffIndex) {
+		
+	}
+	
+	/**
+	 * Checks the feasibility of the given schedule. A schedule will FAIL the feasibility test if a time window at
+	 * any stop is not satisfied, if the maximum travel time for any trip is exceeded, or if the vehicle capacity
+	 * is exceeded at any point along its route. Otherwise, it will succeed.
+	 * @param schedule The schedule for which to check feasibility
+	 * @return True if schedule is feasible, false otherwise
+	 */
+	private boolean checkFeasibility(ArrayList<VehicleScheduleJob> schedule) {
+		int numPassengers = 0;
+		int currentTime = 0;
+		boolean isFeasible = false;
+		for(int i = 0; i < schedule.size(); i++) {
+			VehicleScheduleJob curJob = schedule.get(i);
+			int type = curJob.getType();
+			if(type == VehicleScheduleJob.JOB_TYPE_PICKUP) {
+				numPassengers++;
+				// Check if vehicle capacity has been exceeded
+				if(numPassengers > Vehicle.VEHICLE_CAPACITY)
+					break;
+				
+				//TODO: check window and max travel time
+			} else if(type == VehicleScheduleJob.JOB_TYPE_DROPOFF) {
+				numPassengers--;
+			}
+		}
+		
+		
+		return isFeasible;
+	}
+	
+	private double calculateObjFuncChange(ArrayList<VehicleScheduleJob> schedule) {
+		double objFuncChange = 0;
+		
+		return objFuncChange;
 	}
 	
 	
@@ -228,18 +330,18 @@ public class REBUS {
 	private class REBUSJob implements Comparable<REBUSJob> {
 		public static final int JOB_NEW_REQUEST = 0;
 		
-		private double mREBUSJobCost;
+		private double mJobCost;
 		private int mType;
 		private Trip mTrip;
 		
-		public REBUSJob(int type, Trip trip, double REBUSJobCost) {
+		public REBUSJob(int type, Trip trip, double jobCost) {
 			mTrip = trip;
 			mType = type;
-			mREBUSJobCost = REBUSJobCost;
+			mJobCost = jobCost;
 		}
 		
 		public double getCost() {
-			return mREBUSJobCost;
+			return mJobCost;
 		}
 		
 		public int getType() {
@@ -251,21 +353,27 @@ public class REBUS {
 		}
 
 		public int compareTo(REBUSJob REBUSJob) {
-			int compareVal = 0;
-			double result = mREBUSJobCost - REBUSJob.getCost();
+			int compareVal;
+			double result = mJobCost - REBUSJob.getCost();
 			
 			if (result < 0) compareVal = 1;
 			else if(result > 0) compareVal = -1;
+			else compareVal = 0;
 			
 			return compareVal;
 		}
 	}
 	
+	// Wrapper class which contains the result of evaluateTripInSchedule() function
 	private class ScheduleResult {
 		public boolean mSolutionFound;
-		public VehicleSchedule mSchedule;
+		public ArrayList<VehicleScheduleJob> mSchedule;
 		public double mOptimalScore;
 		public int mOptimalPickupIndex;
-		public int mOpitmalDropoffIndex;
+		public int mOptimalDropoffIndex;
+		
+		public ScheduleResult() {
+			mOptimalScore = 1000;
+		}
 	}
 }

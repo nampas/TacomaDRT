@@ -53,6 +53,9 @@ public class TacomaDRTMain {
 		
 		// Print total time
 		printTime("Entire model finished in ", simEndTime, mTripGenStartTime);
+		
+		// Write any remaining messages to log file
+		Log.writeBufferToLogFile();
 	}
 	
 	private void printTime(String message, long endTimeMillis, long startTimeMillis) {
