@@ -32,6 +32,7 @@ public class Constants {
 	public final static int CALL_REQUEST_BUFFER_MINS = 30; // Minimum buffer between call in time and request time
 	public final static int VEHCILE_QUANTITY = 10; //TODO: determine how many, to be pinned to fixed route cost
 	public final static int VEHICLE_MPH = 26; // TODO: Vehicle speed
+	public final static int PICKUP_SERVICE_WINDOW = 30; //Max difference between actual pickup time and requested pickup time
 	
 	// Dynamic requests
 	public final static String DYNAMIC_REQUESTS_PCT = "dynamic_requests";

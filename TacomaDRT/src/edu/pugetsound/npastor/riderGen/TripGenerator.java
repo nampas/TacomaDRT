@@ -185,41 +185,50 @@ public class TripGenerator {
 		Log.info(TAG, "Generating trip endpoint tracts");
 		for(Trip t: mTrips) {
 			int[] riderAgeGroup = {DRTUtils.getGroupForAge(t.getRiderAge())};
+			String firstTract = Trip.TRACT_NOT_SET;
+			String secondTract = Trip.TRACT_NOT_SET;
 			switch(t.getTripType()) {
 				case Constants.TRIP_COMMUTE:
 					int[] commuteCode = {Constants.PSRC_TOTAL};
-					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
-					t.setSecondTract(mPCData.getWeightedTract(commuteCode, true));
+					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
+					secondTract = mPCData.getWeightedTract(commuteCode, true);
 					break;
 				case Constants.TRIP_MEDICAL_DENTAL:
 					int[] medCodes = {Constants.PSRC_SERVS, Constants.PSRC_GOVT};
-					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
-					t.setSecondTract(mPCData.getWeightedTract(medCodes, true));
+					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
+					secondTract = mPCData.getWeightedTract(medCodes, true);
 					break;
 				case Constants.TRIP_OTHER:
-					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
+					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
 					//TODO: should this be random?
-					t.setSecondTract(mPCData.getRandomTract());
+					secondTract = mPCData.getRandomTract();
 					break;
 				case Constants.TRIP_PERSONAL_BUSINESS:
-					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
+					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
 					//TODO: should this be random?
-					t.setSecondTract(mPCData.getRandomTract());
+					secondTract = mPCData.getRandomTract();
 					break;
 				case Constants.TRIP_SCHOOL:
 					int [] schoolCode = {Constants.PSRC_EDU};
-					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
-					t.setSecondTract(mPCData.getWeightedTract(schoolCode, true));
+					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
+					secondTract = mPCData.getWeightedTract(schoolCode, true);
 					break;
 				case Constants.TRIP_SHOPPING_DINING:
 					int[] shopCodes = {Constants.PSRC_SERVS, Constants.PSRC_RETAIL};
-					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
-					t.setSecondTract(mPCData.getWeightedTract(shopCodes, true));
+					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
+					secondTract = mPCData.getWeightedTract(shopCodes, true);
 					break;
 				case Constants.TRIP_SOCIAL:
-					t.setFirstTract(mPCData.getWeightedTract(riderAgeGroup, false));
+					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
 					//TODO: should this be weighted for total population level?
-					t.setSecondTract(mPCData.getWeightedTract(riderAgeGroup, false));
+					secondTract = mPCData.getWeightedTract(riderAgeGroup, false);
+			}
+			if(t.getDirection()) {
+				t.setFirstTract(firstTract);
+				t.setSecondTract(secondTract);
+			} else {
+				t.setFirstTract(secondTract);
+				t.setSecondTract(firstTract);
 			}
 		}
 	}

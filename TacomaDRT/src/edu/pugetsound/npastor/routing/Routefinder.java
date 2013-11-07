@@ -39,6 +39,12 @@ public class Routefinder {
 		mRouter.load("files/tac-gh");
 	}
 	
+	/**
+	 * Finds driving directions between the two specified points
+	 * @param origin Trip origin location
+	 * @param destination Trip destination location
+	 * @return A GHResponse object representing result of routing
+	 */
 	public GHResponse findRoute(Point2D origin, Point2D destination) {
 		// Build request and set pathfinding algorithm
 		GHRequest routeRequest = new GHRequest(origin.getY(), origin.getX(), destination.getY(), destination.getX());
@@ -47,5 +53,17 @@ public class Routefinder {
 		// Do routing
 		GHResponse routeResponse = mRouter.route(routeRequest);
 		return routeResponse;
+	}
+	
+	/**
+	 * A convenience method for finding the time required to drive between the 
+	 * specified points
+	 * @param origin Trip origin location
+	 * @param destination Trip destination location
+	 * @return The time in seconds to travel between the specified points
+	 */
+	public int getTravelTimeSec(Point2D origin, Point2D destination) {
+		GHResponse response = findRoute(origin, destination);
+		return (int)response.getTime();
 	}
 }

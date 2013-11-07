@@ -16,14 +16,20 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	
 	int mType;
 	Trip mTrip;
-	double mStartTime;
-	double mDuration;
+	int mStartTime;
+	int mDuration;
+	int mPlannedServiceTime;
 	
-	public VehicleScheduleJob(Trip trip, double startTime, double duration, int type) {
+	public VehicleScheduleJob(Trip trip, int startTime, int duration, int type) {
 		mTrip = trip;
 		mStartTime = startTime;
 		mDuration = duration;
 		mType = type;
+		mPlannedServiceTime = startTime;
+	}
+	
+	public void setServiceTime(int serviceTime) {
+		mPlannedServiceTime = serviceTime;
 	}
 	
 	public int getType() {
@@ -34,16 +40,20 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		return mTrip;
 	}
 	
-	public double getStartTime() {
+	public int getStartTime() {
 		return mStartTime;
 	}
 	
-	public double getEndTime() {
+	public int getEndTime() {
 		return mStartTime + mDuration;
 	}
 	
-	public double getDuration() {
+	public int getDuration() {
 		return mDuration;
+	}
+	
+	public int getServiceTime() {
+		return mPlannedServiceTime;
 	}
 	
 	public int compareTo(VehicleScheduleJob job) {
@@ -61,8 +71,12 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	@Override
 	public VehicleScheduleJob clone() {
 		int type = mType;
-		double startTime = mStartTime;
-		double duration = mDuration;
-		return new VehicleScheduleJob(mTrip, startTime, duration, type);
+		int startTime = mStartTime;
+		int duration = mDuration;
+		int serviceTime = mPlannedServiceTime;
+		VehicleScheduleJob clone = new VehicleScheduleJob(mTrip, startTime, duration, type);
+		clone.setServiceTime(serviceTime);
+		return clone;
+		
 	}
 }
