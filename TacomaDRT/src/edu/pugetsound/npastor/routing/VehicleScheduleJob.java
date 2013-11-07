@@ -19,6 +19,7 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	int mStartTime;
 	int mDuration;
 	int mPlannedServiceTime;
+	VehicleScheduleJob mCorrespondingJob;
 	
 	public VehicleScheduleJob(Trip trip, int startTime, int duration, int type) {
 		mTrip = trip;
@@ -26,6 +27,17 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		mDuration = duration;
 		mType = type;
 		mPlannedServiceTime = startTime;
+		mCorrespondingJob = null;
+	}
+	
+	
+	/**
+	 * Every VehicleScheduleJob can contain one reference to another VehicleScheduleJob. 
+	 * This is useful for linking pickup and dropoff jobs of the same trip
+	 * @param job The job to link
+	 */
+	public void setCorrespondingJob(VehicleScheduleJob job) {
+		mCorrespondingJob = job;
 	}
 	
 	public void setServiceTime(int serviceTime) {
@@ -56,6 +68,10 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		return mPlannedServiceTime;
 	}
 	
+	public VehicleScheduleJob getCorrespondingJob() {
+		return mCorrespondingJob;
+	}
+	
 	public int compareTo(VehicleScheduleJob job) {
 		int returnVal = 0;
 		
@@ -76,6 +92,7 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		int serviceTime = mPlannedServiceTime;
 		VehicleScheduleJob clone = new VehicleScheduleJob(mTrip, startTime, duration, type);
 		clone.setServiceTime(serviceTime);
+		clone.setCorrespondingJob(mCorrespondingJob);
 		return clone;
 		
 	}

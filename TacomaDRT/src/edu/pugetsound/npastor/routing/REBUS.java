@@ -94,6 +94,9 @@ public class REBUS {
 			int durationMins = (int)t.getRoute().getTime() / 60;
 			VehicleScheduleJob pickupJob = new VehicleScheduleJob(t, t.getPickupTime(), durationMins, VehicleScheduleJob.JOB_TYPE_PICKUP);
 			VehicleScheduleJob dropoffJob = new VehicleScheduleJob(t, t.getPickupTime() + durationMins, 0, VehicleScheduleJob.JOB_TYPE_DROPOFF);
+			pickupJob.setCorrespondingJob(dropoffJob); // Link the two jobs
+			dropoffJob.setCorrespondingJob(pickupJob);
+			
 			
 			// Keep track of the most optimal insertion of the job
 			ScheduleResult optimalScheduling = null;
@@ -171,9 +174,12 @@ public class REBUS {
 			if(checkFeasibility(scheduleCopy)) {
 				// i. if the insertion if feasible, then calculate the change in the objective,
 				//    and compare to the previously found insertions
-				double objFuncChange = calculateObjFuncChange(scheduleCopy);
+				double objFuncChange = calculateObjFunc(scheduleCopy);
 				if(objFuncChange < result.mOptimalScore) {
-					
+					result.mOptimalPickupIndex = pickupIndex;
+					result.mOptimalDropoffIndex = dropoffIndex;
+					result.mOptimalScore = objFuncChange;
+					result.mSolutionFound = true;
 				}
 			} else {
 				// ii. If the insertion is not feasible, check for the following situations:
@@ -204,12 +210,14 @@ public class REBUS {
 		for(int i = 0; i < schedule.size(); i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
 			int type = curJob.getType();
+			// For pickup jobs we can test the vehicle capacity and pickup window constraints
 			if(type == VehicleScheduleJob.JOB_TYPE_PICKUP) {
 				numPassengers++;
 				// Check if vehicle capacity has been exceeded
-				if(numPassengers > Vehicle.VEHICLE_CAPACITY)
+				if(numPassengers > Vehicle.VEHICLE_CAPACITY) {
+					isFeasible = false;
 					break;
-				
+				}
 				Point2D curLocation = curJob.getTrip().getFirstEndpoint();
 				// Check if pickup window is satisfied.
 				// If this is the first pickup, initialize values
@@ -225,10 +233,12 @@ public class REBUS {
 						isFeasible = false;
 						break;
 					}
-					// If we've gotten here, then the pickup window is satisfied and the vehicle is not over capacity
-					// This stop (job) passes the feasibility check
+					// If we've gotten here, then the pickup window is satisfied and the vehicle is not over capacity.
+					// This stop (job) passes the feasibility check. Set the service time and update last location.
 					lastLocation = curLocation;
+					curJob.setServiceTime(currentTime);
 				}
+			// For dropoff jobs we can test the maximal travel time constraint
 			} else if(type == VehicleScheduleJob.JOB_TYPE_DROPOFF) {
 				numPassengers--;
 				Point2D curLocation = curJob.getTrip().getSecondEndpoint();
@@ -236,26 +246,38 @@ public class REBUS {
 				// Get the travel time between last location and here, and add to current time
 				int lastLeg = mRouter.getTravelTimeSec(lastLocation, curLocation) / 60;
 				currentTime += lastLeg;
-				int totalTripTravelTime = currentTime - curJob.getServiceTime();
+				int totalTripTravelTime = currentTime - curJob.getCorrespondingJob().getServiceTime();
 				
-				// If the total trip travel time exceeds the max allowable trip travel time
+				// If the total trip travel time exceeds the max allowable trip travel time,
 				// fail the feasibility test.
 				if(totalTripTravelTime > maxTravelTime(curJob.getTrip())) {
 					isFeasible = false;
 					break;
 				}
-				// If we've gotten here, actual travel time is less than the max allowable travel time
-				// This stop (job) passes the feasibility check
+				// If we've gotten here, actual travel time is less than the max allowable travel time,
+				// This stop (job) passes the feasibility check. Set the service time and update last location.
 				lastLocation =  curLocation;
+				curJob.setServiceTime(currentTime);
 			}
 		}
 		return isFeasible;
 	}
 	
-	private double calculateObjFuncChange(ArrayList<VehicleScheduleJob> schedule) {
-		double objFuncChange = 0;
+	private double calculateObjFunc(ArrayList<VehicleScheduleJob> schedule) {
+		double objectiveFunction = 0;
+		int passengers = 0;
 		
-		return objFuncChange;
+		for(int i = 0; i < schedule.size(); i++) {
+			VehicleScheduleJob curJob = schedule.get(i);
+			// Update passenger count
+			if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP) passengers++;
+			else if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_DROPOFF) passengers--;
+			// Add load of current job to the cumulative load
+			// TODO: does this need to differ based on pickup and dropoff??
+			objectiveFunction += getLoad(curJob, passengers);
+		}
+		
+		return objectiveFunction;
 	}
 	
 	/**
@@ -272,15 +294,14 @@ public class REBUS {
 	// *************************************************
 	//                 COST FUNCTIONS
 	//  Cost functions assign a difficulty value to 
-	//  each new trip insertion. We will therefore
-	//  schedule the high priority (higher cost) trips
-	//  first.
+	//  each new trip. We will therefore schedule the 
+	//  high priority (higher cost) trips first.
 	// *************************************************
 	
 	/**
 	 * Calculate the trip cost
 	 * @param t Trip for which to calculate cost
-	 * @return
+	 * @return The trip cost
 	 */
 	public double getCost(Trip t) {
 		return costTimeWindow(t) + costMaxTravelTime(t);
@@ -319,7 +340,7 @@ public class REBUS {
 	// ********************************************
 	
 	/**
-	 * Calculates the load of the trip if inserted into the specified vehicle
+	 * Calculates the load of the job at its current location in schedule
 	 * @param j The job to evaluate
 	 * @param passengers Number of passengers in the vehicle
 	 * @return The load cost for this stop (the specified job)
@@ -333,13 +354,18 @@ public class REBUS {
 	
 	/**
 	 * Calculates the driving time component of the load value
+	 * Madsen notation: Cvariable * Tdr_time + Cconstant * (Twait + Chandle)
 	 * @param job Job to evaluate
 	 * @return The driving time laod cost for this stop (the specified job)
 	 */
 	private double loadDrivingTime(VehicleScheduleJob job) {
 		Trip t = job.getTrip();
 		int minDrivingTimeMins = (int)t.getRoute().getTime() / 60;
-		int waitingTime = job.getServiceTime() - job.getStartTime();
+		int waitingTime;
+		if(job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP)
+			waitingTime = job.getServiceTime() - job.getStartTime();
+		else
+			waitingTime = job.getCorrespondingJob().getServiceTime() - job.getCorrespondingJob().getStartTime();
 		
 		// TODO: WHAT IS HANDLING TIME???? (0.0)
 		double cost = DR_TIME_C1 * minDrivingTimeMins + DR_TIME_C2 * (waitingTime + 0.0);
@@ -348,29 +374,37 @@ public class REBUS {
 	}
 	
 	/**
-	 * Calculates the the waiting time component of the load value
+	 * Calculates the waiting time component of the load value
+	 * Madsen notation: C2wait * Twait^2 + C1wait * Twait
 	 * @param job Job to evaluate
 	 * @return The waiting time load cost for this stop (the specified job)
 	 */
 	private double loadWaitingTime(VehicleScheduleJob job) {
-		int waitingTime = job.getServiceTime() - job.getStartTime();
-		
-		double cost = WAIT_C2 * Math.pow(waitingTime, 2) + WAIT_C1 * waitingTime;
-		
+		double cost = 0;
+		//TODO: should this only apply to pickup jobs?
+		if(job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP) {
+			int waitingTime = job.getServiceTime() - job.getStartTime();
+			cost = WAIT_C2 * Math.pow(waitingTime, 2) + WAIT_C1 * waitingTime;
+		}
 		return cost;
 	}
 	
 	/**
 	 * Calculates the service time deviation component of the load value
+	 * Madsen notation: Cdev * Tdev^2
 	 * @param job Job to evaluate
 	 * @return The deviation from desired service time load cost for this stop (the specified job)
 	 */
 	private double loadDesiredServiceTimeDeviation(VehicleScheduleJob job) {
-		return 0;
+		//TODO: what is deviation?
+		int deviation = job.getServiceTime() - job.getStartTime();
+		double cost = DEV_C * Math.pow(deviation, 2);
+		return cost;
 	}
 	
 	/**
 	 * Calculates the capacity utilization component of the load value
+	 * Madsen notation: Ci * Vfreei^2
 	 * @param job The job to evaulate
 	 * @param passengers Number of passengers in vehicle
 	 * @return The vehicle capacity utilization load cost for this stop (the specified job)
@@ -401,6 +435,7 @@ public class REBUS {
 			mType = type;
 			mJobCost = jobCost;
 		}
+
 		
 		public double getCost() {
 			return mJobCost;
