@@ -18,6 +18,7 @@ public class Constants {
 	// Generated simulation files
 	public final static String SIM_BASE_DIRECTORY = "files/Simulations";
 	public final static String TRIPS_PREFIX_TXT = "/trips_";
+	public final static String TRIPS_READABLE_PREFIX_TXT = "/trips_readable_";
 	public final static String TRIP_PREFIX_SHP = "/tripgeo_";
 	public final static String LOG_PREFIX_TXT = "/log_";
 	

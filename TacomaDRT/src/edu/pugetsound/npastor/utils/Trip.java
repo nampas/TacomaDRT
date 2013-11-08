@@ -27,7 +27,7 @@ public class Trip {
 	private int mPickupTime;
 	private int mCallTime; // Time request was called in
 	
-	public Trip() {
+	public Trip(int id) {
 		mTripType = -1;
 		mRiderAge = -1;
 		mIsOutbound = true;

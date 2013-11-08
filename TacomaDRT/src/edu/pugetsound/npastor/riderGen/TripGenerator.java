@@ -1,12 +1,15 @@
 package edu.pugetsound.npastor.riderGen;
 
+import java.awt.geom.Point2D;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.Scanner;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
@@ -19,7 +22,6 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
 import com.graphhopper.GHResponse;
-import com.graphhopper.util.PointList;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
@@ -60,7 +62,7 @@ public class TripGenerator {
 	 */
 	public void generateTrips() {
 		for(int i = 0; i < Constants.TOTAL_TRIPS; i++) {
-			mTrips.add(new Trip());
+			mTrips.add(new Trip(i+1));
 		}
 		// Generate all trip attributes. ORDER IS IMPORTANT!
 		generateTripTypes();
@@ -75,6 +77,43 @@ public class TripGenerator {
 		generateDirections();
 		writeTripsToFile();
 		writeTripGeoToShp();
+	}
+	
+	/**
+	 * Generates trips from a trip log. This allows for the same set of data to be used
+	 * across instances of the model, so we can test how different variables affect the
+	 * results
+	 */
+	public void generateTripsFromFile(String tripLogPath) {
+		File file = new File(tripLogPath);
+		Log.info(TAG, "Loading trips from: " + file.getPath());
+		
+		try {
+			Scanner scanner = new Scanner(file);
+			while (scanner.hasNextLine()) {
+				String[] tokens = scanner.nextLine().split(" ");
+				// Build the trip from the file line
+				Trip newTrip = new Trip(Integer.valueOf(tokens[0]));
+				newTrip.setTripType(Integer.valueOf(tokens[1]));
+				newTrip.setRiderAge(Integer.valueOf(tokens[2]));
+				newTrip.setDirection(tokens[3].equals("1") ? true : false);
+				newTrip.setFirstTract(tokens[4]);
+				newTrip.setFirstEndpoint(new Point2D.Double(Double.valueOf(tokens[5]), Double.valueOf(tokens[6])));
+				newTrip.setSecondTract(tokens[7]);
+				newTrip.setSecondEndpoint(new Point2D.Double(Double.valueOf(tokens[8]), Double.valueOf(tokens[9])));
+				newTrip.setPickupTime(Integer.valueOf(tokens[10]));
+				newTrip.setCalInTime(Integer.valueOf(tokens[11]));
+				
+				// And add trip to list
+				mTrips.add(newTrip);
+			}
+			scanner.close();
+		} catch(FileNotFoundException ex) {
+			Log.error(TAG, "Unable to find trip file at: " + tripLogPath);
+			ex.printStackTrace();
+			System.exit(1);
+		}
+		
 	}
 	
 	public ArrayList<Trip> getTrips() {
@@ -352,8 +391,9 @@ public class TripGenerator {
 	}
 	
 	/**
-	 * Writes the generated trips to file. 
-	 * TODO: Make these trips reloadable in a subsequent simulation
+	 * Writes the generated trips to 2 file. There is a "readable" file which contains an easier to read
+	 * representation of the trips, and a separate file which contains an easier to parse representation
+	 * of the trips for use if the simulation were to be run with trips generated from file in the future.
 	 */
 	private void writeTripsToFile() {
 		// Format the simulation start time
@@ -361,24 +401,57 @@ public class TripGenerator {
 		
 		// Get filename and add current time and file extension
 		String filename = TacomaDRTMain.getSimulationDirectory() + Constants.TRIPS_PREFIX_TXT + dateFormatted + ".txt";
+		String filenameReadable = TacomaDRTMain.getSimulationDirectory() + Constants.TRIPS_READABLE_PREFIX_TXT + dateFormatted + ".txt";
 		Log.info(TAG, "Writing trips to: " + filename);
+		Log.info(TAG, "Writing trips readable to: " + filenameReadable);
 		
-		// Write to file
+		// Write to 2 files
 		try {
 			FileWriter writer = new FileWriter(filename, false);
 			PrintWriter lineWriter = new PrintWriter(writer);
+			
+			FileWriter readableWriter = new FileWriter(filenameReadable, false);
+			PrintWriter readableLineWriter = new PrintWriter(readableWriter);
+			
 			for(Trip t : mTrips) {
-				String curTrip = t.toString();
-				curTrip.replace("\n", ""); // Get rid of all line break;
-				lineWriter.println(curTrip);
+				// Write to parsable file
+				lineWriter.println(buildTripFileLine(t));
+				
+				// Write readable file
+				String readableLine = t.toString().replace("\n", ""); // Get rid of all line breaks
+				readableLineWriter.println(readableLine);
 			}
 			lineWriter.close();
 			writer.close();
+			readableLineWriter.close();
+			readableWriter.close();
 			Log.info(TAG, "  File succesfully writen at:" + filename);
 		} catch (IOException ex) {
 			Log.error(TAG, "Unable to write to file");
 			ex.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Helper method for writing trip txt files. Builds a line of the file, which contains all trip data
+	 * @param t The trip
+	 * @return All trip data in a string
+	 */
+	private String buildTripFileLine(Trip t) {
+		String sp = " ";
+		String line = t.getIdentifier() + sp + 
+				t.getTripType() + sp +
+				t.getRiderAge() + sp + 
+				(t.getDirection() ? "1" : "0") + sp +
+				t.getFirstTract() + sp +
+				t.getFirstEndpoint().getX() + sp +
+				t.getFirstEndpoint().getY() + sp +
+				t.getSecondTract() + sp +
+				t.getSecondEndpoint().getX() + sp +
+				t.getSecondEndpoint().getY() + sp +
+				t.getPickupTime() + sp +
+				t.getCallInTime();
+		return line;
 	}
 	
 	private SimpleFeatureType buildFeatureType() {
