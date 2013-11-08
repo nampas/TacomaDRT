@@ -43,8 +43,8 @@ public class TacomaDRTMain {
 		
 		// Run the simulation!
 		mSimStartTime = System.currentTimeMillis();
-		mSimulation = new DRTSimulation(mTripGen.getTrips());
-		mSimulation.runSimulation();
+//		mSimulation = new DRTSimulation(mTripGen.getTrips());
+//		mSimulation.runSimulation();
 		
 		// Print simulation time
 		long simEndTime = System.currentTimeMillis();

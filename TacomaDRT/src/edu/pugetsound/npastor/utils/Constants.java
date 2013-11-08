@@ -14,6 +14,7 @@ public class Constants {
 	public final static String PC_RAND_PTS_SHP = "files/RandomPoints/RandomPoints.shp"; //Random points within census tracts
 	public final static String PC_AGE_FILE = "files/PCAgeEmployment/PCAgeTotals.csv"; //Pierce County age data by census tract, from census
 	public final static String PC_EMPLOYMENT_FILE = "files/PCAgeEmployment/TacomaTractEmp2009.csv "; // Pierce County employment data, from PSRC
+	public final static String TACOMA_BOUNDARY_SHP = "files/TacomaBoundary/TacomaBoundary.shp"; // Tacoma city limits .shp, MOSTLY clipped to shoreline
 	
 	// Generated simulation files
 	public final static String SIM_BASE_DIRECTORY = "files/Simulations";

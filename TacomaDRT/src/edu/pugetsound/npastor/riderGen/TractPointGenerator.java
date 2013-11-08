@@ -8,6 +8,7 @@ import java.util.Random;
 
 import org.geotools.data.FeatureSource;
 import org.geotools.data.shapefile.ShapefileDataStore;
+import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.GeometryAttributeImpl;
@@ -44,24 +45,38 @@ public class TractPointGenerator {
 	public final static String TAG = "TractPointGenerator";
 	public final String TRACT_PROPERTY_NAME = "NAME10";
 	
-	ShapefileDataStore mCensusFile;
-    FeatureCollection mFeatureCollection;
-    MathTransform mProjectionTransform;
-
+	private ShapefileDataStore mCensusFile;
+    private FeatureCollection mCensusFeatureCollection;
+    private MathTransform mCensusProjectionTransform;
+    
+	private ShapefileDataStore mTacomaBoundaryFile;
+	private FeatureCollection mBoundaryFeatureCollection;
+	private MathTransform mBoundaryProjectionTransform;
+   
+	GeometryFactory mGeoFactory;
     Random mRand;
     
 	public TractPointGenerator() {
-		File file = new File(Constants.PC_CENSUS_SHP);
+		File censusFile = new File(Constants.PC_CENSUS_SHP);
+		File boundaryFile = new File(Constants.TACOMA_BOUNDARY_SHP);
+		mGeoFactory = new GeometryFactory();
 		mRand = new Random();
 		
 		try {
-			mCensusFile = new ShapefileDataStore(file.toURI().toURL());
-			FeatureSource featureSource = mCensusFile.getFeatureSource();
-			mFeatureCollection = featureSource.getFeatures();
+			mCensusFile = new ShapefileDataStore(censusFile.toURI().toURL());
+			FeatureSource censusFeatureSource = mCensusFile.getFeatureSource();
+			mCensusFeatureCollection = censusFeatureSource.getFeatures();
+			
+			mTacomaBoundaryFile = new ShapefileDataStore(boundaryFile.toURI().toURL());
+			FeatureSource boundaryFeatureSource = mTacomaBoundaryFile.getFeatureSource();
+			mBoundaryFeatureCollection = boundaryFeatureSource.getFeatures();
 			
 			// Make the transformation from file CRS to long/lat CRS
-			CoordinateReferenceSystem fileCRS = featureSource.getSchema().getCoordinateReferenceSystem();
-			mProjectionTransform = CRS.findMathTransform(fileCRS, DefaultGeographicCRS.WGS84, true);
+			CoordinateReferenceSystem censusFileCRS = censusFeatureSource.getSchema().getCoordinateReferenceSystem();
+			mCensusProjectionTransform = CRS.findMathTransform(censusFileCRS, DefaultGeographicCRS.WGS84, true);
+			
+			CoordinateReferenceSystem boundaryFileCRS = boundaryFeatureSource.getSchema().getCoordinateReferenceSystem();
+			mBoundaryProjectionTransform = CRS.findMathTransform(boundaryFileCRS, DefaultGeographicCRS.WGS84, true);
 		} catch(MalformedURLException ex) {
 			Log.error(TAG, "Error opening census tract file.");
 			ex.printStackTrace();
@@ -87,7 +102,7 @@ public class TractPointGenerator {
 		Point2D latLong = new Point2D.Double();
 		
 		// Iterate through file to find correct census tract
-		FeatureIterator iterator = mFeatureCollection.features();
+		FeatureIterator<Feature> iterator = mCensusFeatureCollection.features();
 		while (iterator.hasNext()) {
 			
 			// Pull out the feature we're concerned with: census tract name
@@ -100,12 +115,45 @@ public class TractPointGenerator {
 				
 				// Get the shape data
 				MultiPolygon geo = (MultiPolygon) featureGeometry.getValue();
-				latLong = randomPointInPoly(geo);
+				// Loop until we find a point within the Tacoma city boundaries. Some census tracts overlap other jurisdictions,
+				// and some census tracts include ocean space!
+				boolean pointInBoundary = false;
+				while(!pointInBoundary) {
+					latLong = randomPointInPoly(geo);
+					pointInBoundary = isInTacoma(latLong);
+				}
 				break;
 			}	
 		}
 		iterator.close(); // VERY IMPORTANT!! Out of memory errors otherwise on simulation sizes > ~3300
 		return latLong;
+	}
+	
+	/**
+	 * Checks if the given point is within the Tacoma city limits ON LAND
+	 * @param point The point to examine
+	 * @return True if point is within Tacoma city limits and on land, false if otherwise
+	 */
+	private boolean isInTacoma(Point2D point) {
+		boolean inTacoma = true;
+		// Get the Tacoma feature, which should be the only feature in the Tacoma boundary file
+		FeatureIterator iterator = mBoundaryFeatureCollection.features();
+		Feature feature = (Feature) iterator.next();
+//		System.out.println("HOpefully tacoma feature name: " + feature.getName().toString());
+		GeometryAttributeImpl tacomaFeatureGeo = (GeometryAttributeImpl) feature.getDefaultGeometryProperty();
+		Geometry tacomaShape = tacomaFeatureGeo.getValue();
+		try {
+			Geometry projectedShape = JTS.transform(tacomaShape, mBoundaryProjectionTransform);
+			// Do the containing check
+			if(!projectedShape.contains(mGeoFactory.createPoint(new Coordinate(point.getX(), point.getY()))))
+				inTacoma = false;
+		} catch (TransformException ex) {
+			Log.error(TAG, "Unable to transform the Tacoma boundary file into long/lat");
+			ex.printStackTrace();
+		}
+		
+		iterator.close();
+		return inTacoma;
 	}
 	
 	/**
@@ -117,7 +165,7 @@ public class TractPointGenerator {
 		
 		try {
 			// First we project the point to long/lat
-			Geometry projectedPoly = JTS.transform(polygon, mProjectionTransform);
+			Geometry projectedPoly = JTS.transform(polygon, mCensusProjectionTransform);
 
 			// Then get a point in the polygon
 			return boundingBoxMethod(projectedPoly);
@@ -161,7 +209,6 @@ public class TractPointGenerator {
 		}
 		
 		Point point = null;
-		GeometryFactory geoFact = new GeometryFactory();
 		// Determine bounding box range
 		double xRange = Math.abs(maxX - minX);
 		double yRange = Math.abs(maxY - minY);
@@ -169,7 +216,7 @@ public class TractPointGenerator {
 		while(true) {
 			double randX = mRand.nextDouble() * xRange + minX;
 			double randY = mRand.nextDouble() * yRange + minY;
-			point = geoFact.createPoint(new Coordinate(randX, randY));
+			point = mGeoFactory.createPoint(new Coordinate(randX, randY));
 			if(polygon.contains(point)) break;
 		}
 		
