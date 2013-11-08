@@ -11,7 +11,6 @@ public class Constants {
 	// Filenames and paths
 	public final static String RIDER_CHARS_FILE = "files/RiderCharacteristics.txt"; //Contains APTA rider age and trip type distributions, trip distributions across day and more
 	public final static String PC_CENSUS_SHP = "files/PCCensusTracts/pie10ct.shp"; //Pierce County census tract shapefile
-	public final static String PC_RAND_PTS_SHP = "files/RandomPoints/RandomPoints.shp"; //Random points within census tracts
 	public final static String PC_AGE_FILE = "files/PCAgeEmployment/PCAgeTotals.csv"; //Pierce County age data by census tract, from census
 	public final static String PC_EMPLOYMENT_FILE = "files/PCAgeEmployment/TacomaTractEmp2009.csv "; // Pierce County employment data, from PSRC
 	public final static String TACOMA_BOUNDARY_SHP = "files/TacomaBoundary/TacomaBoundary.shp"; // Tacoma city limits .shp, MOSTLY clipped to shoreline

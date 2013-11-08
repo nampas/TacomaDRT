@@ -22,8 +22,16 @@ public class Vehicle {
 		mPassengers = new ArrayList<Trip>();
 		mMPH = Constants.VEHICLE_MPH;
 		mVehicleId = hashCode();
-		mSchedule = new ArrayList<VehicleScheduleJob>();
 		mIdentifier = id;
+		initSchedule();
+		
+	}
+	
+	private void initSchedule() {
+		mSchedule = new ArrayList<VehicleScheduleJob>();
+		// Add start and end jobs
+		mSchedule.add(new VehicleScheduleJob(null, 0, 0, VehicleScheduleJob.JOB_TYPE_START));
+		mSchedule.add(new VehicleScheduleJob(null, 0, 0, VehicleScheduleJob.JOB_TYPE_END));
 	}
 	
 	public void addPassenger(Trip t) {

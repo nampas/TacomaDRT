@@ -20,7 +20,6 @@ public class PCAgeEmployment {
 	private TractCSVFile mEmploymentByTract;
 	private Random mRand;
 	
-	
 	public PCAgeEmployment() {
 		mRand = new Random();
 		mAgeByTract = new TractCSVFile(Constants.PC_AGE_FILE);

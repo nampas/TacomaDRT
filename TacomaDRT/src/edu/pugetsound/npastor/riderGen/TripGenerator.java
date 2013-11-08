@@ -330,7 +330,7 @@ public class TripGenerator {
 			t.setFirstEndpoint(pointGen.randomPointInTract(t.getFirstTract()));
 			t.setSecondEndpoint(pointGen.randomPointInTract(t.getSecondTract()));
 			if(i % 500 == 0)
-				Log.info(TAG, "  At trip " + i);
+				Log.info(TAG, "  Endpoint generation at trip " + i);
 		}
 	}
 	
