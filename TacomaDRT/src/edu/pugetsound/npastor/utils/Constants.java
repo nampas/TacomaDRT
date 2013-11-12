@@ -6,7 +6,7 @@ package edu.pugetsound.npastor.utils;
  */
 public class Constants {
 	
-	public final static boolean DEBUG = true;
+	public final static boolean DEBUG = false;
 	
 	// Filenames and paths
 	public final static String RIDER_CHARS_FILE = "files/RiderCharacteristics.txt"; //Contains APTA rider age and trip type distributions, trip distributions across day and more

@@ -426,6 +426,7 @@ public class TripGenerator {
 			readableLineWriter.close();
 			readableWriter.close();
 			Log.info(TAG, "  File succesfully writen at:" + filename);
+			Log.info(TAG, "  File succesfully writen at:" + filenameReadable);
 		} catch (IOException ex) {
 			Log.error(TAG, "Unable to write to file");
 			ex.printStackTrace();

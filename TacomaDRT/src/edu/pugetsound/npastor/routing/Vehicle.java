@@ -15,14 +15,12 @@ public class Vehicle {
 	private int mMPH;
 	private ArrayList<Trip> mPassengers;
 	private ArrayList<VehicleScheduleJob> mSchedule;
-	private int mIdentifier;
 	
 	
 	public Vehicle(int id) {
 		mPassengers = new ArrayList<Trip>();
 		mMPH = Constants.VEHICLE_MPH;
-		mVehicleId = hashCode();
-		mIdentifier = id;
+		mVehicleId = id;
 		initSchedule();
 		
 	}
@@ -59,6 +57,14 @@ public class Vehicle {
 	}
 	
 	public int getIdentifier() {
-		return mIdentifier;
+		return mVehicleId;
+	}
+	
+	public String scheduleToString() {
+		String str = "Vehicle " + mVehicleId + " schedule:";
+		for(int i = 0; i < mSchedule.size(); i++) {
+			str += "\n " + mSchedule.get(i) ;
+		}
+		return str;
 	}
 }

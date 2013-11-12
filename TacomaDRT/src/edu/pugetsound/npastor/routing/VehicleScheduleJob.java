@@ -1,5 +1,6 @@
 package edu.pugetsound.npastor.routing;
 
+import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 
 /**
@@ -9,17 +10,18 @@ import edu.pugetsound.npastor.utils.Trip;
  */
 public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Cloneable {
 
+	public static final String TAG = "VehicleScheduleJob";
+	
 	public static final int JOB_TYPE_PICKUP = 0;
-	public static final int JOB_TYPE_DROPOFF = 3;
-	public static final int JOB_TYPE_START = 1;
-	public static final int JOB_TYPE_END = 2;
+	public static final int JOB_TYPE_DROPOFF = 1;
+	public static final int JOB_TYPE_START = 2;
+	public static final int JOB_TYPE_END = 3;
 	
 	int mType;
 	Trip mTrip;
 	int mStartTime;
 	int mDuration;
 	int mPlannedServiceTime;
-	VehicleScheduleJob mCorrespondingJob;
 	
 	public VehicleScheduleJob(Trip trip, int startTime, int duration, int type) {
 		mTrip = trip;
@@ -27,7 +29,6 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		mDuration = duration;
 		mType = type;
 		mPlannedServiceTime = startTime;
-		mCorrespondingJob = null;
 	}
 	
 	
@@ -36,9 +37,9 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	 * This is useful for linking pickup and dropoff jobs of the same trip
 	 * @param job The job to link
 	 */
-	public void setCorrespondingJob(VehicleScheduleJob job) {
-		mCorrespondingJob = job;
-	}
+//	public void setCorrespondingJob(VehicleScheduleJob job) {
+//		mCorrespondingJob = job;
+//	}
 	
 	public void setServiceTime(int serviceTime) {
 		mPlannedServiceTime = serviceTime;
@@ -68,10 +69,6 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		return mPlannedServiceTime;
 	}
 	
-	public VehicleScheduleJob getCorrespondingJob() {
-		return mCorrespondingJob;
-	}
-	
 	public int compareTo(VehicleScheduleJob job) {
 		int returnVal = 0;
 		
@@ -80,6 +77,12 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		else if(compareVal > 0) returnVal = 1;
 		
 		return returnVal;
+	}
+	
+	public String toString() {
+		String str = "Job type: " + mType + ". Start time: " + mStartTime + ". Service time: " + mPlannedServiceTime;
+		if(mTrip != null) str += ". Trip ID: " + mTrip.getIdentifier();
+		return str;
 	}
 	
 	// Note this is not a "perfect" clone. We won't bother deep copying the behemoth that is the Trip class.
@@ -92,7 +95,6 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		int serviceTime = mPlannedServiceTime;
 		VehicleScheduleJob clone = new VehicleScheduleJob(mTrip, startTime, duration, type);
 		clone.setServiceTime(serviceTime);
-		clone.setCorrespondingJob(mCorrespondingJob);
 		return clone;
 		
 	}

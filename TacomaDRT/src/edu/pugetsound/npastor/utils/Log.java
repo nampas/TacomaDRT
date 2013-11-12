@@ -20,11 +20,22 @@ public class Log {
 	private static int mBufferPos = 0;
 	
 	/**
-	 * Prints debug strings if debug mode is enabled (Constants.DEBUG)
+	 * Prints info strings
+	 * @param tag Message tag (usually class name)
+	 * @param message Info message
+	 */
+	public static void info(String tag, String message) {
+		String msg = tag + " : " + message;
+		System.out.println(msg);
+		addMsgToBuffer(msg);	
+	}
+	
+	/**
+	 * Prints debug messages if debug mode is enabled (Constants.DEBUG)
 	 * @param tag Message tag (usually class name)
 	 * @param message Debug message
 	 */
-	public static void info(String tag, String message) {
+	public static void d(String tag, String message) {
 		if(Constants.DEBUG) {
 			String msg = tag + " : " + message;
 			System.out.println(msg);
@@ -69,7 +80,7 @@ public class Log {
 			}
 			lineWriter.close();
 			writer.close();
-			System.out.println(TAG + " : Log file succesfully writen at: " + filename);
+//			System.out.println(TAG + " : Log file writen or updated at: " + filename);
 			mMessageBuffer = new String[MSG_BUFFER_LENGTH];
 		} catch (IOException ex) {
 			System.err.println(TAG +  " : Unable to write to file");

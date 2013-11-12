@@ -137,6 +137,7 @@ public class Trip {
 				"\n  First Tract: " + mEndpointTract1 + ". At " + mEndpoint1 +
 				"\n  Second Tract: " + mEndpointTract2 + ". At " + mEndpoint2 +
 				"\n  Pickup Time: " + DRTUtils.minsToHrMin(mPickupTime) +
-				"\n  Request Made at: " + DRTUtils.minsToHrMin(mCallTime);
+				"\n  Request Made at: " + DRTUtils.minsToHrMin(mCallTime) +
+				"\n  Travel time: " + mRoute.getTime();
 	}
 }
