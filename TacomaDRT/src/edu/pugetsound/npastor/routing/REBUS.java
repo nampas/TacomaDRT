@@ -41,10 +41,12 @@ public class REBUS {
 	
 	PriorityQueue<REBUSJob> mJobQueue;
 	Routefinder mRouter;
+	private int mTotalJobsHandled;
 	
 	public REBUS() {
 		mJobQueue = new PriorityQueue<REBUSJob>();
 		mRouter = new Routefinder();
+		mTotalJobsHandled = 0;
 	}
 	
 	public int getQueueSize() {
@@ -73,6 +75,7 @@ public class REBUS {
 		ArrayList<Trip> rejectedTrips = new ArrayList<Trip>();
 		while(!mJobQueue.isEmpty()) {
 			REBUSJob job = mJobQueue.poll();
+			mTotalJobsHandled++;
 			if(!scheduleJob(job, plan)) {
 				// If job was not successfully scheduled, add to list of failed jobs
 				rejectedTrips.add(job.getTrip());
@@ -93,7 +96,7 @@ public class REBUS {
 		boolean scheduleSuccessful = false;
 		if(job.getType() == REBUSJob.JOB_NEW_REQUEST) {
 			Trip t = job.getTrip();
-			Log.info(TAG, "Scheduling " + t.toString().replace("\n", "") +
+			Log.info(TAG, "On trip " + mTotalJobsHandled + ". Scheduling " + t.toString().replace("\n", "") +
 					   "\n           Cost: " + job.getCost());
 			
 			// Split the trip into pickup and dropoff jobs

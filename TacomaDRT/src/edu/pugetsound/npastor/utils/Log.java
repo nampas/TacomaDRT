@@ -3,6 +3,9 @@ package edu.pugetsound.npastor.utils;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import edu.pugetsound.npastor.TacomaDRTMain;
 
@@ -25,7 +28,7 @@ public class Log {
 	 * @param message Info message
 	 */
 	public static void info(String tag, String message) {
-		String msg = tag + " : " + message;
+		String msg = curTimeString() + " : " + tag + " : " + message;
 		System.out.println(msg);
 		addMsgToBuffer(msg);	
 	}
@@ -37,9 +40,7 @@ public class Log {
 	 */
 	public static void d(String tag, String message) {
 		if(Constants.DEBUG) {
-			String msg = tag + " : " + message;
-			System.out.println(msg);
-			addMsgToBuffer(msg);
+			info(tag,message);
 		}
 	}
 	
@@ -49,11 +50,11 @@ public class Log {
 	 * @param message Error message
 	 */
 	public static void error(String tag, String message) {
-		String msg = "ERROR: " + tag + " : " + message;
+		String msg = curTimeString() + " : ERROR: " + tag + " : " + message;
 		System.err.println(msg);
 		addMsgToBuffer(msg);
 	}
-		
+	
 	private static void addMsgToBuffer(String message) {
 		mMessageBuffer[mBufferPos] = message;
 		mBufferPos++;
@@ -61,6 +62,13 @@ public class Log {
 			mBufferPos = 0;
 			writeBufferToLogFile();
 		}
+	}
+	
+	private static String curTimeString() {
+		Date date = new Date(System.currentTimeMillis());
+		DateFormat formatter = new SimpleDateFormat("HH:mm:ss.SSS");
+		String dateFormatted = formatter.format(date);
+		return dateFormatted;
 	}
 	
 	public static void writeBufferToLogFile() {

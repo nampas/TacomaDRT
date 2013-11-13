@@ -14,12 +14,10 @@ import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.feature.type.FeatureType;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.Point;
 
 import edu.pugetsound.npastor.TacomaDRTMain;
 import edu.pugetsound.npastor.routing.REBUS;
@@ -190,6 +188,10 @@ public class DRTSimulation {
         ShapefileWriter.writeShapefile(featureType, collection, shpFile);
 	}
 	
+	/**
+	 * Creates a Line feature type for the the route shapefile
+	 * @return A line feature type
+	 */
 	private SimpleFeatureType buildFeatureType() {
 		// Build feature type
         SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();

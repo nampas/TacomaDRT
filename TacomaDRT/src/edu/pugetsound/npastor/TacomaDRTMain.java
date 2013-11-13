@@ -101,5 +101,5 @@ public class TacomaDRTMain {
 	
 	public static String getTripShpSimDirectory() {
 		return getSimulationDirectory() + Constants.TRIP_SHP_DIR;
-				}
+	}
 }
