@@ -22,19 +22,25 @@ public class TacomaDRTMain {
 	
 	public static void main(String[] args) {
 		TacomaDRTMain drt = new TacomaDRTMain();
-		drt.runModel();
+		String tripFile = null;
+		if(args.length > 0)
+			tripFile = args[0];
+		drt.runModel(tripFile);
 	}
 	
 	public TacomaDRTMain() {
 		mTripGen = new TripGenerator();
 	}
 	
-	public void runModel() {
+	public void runModel(String tripFilePath) {
 		mTripGenStartTime = System.currentTimeMillis();
 		setSimulationDirectory();
 		
 		// Run the trip generation
-		mTripGen.generateTrips(); 
+		if(tripFilePath == null)
+			mTripGen.generateTrips(); 
+		else 
+			mTripGen.generateTripsFromFile(tripFilePath);
 		
 		// Print trip gen time
 		long tripGenEndTime = System.currentTimeMillis();

@@ -117,7 +117,7 @@ public class DRTSimulation {
 		}
 		Log.info(TAG, mREBUS.getQueueSize() + " static jobs queued");
 		// Now that all static trips are enqueued we can schedule them.
-		mREBUS.scheduleQueuedJobs(mVehiclePlans);
+		mRejectedTrips.addAll(mREBUS.scheduleQueuedJobs(mVehiclePlans));
 	}
 	
 	/**

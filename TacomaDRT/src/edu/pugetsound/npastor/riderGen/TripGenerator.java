@@ -73,7 +73,11 @@ public class TripGenerator {
 		generatePickupTimes();
 //		for(int i = 0; i < mTrips.size(); i++)
 //			Log.info(TAG, mTrips.get(i).toString());
-		
+				
+		onTripsGenerated();
+	}
+	
+	private void onTripsGenerated() {
 		generateDirections();
 		writeTripsToFile();
 		writeTripGeoToShp();
@@ -114,6 +118,7 @@ public class TripGenerator {
 			System.exit(1);
 		}
 		
+		onTripsGenerated();
 	}
 	
 	public ArrayList<Trip> getTrips() {
@@ -391,9 +396,9 @@ public class TripGenerator {
 	}
 	
 	/**
-	 * Writes the generated trips to 2 file. There is a "readable" file which contains an easier to read
-	 * representation of the trips, and a separate file which contains an easier to parse representation
-	 * of the trips for use if the simulation were to be run with trips generated from file in the future.
+	 * Writes the generated trips to 2 files. There is a "readable" file which contains an easier to read
+	 * representation of the trips, and a separate file which contains an easier to parse representation.
+	 * The latter is used for generateTripsFromFile()
 	 */
 	private void writeTripsToFile() {
 		// Format the simulation start time
@@ -415,7 +420,7 @@ public class TripGenerator {
 			
 			for(Trip t : mTrips) {
 				// Write to parsable file
-				lineWriter.println(buildTripFileLine(t));
+				lineWriter.println(buildParsableTripFileLine(t));
 				
 				// Write readable file
 				String readableLine = t.toString().replace("\n", ""); // Get rid of all line breaks
@@ -438,7 +443,7 @@ public class TripGenerator {
 	 * @param t The trip
 	 * @return All trip data in a string
 	 */
-	private String buildTripFileLine(Trip t) {
+	private String buildParsableTripFileLine(Trip t) {
 		String sp = " ";
 		String line = t.getIdentifier() + sp + 
 				t.getTripType() + sp +

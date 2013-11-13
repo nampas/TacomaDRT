@@ -28,8 +28,8 @@ public class Vehicle {
 	private void initSchedule() {
 		mSchedule = new ArrayList<VehicleScheduleJob>();
 		// Add start and end jobs
-		mSchedule.add(new VehicleScheduleJob(null, 0, 0, VehicleScheduleJob.JOB_TYPE_START));
-		mSchedule.add(new VehicleScheduleJob(null, 0, 0, VehicleScheduleJob.JOB_TYPE_END));
+		mSchedule.add(new VehicleScheduleJob(null, Constants.BEGIN_OPERATION_HOUR, 0, VehicleScheduleJob.JOB_TYPE_START));
+		mSchedule.add(new VehicleScheduleJob(null, Constants.END_OPERATION_HOUR, 0, VehicleScheduleJob.JOB_TYPE_END));
 	}
 	
 	public void addPassenger(Trip t) {

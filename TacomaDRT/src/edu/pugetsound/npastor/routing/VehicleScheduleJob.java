@@ -1,5 +1,6 @@
 package edu.pugetsound.npastor.routing;
 
+import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 
@@ -80,7 +81,8 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	}
 	
 	public String toString() {
-		String str = "Job type: " + mType + ". Start time: " + mStartTime + ". Service time: " + mPlannedServiceTime;
+		String str = "Job type: " + mType + ". Start time: " + DRTUtils.minsToHrMin(mStartTime) +
+						". Service time: " + DRTUtils.minsToHrMin(mPlannedServiceTime);
 		if(mTrip != null) str += ". Trip ID: " + mTrip.getIdentifier();
 		return str;
 	}

@@ -69,8 +69,7 @@ public class REBUS {
 	 */
 	public ArrayList<Trip> scheduleQueuedJobs(ArrayList<Vehicle> plan) {
 		Log.info(TAG, "*************************************");
-		Log.info(TAG, "      Scheduling " + mJobQueue.size() + " job(s)");
-		Log.info(TAG, "*************************************");
+		Log.info(TAG, "       Scheduling " + mJobQueue.size() + " job(s)");
 		ArrayList<Trip> rejectedTrips = new ArrayList<Trip>();
 		while(!mJobQueue.isEmpty()) {
 			REBUSJob job = mJobQueue.poll();
@@ -94,7 +93,7 @@ public class REBUS {
 		boolean scheduleSuccessful = false;
 		if(job.getType() == REBUSJob.JOB_NEW_REQUEST) {
 			Trip t = job.getTrip();
-			Log.info(TAG, "Scheduling trip " + t.toString().replace("\n", "") +
+			Log.info(TAG, "Scheduling " + t.toString().replace("\n", "") +
 					   "\n           Cost: " + job.getCost());
 			
 			// Split the trip into pickup and dropoff jobs
@@ -116,10 +115,11 @@ public class REBUS {
 				}
 			}
 			if(optimalScheduling != null) {
-				// Do the scheduling if a feasibile result has been found
+				// Do the scheduling if a feasible result has been found
 				ArrayList<VehicleScheduleJob> optimalSchedule = optimalScheduling.mSchedule;
 				optimalSchedule.add(optimalScheduling.mOptimalPickupIndex, pickupJob);
 				optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
+				updateServiceTimes(optimalSchedule);
 				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
 							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
 							". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex);
@@ -128,8 +128,51 @@ public class REBUS {
 		} else {
 			scheduleSuccessful = true;
 		}
-		
 		return scheduleSuccessful;
+	}
+	
+	/**
+	 * TODO: Do this during scheduling so that we don't have to pathfind for the same routes twice
+	 * Updates the service times of each job in this schedule
+	 * @param schedule
+	 */
+	private void updateServiceTimes(ArrayList<VehicleScheduleJob> schedule) {
+		int curTime = 0;
+		Point2D lastLoc = null;
+		for(int i = 0; i < schedule.size(); i++) {
+			VehicleScheduleJob curJob = schedule.get(i);
+			int type = curJob.getType();
+			// For now, skip start and end jobs
+			if(type == VehicleScheduleJob.JOB_TYPE_START || type == VehicleScheduleJob.JOB_TYPE_END)
+				continue;
+	
+			// Initialize location and time
+			if(lastLoc == null) {
+				lastLoc = curJob.getTrip().getFirstEndpoint();
+				curTime = curJob.getStartTime();
+				curJob.setServiceTime(curTime);
+			} else {
+				// Set current location to pickup or dropoff coordinates
+				Point2D curLoc;
+				if(type == VehicleScheduleJob.JOB_TYPE_PICKUP)
+					curLoc = curJob.getTrip().getFirstEndpoint();
+				else 
+					curLoc = curJob.getTrip().getSecondEndpoint();
+	
+				// Calculate time to travel from last point to here
+				int lastLegSec = mRouter.getTravelTimeSec(lastLoc, curLoc);
+				// Add to current time, and set job's schedule service time
+				curTime += lastLegSec / 60;
+				// Don't service pickup jobs early
+				if(curTime < curJob.getStartTime()) {
+					curTime = curJob.getStartTime();
+				}
+				curJob.setServiceTime(curTime);
+
+				// Update location
+				lastLoc = curLoc;
+			}
+		}
 	}
 	
 	/**
@@ -192,26 +235,31 @@ public class REBUS {
 			while(potentiallyFeasible) {
 				// (ensure this is a valid schedule ordering. Trip related jobs cannot be last schedule)
 				if(dropoffIndex == scheduleCopy.size() - 1 || pickupIndex == scheduleCopy.size() - 1) {
+//					Log.info(TAG, "-------BREAKING ON INDEX TOO HIGH");
 					break;
 				}
-				FeasibilityResult feasibilityResult = checkScheduleFeasibility(scheduleCopy);
-				int feasCode = feasibilityResult.mResultCode;
+				FeasibilityResult feasResult = checkScheduleFeasibility(scheduleCopy);
+				int feasCode = feasResult.mResultCode;
+				VehicleScheduleJob failsOn = feasResult.mFailsOn; // The job the test failed on
 				//  i. if the insertion is feasible...
 				if(feasCode == FeasibilityResult.SUCCESS) {
 					// then calculate the change in the objective and compare to the previously found insertions
 					double objectiveFunc = calculateObjFunc(scheduleCopy);
-					if(objectiveFunc < schedResult.mOptimalScore) {
+//					Log.info(TAG, "success, objective func is " + objectiveFunc);
+					if(objectiveFunc < schedResult.mOptimalScore || schedResult.mSolutionFound == false) {
 						schedResult.mOptimalPickupIndex = pickupIndex;
 						schedResult.mOptimalDropoffIndex = dropoffIndex;
 						schedResult.mOptimalScore = objectiveFunc;
 						schedResult.mSolutionFound = true;
 					}
+//					Log.info(TAG, "-------BREAKING ON SUCCESS");
 					potentiallyFeasible = false; // (No longer potentially feasible, schedule is certainly feasible)
 				// ii. If the insertion is not feasible, check for the following situations:
 				} else {
 					// A. if the capacity constraints, the maximum travel time or the time window
 					//    related to s2 have been violated...
-					if(feasCode == FeasibilityResult.FAIL_MAX_TRAVEL_TIME) {
+					if(feasCode == FeasibilityResult.FAIL_MAX_TRAVEL_TIME && 
+							failsOn.getTrip().getIdentifier() == pickupJob.getTrip().getIdentifier()) {
 //						Log.info(TAG, " --- THIRD");
 						// then move s1 one step to the right...
 						scheduleCopy.remove(dropoffIndex); // Remove so we don't swap pickup/dropoff order
@@ -222,10 +270,14 @@ public class REBUS {
 						dropoffIndex = pickupIndex + 1;
 						scheduleCopy.add(dropoffIndex, dropoffJob);
 					// B. if the time window related to s1 is violated then stop
-					} else if(feasCode == FeasibilityResult.FAIL_WINDOW) {
+					} else if(feasCode == FeasibilityResult.FAIL_WINDOW && 
+							failsOn.getTrip().getIdentifier() == pickupJob.getTrip().getIdentifier()) {
+//						Log.info(TAG, "-------BREAKING ON WINDOW");
 						break outerloop;
 					// C. else, go to 2
 					} else {
+//						Log.info(TAG, "-------BREAKING ON ELSE. result code " + feasResult.mResultCode + " fails on " + 
+//								(feasResult.mFailsOn.getTrip() != null ? feasResult.mFailsOn.getTrip().getIdentifier() : feasResult.mFailsOn.getType()));
 						potentiallyFeasible = false;
 					}
 				}
@@ -242,15 +294,13 @@ public class REBUS {
 	 * @return The job that the feasibility check fails on, null if schedule passes feasibility
 	 */
 	private FeasibilityResult checkScheduleFeasibility(ArrayList<VehicleScheduleJob> schedule) {
+		updateServiceTimes(schedule);
 //		for(int i = 0; i < schedule.size(); i++) {
 //			VehicleScheduleJob job = schedule.get(i);
-//			Log.info(TAG, "Type: " + job.getType() + " Time: " + job.getStartTime() + " Trip num: " + 
-//					(job.getTrip() == null ? "N/A" : job.getTrip().getIdentifier()));
-//		}		
+//			Log.info(TAG, job.toString());
+//		}
 		
 		int numPassengers = 0;
-		int currentTime = 0;
-		Point2D lastLocation = null;
 		FeasibilityResult result = new FeasibilityResult();
 		for(int i = 0; i < schedule.size(); i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
@@ -264,38 +314,19 @@ public class REBUS {
 					result.mResultCode = FeasibilityResult.FAIL_CAPACITY;
 					break;
 				}
-				Point2D curLocation = curJob.getTrip().getFirstEndpoint();
-				// Check if pickup window is satisfied.
-				// If this is the first pickup, initialize values
-				if(lastLocation == null) {
-					currentTime = curJob.getStartTime();
-					lastLocation = curLocation;
-				} else {
-					// Determine how long it will take to get from last location to this location, and update current time
-					Log.d(TAG, "Routing between " + lastLocation + " and " + curLocation);
-					int lastLeg = mRouter.getTravelTimeSec(lastLocation, curLocation) / 60;
-					currentTime += lastLeg;
-					// If current time exceeds the max pickup window, fail the feasibility test
-					if(currentTime > curJob.getStartTime() + Constants.PICKUP_SERVICE_WINDOW) {
-						result.mFailsOn = curJob;
-						result.mResultCode = FeasibilityResult.FAIL_WINDOW;
-						break;
-					}
-					// If we've gotten here, then the pickup window is satisfied and the vehicle is not over capacity.
-					// This stop (job) passes the feasibility check. Set the service time and update last location.
-					lastLocation = curLocation;
-					curJob.setServiceTime(currentTime);
+				// Check if pickup window is satisfied
+				// If current time exceeds the max pickup window, fail the feasibility test
+				if(curJob.getServiceTime() > curJob.getStartTime() + Constants.PICKUP_SERVICE_WINDOW) {
+					result.mFailsOn = curJob;
+					result.mResultCode = FeasibilityResult.FAIL_WINDOW;
+					break;
 				}
 			// For dropoff jobs we can test the maximal travel time constraint
 			} else if(type == VehicleScheduleJob.JOB_TYPE_DROPOFF) {
 				numPassengers--;
-				Point2D curLocation = curJob.getTrip().getSecondEndpoint();
 
-				// Get the travel time between last location and here, and add to current time
-				Log.d(TAG, "Routing between " + lastLocation + " and " + curLocation);
-				int lastLeg = mRouter.getTravelTimeSec(lastLocation, curLocation) / 60;
-				currentTime += lastLeg;
-				int totalTripTravelTime = currentTime - findCorrespondingJob(curJob, schedule).getServiceTime();
+				// Get the travel time between last location and here
+				int totalTripTravelTime = curJob.getServiceTime() - findCorrespondingJob(curJob, schedule).getServiceTime();
 				
 				// If the total trip travel time exceeds the max allowable trip travel time,
 				// fail the feasibility test.
@@ -304,15 +335,95 @@ public class REBUS {
 					result.mResultCode = FeasibilityResult.FAIL_MAX_TRAVEL_TIME;
 					break;
 				}
-				// If we've gotten here, actual travel time is less than the max allowable travel time,
-				// This stop (job) passes the feasibility check. Set the service time and update last location.
-				lastLocation =  curLocation;
-				curJob.setServiceTime(currentTime);
 			}
 		}
-//		Log.info(TAG, "Feasibility result: " + result.mResultCode);
 		return result;
 	}
+	
+//	/**
+//	 * Checks the feasibility of the given schedule. A schedule will FAIL the feasibility test if a time window at
+//	 * any stop is not satisfied, if the maximum travel time for any trip is exceeded, or if the vehicle capacity
+//	 * is exceeded at any point along its route. Otherwise, it will succeed.
+//	 * @param schedule The schedule for which to check feasibility
+//	 * @return The job that the feasibility check fails on, null if schedule passes feasibility
+//	 */
+//	private FeasibilityResult checkScheduleFeasibility(ArrayList<VehicleScheduleJob> schedule) {
+//		updateServiceTimes(schedule);
+//		for(int i = 0; i < schedule.size(); i++) {
+//			VehicleScheduleJob job = schedule.get(i);
+//			Log.info(TAG, "Type: " + job.getType() + " Time: " + job.getStartTime() + " Trip num: " + 
+//					(job.getTrip() == null ? "N/A" : job.getTrip().getIdentifier()));
+//		}		
+//		
+//		int numPassengers = 0;
+//		int currentTime = 0;
+//		Point2D lastLocation = null;
+//		FeasibilityResult result = new FeasibilityResult();
+//		for(int i = 0; i < schedule.size(); i++) {
+//			VehicleScheduleJob curJob = schedule.get(i);
+//			int type = curJob.getType();
+//			// For pickup jobs we can test the vehicle capacity and pickup window constraints
+//			if(type == VehicleScheduleJob.JOB_TYPE_PICKUP) {
+//				numPassengers++;
+//				// Check if vehicle capacity has been exceeded
+//				if(numPassengers > Vehicle.VEHICLE_CAPACITY) {
+//					result.mFailsOn = curJob;
+//					result.mResultCode = FeasibilityResult.FAIL_CAPACITY;
+//					break;
+//				}
+//				Point2D curLocation = curJob.getTrip().getFirstEndpoint();
+//				// Check if pickup window is satisfied.
+//				// If this is the first pickup, initialize values
+//				if(lastLocation == null) {
+//					currentTime = curJob.getStartTime();
+//					lastLocation = curLocation;
+//				} else {
+//					// Determine how long it will take to get from last location to this location, and update current time
+//					Log.d(TAG, "Routing between " + lastLocation + " and " + curLocation);
+//					int lastLeg = mRouter.getTravelTimeSec(lastLocation, curLocation) / 60;
+//					currentTime += lastLeg;
+//					// If current time exceeds the max pickup window, fail the feasibility test
+//					if(currentTime > curJob.getStartTime() + Constants.PICKUP_SERVICE_WINDOW) {
+//						result.mFailsOn = curJob;
+//						result.mResultCode = FeasibilityResult.FAIL_WINDOW;
+//						break;
+//					// If current time is less than pickup time, fail the feasibility test
+////					} else if(currentTime < curJob.getStartTime()) {
+////						result.mFailsOn = curJob;
+////						result.mResultCode = FeasibilityResult.FAIL_EARLY_SERVICE;
+////						break;
+//					}
+//					// If we've gotten here, then the pickup window is satisfied and the vehicle is not over capacity.
+//					// This stop (job) passes the feasibility check. Set the service time and update last location.
+//					lastLocation = curLocation;
+//					curJob.setServiceTime(currentTime);
+//				}
+//			// For dropoff jobs we can test the maximal travel time constraint
+//			} else if(type == VehicleScheduleJob.JOB_TYPE_DROPOFF) {
+//				numPassengers--;
+//				Point2D curLocation = curJob.getTrip().getSecondEndpoint();
+//
+//				// Get the travel time between last location and here, and add to current time
+//				Log.d(TAG, "Routing between " + lastLocation + " and " + curLocation);
+//				int lastLeg = mRouter.getTravelTimeSec(lastLocation, curLocation) / 60;
+//				currentTime += lastLeg;
+//				int totalTripTravelTime = currentTime - findCorrespondingJob(curJob, schedule).getServiceTime();
+//				
+//				// If the total trip travel time exceeds the max allowable trip travel time,
+//				// fail the feasibility test.
+//				if(totalTripTravelTime > maxTravelTime(curJob.getTrip())) {
+//					result.mFailsOn = curJob;
+//					result.mResultCode = FeasibilityResult.FAIL_MAX_TRAVEL_TIME;
+//					break;
+//				}
+//				// If we've gotten here, actual travel time is less than the max allowable travel time,
+//				// This stop (job) passes the feasibility check. Set the service time and update last location.
+//				lastLocation =  curLocation;
+//				curJob.setServiceTime(currentTime);
+//			}
+//		}
+//		return result;
+//	}
 	
 	private double calculateObjFunc(ArrayList<VehicleScheduleJob> schedule) {
 		double objectiveFunction = 0;
@@ -557,9 +668,10 @@ public class REBUS {
 	// Wrapper class which contains the result of checkFeasibility() function
 	private class FeasibilityResult {
 		
-		public static final int FAIL_CAPACITY = 0;
-		public static final int FAIL_MAX_TRAVEL_TIME = 1;
-		public static final int FAIL_WINDOW = 2;
+		public static final int FAIL_CAPACITY = 0; // Vehicle over capacity
+		public static final int FAIL_MAX_TRAVEL_TIME = 1; // Excessive trip time
+		public static final int FAIL_WINDOW = 2; // Pickup too late
+		public static final int FAIL_EARLY_SERVICE = 4; // Pickup too early
 		public static final int SUCCESS = 3;
 		
 		public VehicleScheduleJob mFailsOn;
