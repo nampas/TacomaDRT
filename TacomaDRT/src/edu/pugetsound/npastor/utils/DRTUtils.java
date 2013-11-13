@@ -1,11 +1,20 @@
 package edu.pugetsound.npastor.utils;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+
+import edu.pugetsound.npastor.TacomaDRTMain;
+import edu.pugetsound.npastor.routing.Vehicle;
 
 public class DRTUtils {
 
+	public final static String TAG = "DRTUtils";
+	
 	/**
 	 * Returns age group code which the specified age falls in
 	 * @param age Age
@@ -76,5 +85,31 @@ public class DRTUtils {
 		DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'_'HH-mm-ss");
 		String dateFormatted = formatter.format(date);
 		return dateFormatted;
+	}
+	
+	public static void writeTxtFile(ArrayList<String> text, String filePrefix) {
+		// Format the simulation start time
+		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mTripGenStartTime);
+		
+		// Get filename and add current time and file extension
+		String filename = TacomaDRTMain.getSimulationDirectory() + filePrefix + dateFormatted + ".txt";
+		Log.info(TAG, "Writing txt file to: " + filename);
+		
+		// Write to file
+		try {
+			FileWriter writer = new FileWriter(filename, false);
+			PrintWriter lineWriter = new PrintWriter(writer);
+			
+			for(String str : text) {
+				// Write to file
+				lineWriter.println(str);
+			}
+			lineWriter.close();
+			writer.close();
+			Log.info(TAG, "  File succesfully writen at:" + filename);
+		} catch (IOException ex) {
+			Log.error(TAG, "Unable to write to file");
+			ex.printStackTrace();
+		}
 	}
 }

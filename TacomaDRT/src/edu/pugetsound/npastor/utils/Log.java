@@ -64,6 +64,7 @@ public class Log {
 	}
 	
 	public static void writeBufferToLogFile() {
+		
 		// Format the simulation start time
 		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mTripGenStartTime);
 		
@@ -80,10 +81,9 @@ public class Log {
 			}
 			lineWriter.close();
 			writer.close();
-//			System.out.println(TAG + " : Log file writen or updated at: " + filename);
 			mMessageBuffer = new String[MSG_BUFFER_LENGTH];
 		} catch (IOException ex) {
-			System.err.println(TAG +  " : Unable to write to file");
+			System.err.println(TAG +  " : Unable to write to log file");
 			ex.printStackTrace();
 		}
 	}

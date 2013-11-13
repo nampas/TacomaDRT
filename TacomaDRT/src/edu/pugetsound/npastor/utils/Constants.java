@@ -21,9 +21,10 @@ public class Constants {
 	public final static String TRIPS_READABLE_PREFIX_TXT = "/trips_readable_";
 	public final static String TRIP_PREFIX_SHP = "/tripgeo_";
 	public final static String LOG_PREFIX_TXT = "/log_";
+	public final static String SCHED_PREFIX_TXT = "/schedules_";
 	
 	// Total trips per day
-	public final static int TOTAL_TRIPS = 50;
+	public final static int TOTAL_TRIPS = 10;
 	
 	// Agency constants
 	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour

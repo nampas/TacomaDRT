@@ -401,41 +401,18 @@ public class TripGenerator {
 	 * The latter is used for generateTripsFromFile()
 	 */
 	private void writeTripsToFile() {
-		// Format the simulation start time
-		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mTripGenStartTime);
 		
-		// Get filename and add current time and file extension
-		String filename = TacomaDRTMain.getSimulationDirectory() + Constants.TRIPS_PREFIX_TXT + dateFormatted + ".txt";
-		String filenameReadable = TacomaDRTMain.getSimulationDirectory() + Constants.TRIPS_READABLE_PREFIX_TXT + dateFormatted + ".txt";
-		Log.info(TAG, "Writing trips to: " + filename);
-		Log.info(TAG, "Writing trips readable to: " + filenameReadable);
-		
-		// Write to 2 files
-		try {
-			FileWriter writer = new FileWriter(filename, false);
-			PrintWriter lineWriter = new PrintWriter(writer);
-			
-			FileWriter readableWriter = new FileWriter(filenameReadable, false);
-			PrintWriter readableLineWriter = new PrintWriter(readableWriter);
-			
-			for(Trip t : mTrips) {
-				// Write to parsable file
-				lineWriter.println(buildParsableTripFileLine(t));
-				
-				// Write readable file
-				String readableLine = t.toString().replace("\n", ""); // Get rid of all line breaks
-				readableLineWriter.println(readableLine);
-			}
-			lineWriter.close();
-			writer.close();
-			readableLineWriter.close();
-			readableWriter.close();
-			Log.info(TAG, "  File succesfully writen at:" + filename);
-			Log.info(TAG, "  File succesfully writen at:" + filenameReadable);
-		} catch (IOException ex) {
-			Log.error(TAG, "Unable to write to file");
-			ex.printStackTrace();
+		// Build text lists
+		ArrayList<String> parsableText = new ArrayList<String>();
+		ArrayList<String> readableText = new ArrayList<String>();
+		for(Trip t : mTrips) {
+			parsableText.add(buildParsableTripFileLine(t));
+			readableText.add(t.toString().replace("\n", "")); // Get rid of all line breaks
 		}
+		
+		// Write to file
+		DRTUtils.writeTxtFile(parsableText, Constants.TRIPS_PREFIX_TXT);
+		DRTUtils.writeTxtFile(readableText, Constants.TRIPS_READABLE_PREFIX_TXT);
 	}
 	
 	/**
