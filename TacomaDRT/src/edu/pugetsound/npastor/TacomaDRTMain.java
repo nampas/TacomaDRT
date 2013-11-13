@@ -73,13 +73,33 @@ public class TacomaDRTMain {
 	
 	private void setSimulationDirectory() {
 		mSimulationDirectory = Constants.SIM_BASE_DIRECTORY + "/sim" + DRTUtils.formatMillis(mTripGenStartTime);
+		// Make base directory
 		boolean result = new File(mSimulationDirectory).mkdirs();
-		if(!result) {
-			Log.error(TAG, "Unable to create simulation base directory at: " + mSimulationDirectory);
-		}
+		if(!result)
+			Log.error(TAG, "Unable to create simulation directory at: " + mSimulationDirectory);
+
+		// Make route shp directory
+		String routeShpDir = mSimulationDirectory + Constants.ROUTE_SHP_DIR;
+		result = new File(routeShpDir).mkdirs();
+		if(!result)
+			Log.error(TAG, "Unable to create route simulation directory at: " + routeShpDir);
+		
+		// Make trip shp directory
+		String tripShpDir = mSimulationDirectory + Constants.TRIP_SHP_DIR;
+		result = new File(tripShpDir).mkdirs();
+		if(!result)
+			Log.error(TAG, "Unable to create trip simulation directory at: " + tripShpDir);
 	}
 	
 	public static String getSimulationDirectory() {
 		return mSimulationDirectory;
 	}
+	
+	public static String getRouteShpSimDirectory() {
+		return getSimulationDirectory() + Constants.ROUTE_SHP_DIR;
+	}
+	
+	public static String getTripShpSimDirectory() {
+		return getSimulationDirectory() + Constants.TRIP_SHP_DIR;
+				}
 }

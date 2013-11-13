@@ -31,7 +31,7 @@ public class Trip {
 		mTripType = -1;
 		mRiderAge = -1;
 		mIsOutbound = true;
-		mIdentifier = hashCode();
+		mIdentifier = id;
 		mEndpointTract1 = TRACT_NOT_SET;
 		mEndpointTract2 = TRACT_NOT_SET;
 		mEndpoint1 = new Point2D.Double();

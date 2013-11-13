@@ -1,17 +1,34 @@
 package edu.pugetsound.npastor.simulation;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.awt.geom.Point2D;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
+
+import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.FeatureCollections;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.geotools.geometry.jts.JTSFactoryFinder;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.FeatureType;
+
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LineString;
+import com.vividsolutions.jts.geom.Point;
 
 import edu.pugetsound.npastor.TacomaDRTMain;
 import edu.pugetsound.npastor.routing.REBUS;
 import edu.pugetsound.npastor.routing.Vehicle;
+import edu.pugetsound.npastor.routing.VehicleScheduleJob;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
+import edu.pugetsound.npastor.utils.ShapefileWriter;
 import edu.pugetsound.npastor.utils.Trip;
 
 public class DRTSimulation {
@@ -158,9 +175,62 @@ public class DRTSimulation {
 	}
 	
 	/**
-	 * Write vehicle schedules to a shapfile
+	 * Write vehicle schedules to a shapefile
 	 */
 	private void writeScheduleShpFile() {
+		// Build feature type and feature collection
+		SimpleFeatureType featureType = buildFeatureType();
+		SimpleFeatureCollection collection = createShpFeatureCollection(featureType);
 		
+		// Format time and create filename
+		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mTripGenStartTime);
+		String filename = TacomaDRTMain.getRouteShpSimDirectory() + Constants.ROUTE_PREFIX_SHP + dateFormatted + ".shp";
+        File shpFile = new File(filename);
+        
+        ShapefileWriter.writeShapefile(featureType, collection, shpFile);
+	}
+	
+	private SimpleFeatureType buildFeatureType() {
+		// Build feature type
+        SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
+        builder.setName("TripRoutes");
+        builder.setCRS(DefaultGeographicCRS.WGS84); // long/lat projection system
+        builder.add("Route", LineString.class); // Geo data
+        builder.add("Vehicle", String.class); // Vehicle identifier
+        
+        final SimpleFeatureType featureType = builder.buildFeatureType();
+        return featureType;
+	}
+	
+	private SimpleFeatureCollection createShpFeatureCollection(SimpleFeatureType featureType) {
+	   // New collection with feature type
+		SimpleFeatureCollection collection = FeatureCollections.newCollection();
+		GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory(null);
+        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
+        
+        // Loop through vehicles
+        for(Vehicle v : mVehiclePlans) {
+        	ArrayList<VehicleScheduleJob> schedule = v.getSchedule();
+        	Coordinate[] coordinates = new Coordinate[schedule.size()-2];
+        	// Add all pickup/dropoff points to the line
+        	for(int i = 1; i < schedule.size()-1; i++) {
+        		VehicleScheduleJob curJob = schedule.get(i);
+        		Point2D loc = null;
+        		if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP)
+        			loc = curJob.getTrip().getFirstEndpoint();
+        		else if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_DROPOFF)
+        			loc = curJob.getTrip().getSecondEndpoint();
+
+        		coordinates[i-1] = new Coordinate(loc.getX(), loc.getY());	
+        	}	        	
+        	LineString line = geometryFactory.createLineString(coordinates);
+        	
+        	// Build the feature
+            featureBuilder.add(line); // Geo data
+            featureBuilder.add(String.valueOf(v.getIdentifier())); // Trip identifier
+            SimpleFeature feature = featureBuilder.buildFeature(null);
+            ((DefaultFeatureCollection)collection).add(feature);			
+        }
+        return collection;
 	}
 }

@@ -43,7 +43,7 @@ public class ShapefileWriter {
 	 * @param collection A collection of feature types
 	 * @param shpFile A file descripter. This specifies name and destination of the file
 	 */
-	public void writeShapefile(SimpleFeatureType featureType, SimpleFeatureCollection collection, File shpFile) {
+	public static void writeShapefile(SimpleFeatureType featureType, SimpleFeatureCollection collection, File shpFile) {
 		
         Log.info(TAG, "Writing trips to shapefile at: " + shpFile.getPath());
         

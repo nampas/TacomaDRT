@@ -505,10 +505,9 @@ public class TripGenerator {
 		
 		// Format time and create filename
 		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mTripGenStartTime);
-		String filename = TacomaDRTMain.getSimulationDirectory() + Constants.TRIP_PREFIX_SHP + dateFormatted + ".shp";
+		String filename = TacomaDRTMain.getTripShpSimDirectory() + Constants.TRIP_PREFIX_SHP + dateFormatted + ".shp";
         File shpFile = new File(filename);
         
-        ShapefileWriter shpWriter = new ShapefileWriter();
-        shpWriter.writeShapefile(featureType, collection, shpFile);
+        ShapefileWriter.writeShapefile(featureType, collection, shpFile);
 	}
 }
