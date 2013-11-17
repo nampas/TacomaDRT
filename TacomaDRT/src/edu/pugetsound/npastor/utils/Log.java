@@ -66,9 +66,7 @@ public class Log {
 	
 	private static String curTimeString() {
 		Date date = new Date(System.currentTimeMillis());
-		DateFormat formatter = new SimpleDateFormat("HH:mm:ss.SSS");
-		String dateFormatted = formatter.format(date);
-		return dateFormatted;
+		return new SimpleDateFormat("HH:mm:ss.SSS").format(date);
 	}
 	
 	public static void writeBufferToLogFile() {

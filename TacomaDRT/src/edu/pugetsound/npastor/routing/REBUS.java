@@ -11,6 +11,7 @@ import edu.pugetsound.npastor.utils.Trip;
 /**
  * An implementation of the REBUS algorithm. This is a heuristic solution to the dial-a-ride problem,
  * developed by Madsen et al. (1995)
+ * 0.0347619x^2 - 0.730952x + 1.64286
  * @author Nathan P
  *
  */
@@ -24,10 +25,8 @@ public class REBUS {
 	// Job cost constants (job difficulty)
 	private static final float WINDOW_C1 = 1.0f;
 	private static final float WINDOW_C2 = 1.0f;
-	private static final float WINDOW_MAX = 30.0f; // minutes
 	private static final float TR_TIME_C1 = 1.0f;
 	private static final float TR_TIME_C2 = 1.0f;
-	private static final float TR_TIME_MAX = 1.0f;
 	private static final float MAX_TRAVEL_COEFF = 2.0f; //Max travel time for a given trip is this coefficient
 														//multiplied by direct travel time
 	

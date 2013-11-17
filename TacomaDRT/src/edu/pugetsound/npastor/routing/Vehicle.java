@@ -12,14 +12,12 @@ public class Vehicle {
 	public static final int VEHICLE_CAPACITY = 20;
 	
 	private int mVehicleId;
-	private int mMPH;
 	private ArrayList<Trip> mPassengers;
 	private ArrayList<VehicleScheduleJob> mSchedule;
 	
 	
 	public Vehicle(int id) {
 		mPassengers = new ArrayList<Trip>();
-		mMPH = Constants.VEHICLE_MPH;
 		mVehicleId = id;
 		initSchedule();
 		
@@ -28,8 +26,8 @@ public class Vehicle {
 	private void initSchedule() {
 		mSchedule = new ArrayList<VehicleScheduleJob>();
 		// Add start and end jobs
-		mSchedule.add(new VehicleScheduleJob(null, Constants.BEGIN_OPERATION_HOUR, 0, VehicleScheduleJob.JOB_TYPE_START));
-		mSchedule.add(new VehicleScheduleJob(null, Constants.END_OPERATION_HOUR, 0, VehicleScheduleJob.JOB_TYPE_END));
+		mSchedule.add(new VehicleScheduleJob(null, Constants.BEGIN_OPERATION_HOUR*60, 0, VehicleScheduleJob.JOB_TYPE_START));
+		mSchedule.add(new VehicleScheduleJob(null, Constants.END_OPERATION_HOUR*60, 0, VehicleScheduleJob.JOB_TYPE_END));
 	}
 	
 	public void addPassenger(Trip t) {
