@@ -8,8 +8,8 @@ import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 
 /**
- * This Runnable class checks the feasibility of scheduling a trip in a vehicle schedule.
- * Because REBUS requires that every trip be evaluated in every vehicle, we can easily parallelize 
+ * This Callable class checks the feasibility of scheduling a trip in a vehicle schedule.
+ * Because REBUS requires that every trip be evaluated in every vehicle, we can parallelize 
  * the process by delegating work related to different vehicles to different worker threads. This
  * class represents one of those threads.
  * @author Nathan P
@@ -33,75 +33,74 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 		mRouter = new Routefinder();
 	}
 
+	/**
+	 * Similar to a Runnable's run(), this method begins thread operations
+	 */
 	public ScheduleResult call() {
-		return evaluateTripInVehicle(mPickupJob, mDropoffJob, mSchedule, mVehiclePlanIndex);
+		return evaluateTripInVehicle();
 	}
 	
 	/**
-	 * Evaluates the given trip (specified as pickup and dropoff events) in the given schedule. This will NOT schedule the jobs.
-	 * @param pickup The trip's pickup job
-	 * @param dropoff The trip's dropoff job
-	 * @param schedule The schedule to evaluate
-	 * @return A ScheduleResult object containing the results of the evaluation. If multiple feasible solution was found, this will
-	 *         contain the solution that disturbs the objective function the least (miminizes mJobCost). If no feasible solution was
+	 * Evaluates this instance's trip (mPickupJob and mDropoffJob) in the given schedule. This will NOT schedule the jobs.
+	 * @return A ScheduleResult object containing the results of the evaluation. If multiple feasible solution were found, this will
+	 *         contain the solution that disturbs the objective function the least (minimizes mJobCost). If no feasible solution was
 	 *         found, mSolutionFound will be set to false
 	 */
-	private ScheduleResult evaluateTripInVehicle(VehicleScheduleJob pickupJob, VehicleScheduleJob dropoffJob, 
-			ArrayList<VehicleScheduleJob> schedule, int vehicleIndex) {
+	private ScheduleResult evaluateTripInVehicle() {
 		
 		// Initialize the result
 		ScheduleResult schedResult = new ScheduleResult();
 		schedResult.mSolutionFound = false;
-		schedResult.mVehicleIndex = vehicleIndex;
+		schedResult.mVehicleIndex = mVehiclePlanIndex;
 		
 		int pickupIndex = 1; //s1 in Madsen's notation
 		int dropoffIndex = 2; //s2 in Madsen's notation
 		
 		// FOLLOWING COMMENTS (except parenthetical comments) ARE MADSEN'S REBUS PSEUDO-CODE
-		// Step 1: Place s1, s2 just after this first stop T0 in the schedule, and update the schedule
-		schedule.add(pickupIndex, pickupJob);
-		schedule.add(dropoffIndex, dropoffJob);
+		// Step 1: Place s1, s2 just after this first stop T0 in the mSchedule, and update the mSchedule
+		mSchedule.add(pickupIndex, mPickupJob);
+		mSchedule.add(dropoffIndex, mDropoffJob);
 		
 		// Step 2: While all insertions have not been evaluated, do
 		boolean isFirstEval = true;
 		outerloop:
-		while(pickupIndex < schedule.size() - 2) {
+		while(pickupIndex < mSchedule.size() - 2) {
 			if(isFirstEval) {
 				isFirstEval = false;
-			//  a) if s2 is before the last stop T1 in the schedule...
-			} else if(schedule.get(dropoffIndex+1).getType() == VehicleScheduleJob.JOB_TYPE_END) {
+			//  a) if s2 is before the last stop T1 in the mSchedule...
+			} else if(mSchedule.get(dropoffIndex+1).getType() == VehicleScheduleJob.JOB_TYPE_END) {
 //				Log.info(TAG, " --- FIRST");
 				// then move s1 one step to the right...
-				schedule.remove(dropoffIndex); // Remove so we don't swap pickup/dropoff order
-				schedule.set(pickupIndex, schedule.get(pickupIndex+1)); // (swap elements, save time!)
+				mSchedule.remove(dropoffIndex); // Remove so we don't swap pickup/dropoff order
+				mSchedule.set(pickupIndex, mSchedule.get(pickupIndex+1)); // (swap elements, save time!)
 				pickupIndex++;
-				schedule.set(pickupIndex, pickupJob);
-				// and place s2 just after s1 and update the schedule. Go to 2(b).
+				mSchedule.set(pickupIndex, mPickupJob);
+				// and place s2 just after s1 and update the mSchedule. Go to 2(b).
 				dropoffIndex = pickupIndex + 1;
-				schedule.add(dropoffIndex, dropoffJob);
+				mSchedule.add(dropoffIndex, mDropoffJob);
 			//     else, move s2 one step to the right
 			} else {
 //				Log.info(TAG, " --- SECOND");
-				schedule.set(dropoffIndex, schedule.get(dropoffIndex+1)); // (swap elements)
+				mSchedule.set(dropoffIndex, mSchedule.get(dropoffIndex+1)); // (swap elements)
 				dropoffIndex++;
-				schedule.set(dropoffIndex, dropoffJob);
+				mSchedule.set(dropoffIndex, mDropoffJob);
 			}
 			
 			// b) Check for feasibility.
 			boolean potentiallyFeasible = true;			
 			while(potentiallyFeasible) {
-				// (ensure this is a valid schedule ordering. Trip related jobs cannot be last schedule)
-				if(dropoffIndex == schedule.size() - 1 || pickupIndex == schedule.size() - 1) {
+				// (ensure this is a valid mSchedule ordering. Trip related jobs cannot be last mSchedule)
+				if(dropoffIndex == mSchedule.size() - 1 || pickupIndex == mSchedule.size() - 1) {
 //					Log.info(TAG, "-------BREAKING ON INDEX TOO HIGH");
 					break;
 				}
-				FeasibilityResult feasResult = checkScheduleFeasibility(schedule);
+				FeasibilityResult feasResult = checkScheduleFeasibility(mSchedule);
 				int feasCode = feasResult.mResultCode;
 				VehicleScheduleJob failsOn = feasResult.mFailsOn; // The job the test failed on
 				//  i. if the insertion is feasible...
 				if(feasCode == FeasibilityResult.SUCCESS) {
 					// then calculate the change in the objective and compare to the previously found insertions
-					double objectiveFunc = calculateObjFunc(schedule);
+					double objectiveFunc = calculateObjFunc(mSchedule);
 //					Log.info(TAG, "success, objective func is " + objectiveFunc);
 					if(objectiveFunc < schedResult.mOptimalScore || schedResult.mSolutionFound == false) {
 						schedResult.mOptimalPickupIndex = pickupIndex;
@@ -110,25 +109,25 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 						schedResult.mSolutionFound = true;
 					}
 //					Log.info(TAG, "-------BREAKING ON SUCCESS");
-					potentiallyFeasible = false; // (No longer potentially feasible, schedule is certainly feasible)
+					potentiallyFeasible = false; // (No longer potentially feasible, mSchedule is certainly feasible)
 				// ii. If the insertion is not feasible, check for the following situations:
 				} else {
 					// A. if the capacity constraints, the maximum travel time or the time window
 					//    related to s2 have been violated...
 					if(feasCode == FeasibilityResult.FAIL_MAX_TRAVEL_TIME && 
-							failsOn.getTrip().getIdentifier() == pickupJob.getTrip().getIdentifier()) {
+							failsOn.getTrip().getIdentifier() == mPickupJob.getTrip().getIdentifier()) {
 //						Log.info(TAG, " --- THIRD");
 						// then move s1 one step to the right...
-						schedule.remove(dropoffIndex); // Remove so we don't swap pickup/dropoff order
-						schedule.set(pickupIndex, schedule.get(pickupIndex+1)); // (swap elements, save time!)
+						mSchedule.remove(dropoffIndex); // Remove so we don't swap pickup/dropoff order
+						mSchedule.set(pickupIndex, mSchedule.get(pickupIndex+1)); // (swap elements, save time!)
 						pickupIndex++;
-						schedule.set(pickupIndex, pickupJob);
-						// and place s2 just after s1 and update the schedule. Go to 2(b).
+						mSchedule.set(pickupIndex, mPickupJob);
+						// and place s2 just after s1 and update the mSchedule. Go to 2(b).
 						dropoffIndex = pickupIndex + 1;
-						schedule.add(dropoffIndex, dropoffJob);
+						mSchedule.add(dropoffIndex, mDropoffJob);
 					// B. if the time window related to s1 is violated then stop
 					} else if(feasCode == FeasibilityResult.FAIL_WINDOW && 
-							failsOn.getTrip().getIdentifier() == pickupJob.getTrip().getIdentifier()) {
+							failsOn.getTrip().getIdentifier() == mPickupJob.getTrip().getIdentifier()) {
 //						Log.info(TAG, "-------BREAKING ON WINDOW");
 						break outerloop;
 					// C. else, go to 2
@@ -232,6 +231,30 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 		return timeMins * Rebus.MAX_TRAVEL_COEFF;
 	}
 	
+	/**
+	 * Finds the corresponding job. Pickup and dropoff jobs for the same trip are considered corresponding.
+	 * @param job Job to find corresponding pair for
+	 * @return The corresponding job
+	 */
+	private VehicleScheduleJob findCorrespondingJob(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> jobs) {
+		//For now, assume this is a pickup/dropoff
+		int keyId = job.getTrip().getIdentifier();
+		VehicleScheduleJob correspondingJob = null;
+		for(VehicleScheduleJob j : jobs) {
+			Trip t = j.getTrip();
+			if(t != null) {
+				if(t.getIdentifier() == keyId && j.getType() != job.getType()) {
+					correspondingJob = j;
+					break;
+				}
+			}
+		}
+		if(correspondingJob == null) 
+			Log.error(TAG, "No corresponding job found for job type " +
+					job.getType() + ", trip " + job.getTrip().getIdentifier());
+		return correspondingJob;
+	}
+	
 	// ********************************************
 	//               LOAD FUNCTIONS
 	//  Load functions estimate the feasibility of 
@@ -285,7 +308,7 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 		//TODO: should this only apply to pickup jobs?
 		if(job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP) {
 			int waitingTime = job.getServiceTime() - job.getStartTime();
-			cost = Rebus.WAIT_C2 * Math.pow(waitingTime, 2) + Rebus.WAIT_C1 * waitingTime;
+			cost = Rebus.WAIT_C2 * (waitingTime * waitingTime) + Rebus.WAIT_C1 * waitingTime;
 		}
 		return cost;
 	}
@@ -299,7 +322,7 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 	private double loadDesiredServiceTimeDeviation(VehicleScheduleJob job) {
 		//TODO: what is deviation?
 		int deviation = job.getServiceTime() - job.getStartTime();
-		double cost = Rebus.DEV_C * Math.pow(deviation, 2);
+		double cost = Rebus.DEV_C * (deviation * deviation);
 		return cost;
 	}
 	
@@ -314,36 +337,15 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 		// Number of seats free
 		int free = Vehicle.VEHICLE_CAPACITY - passengers;
 		
-		double cost = Rebus.CAPACITY_C * Math.pow(free, 2);
+		double cost = Rebus.CAPACITY_C * (free * free);
 		
 		return cost;
 	}
 	
 	/**
-	 * Finds the corresponding job. Pickup and dropoff jobs for the same trip are considered corresponding.
-	 * @param job Job to find corresponding pair for
-	 * @return The corresponding job
+	 * Wrapper class which contains the result of checkFeasibility() function
+	 * @author Nathan P
 	 */
-	private VehicleScheduleJob findCorrespondingJob(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> jobs) {
-		//For now, assume this is a pickup/dropoff
-		int keyId = job.getTrip().getIdentifier();
-		VehicleScheduleJob correspondingJob = null;
-		for(VehicleScheduleJob j : jobs) {
-			Trip t = j.getTrip();
-			if(t != null) {
-				if(t.getIdentifier() == keyId && j.getType() != job.getType()) {
-					correspondingJob = j;
-					break;
-				}
-			}
-		}
-		if(correspondingJob == null) 
-			Log.error(TAG, "No corresponding job found for job type " +
-					job.getType() + ", trip " + job.getTrip().getIdentifier());
-		return correspondingJob;
-	}
-	
-	// Wrapper class which contains the result of checkFeasibility() function
 	public class FeasibilityResult {
 		
 		public static final int FAIL_CAPACITY = 0; // Vehicle over capacity

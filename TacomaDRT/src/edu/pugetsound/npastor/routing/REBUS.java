@@ -26,7 +26,7 @@ public class Rebus {
 	
 	public static final String TAG = "REBUS";
 	
-	private static final int NUM_SCHEDULE_THREADS = 5;
+	private static final int NUM_SCHEDULE_THREADS = 4;
 
 	// *****************************************
 	//         REBUS function constants
@@ -130,13 +130,13 @@ public class Rebus {
 			for(int i = 0; i < plan.size(); i++) {
 				Vehicle v = plan.get(i);
 				
-				// Build new worker threads. Copy schedules: we don't want to modify existing schedule
+				// Build new worker threads and copy schedules and jobs. We don't want to modify existing schedule
 				ArrayList<VehicleScheduleJob> existingSchedule = v.getSchedule();
 				ArrayList<VehicleScheduleJob> scheduleCopy  = new ArrayList<VehicleScheduleJob>();
 				for(int j = 0; j < existingSchedule.size(); j++) {
 					scheduleCopy.add(existingSchedule.get(j).clone());
 				}
-				threadTasks.add(new RebusScheduleTask(i, scheduleCopy, pickupJob, dropoffJob));
+				threadTasks.add(new RebusScheduleTask(i, scheduleCopy, pickupJob.clone(), dropoffJob.clone()));
 			}
 			
 			// Execute all threads and wait
@@ -148,7 +148,7 @@ public class Rebus {
 				e.printStackTrace();
 				System.exit(1);
 			}
-
+			
 			// Examine all scheduling results, and find the most optimal
 			for(Future<ScheduleResult> f : threadResults) {
 				ScheduleResult curResult = null;
