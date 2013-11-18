@@ -28,7 +28,7 @@ public class Log {
 	 * @param message Info message
 	 */
 	public static void info(String tag, String message) {
-		String msg = curTimeString() + " : " + tag + " : " + message;
+		String msg = curTimeString() + ": " + tag + ": " + message;
 		System.out.println(msg);
 		addMsgToBuffer(msg);	
 	}
@@ -50,7 +50,7 @@ public class Log {
 	 * @param message Error message
 	 */
 	public static void error(String tag, String message) {
-		String msg = curTimeString() + " : ERROR: " + tag + " : " + message;
+		String msg = curTimeString() + ": ERROR: " + tag + ": " + message;
 		System.err.println(msg);
 		addMsgToBuffer(msg);
 	}

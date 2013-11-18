@@ -1,8 +1,10 @@
 package edu.pugetsound.npastor.routing;
 
-import java.util.ArrayList;
-
-// Wrapper class which contains the result of evaluateTripInSchedule() function
+/**
+ * Wrapper class which contains the result of a RebusScheduleTask
+ * @author Nathan P
+ *
+ */
 public class ScheduleResult {
 	public int mVehicleIndex;
 	public boolean mSolutionFound;
@@ -10,7 +12,9 @@ public class ScheduleResult {
 	public int mOptimalPickupIndex;
 	public int mOptimalDropoffIndex;
 	
-	public ScheduleResult() {
-		mOptimalScore = 100000;
+	public ScheduleResult(int vehiclePlanIndex) {
+		mVehicleIndex = vehiclePlanIndex;
+		mSolutionFound = false;
+		mOptimalScore = 0;
 	}
 }

@@ -39,7 +39,7 @@ public class DRTSimulation {
 	
 	ArrayList<Trip> mTrips;
 	PriorityQueue<SimEvent> mEventQueue;
-	ArrayList<Vehicle> mVehiclePlans;
+	Vehicle[] mVehiclePlans;
 	Rebus mRebus;
 	
 	ArrayList<Trip> mRejectedTrips;
@@ -50,7 +50,7 @@ public class DRTSimulation {
 		mTotalTrips = trips.size();
 		mEventQueue = new PriorityQueue<SimEvent>();
 		mRebus = new Rebus();
-		mVehiclePlans = new ArrayList<Vehicle>();
+		mVehiclePlans = new Vehicle[0];
 		mRejectedTrips = new ArrayList<Trip>();
 	}
 	
@@ -117,9 +117,10 @@ public class DRTSimulation {
 	}
 	
 	private void generateVehicles(int numVehicles) {
-		Log.info(TAG, "Generating " + numVehicles + " vehicles");	
+		Log.info(TAG, "Generating " + numVehicles + " vehicles");
+		mVehiclePlans = new Vehicle[numVehicles];
 		for(int i = 0; i < numVehicles; i++) {
-			mVehiclePlans.add(new Vehicle(i+1));
+			mVehiclePlans[i] = new Vehicle(i+1);
 		}
 	}
 	
@@ -219,7 +220,7 @@ public class DRTSimulation {
 	 */
 	private void appendTripVehicleTxtFile() {
 		ArrayList<String> text = new ArrayList<String>(1);
-		text.add(NUM_VEHICLES_FILE_LBL + " " + mVehiclePlans.size());
+		text.add(NUM_VEHICLES_FILE_LBL + " " + mVehiclePlans.length);
 		DRTUtils.writeTxtFile(text, Constants.TRIPS_VEHICLES_PREFIX_TXT);
 	}
 	

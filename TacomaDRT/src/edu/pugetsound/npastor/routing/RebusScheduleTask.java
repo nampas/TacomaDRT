@@ -8,12 +8,12 @@ import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 
 /**
- * This Callable class checks the feasibility of scheduling a trip in a vehicle schedule.
- * Because REBUS requires that every trip be evaluated in every vehicle, we can parallelize 
- * the process by delegating work related to different vehicles to different worker threads. This
- * class represents one of those threads.
- * @author Nathan P
- *
+ * This Callable class checks the feasibility of scheduling a trip in a vehicle schedule, using the 
+ * REBUS algorithm. Because REBUS requires that every trip be evaluated in every vehicle, we can 
+ * parallelize the process by delegating work related to different vehicles to different worker 
+ * threads. This class represents one of those threads.
+ * 
+ * @author Nathan Pastor
  */
 public class RebusScheduleTask implements Callable<ScheduleResult> {
 	
@@ -49,14 +49,12 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 	private ScheduleResult evaluateTripInVehicle() {
 		
 		// Initialize the result
-		ScheduleResult schedResult = new ScheduleResult();
-		schedResult.mSolutionFound = false;
-		schedResult.mVehicleIndex = mVehiclePlanIndex;
+		ScheduleResult schedResult = new ScheduleResult(mVehiclePlanIndex);
 		
 		int pickupIndex = 1; //s1 in Madsen's notation
 		int dropoffIndex = 2; //s2 in Madsen's notation
 		
-		// FOLLOWING COMMENTS (except parenthetical comments) ARE MADSEN'S REBUS PSEUDO-CODE
+		// FOLLOWING COMMENTS (except those in parenthesis) ARE MADSEN'S REBUS PSEUDO-CODE
 		// Step 1: Place s1, s2 just after this first stop T0 in the mSchedule, and update the mSchedule
 		mSchedule.add(pickupIndex, mPickupJob);
 		mSchedule.add(dropoffIndex, mDropoffJob);
@@ -122,7 +120,7 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 						mSchedule.set(pickupIndex, mSchedule.get(pickupIndex+1)); // (swap elements, save time!)
 						pickupIndex++;
 						mSchedule.set(pickupIndex, mPickupJob);
-						// and place s2 just after s1 and update the mSchedule. Go to 2(b).
+						// and place s2 just after s1 and update the schedule. Go to 2(b).
 						dropoffIndex = pickupIndex + 1;
 						mSchedule.add(dropoffIndex, mDropoffJob);
 					// B. if the time window related to s1 is violated then stop
@@ -147,7 +145,8 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 	 * any stop is not satisfied, if the maximum travel time for any trip is exceeded, or if the vehicle capacity
 	 * is exceeded at any point along its route. Otherwise, it will succeed.
 	 * @param schedule The schedule for which to check feasibility
-	 * @return The job that the feasibility check fails on, null if schedule passes feasibility
+	 * @return A FeasibilityResult object containing the result code (mResultCode). In the case of a failure, this
+	 *         result also includes the job (mFailsOn) that the result code applies to. 
 	 */
 	private FeasibilityResult checkScheduleFeasibility(ArrayList<VehicleScheduleJob> schedule) {
 		Rebus.updateServiceTimes(schedule, mRouter);

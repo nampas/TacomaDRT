@@ -3,7 +3,6 @@ package edu.pugetsound.npastor.routing;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.ExecutionException;
@@ -11,22 +10,32 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 
 /**
- * An implementation of the REBUS algorithm. This is a heuristic solution to the dial-a-ride problem,
- * developed by Madsen et al. (1995)
+ * A parallelized implementation of the REBUS algorithm. This is a heuristic solution to the dial-a-ride problem,
+ * developed by Madsen et al. (1995). It uses a two-step insertion technique, outlined below.
+ * 
+ *   A brief REBUS outline:
+ *   1) Queue all jobs according to a difficulty cost
+ *   2) Consume the job queue. For each job in each vehicle schedule, do:
+ *      2a) Insert job into schedule in every legitimate permutation (e.g, no dropffs before pickups)
+ *          For each permutation, do:
+ *          2aa) Determine insertion feasibility by assessing if any constraints have been violated
+ *          2bb) If no constraints have been violated, calculate this schedule's objective function
+ *               Lower objective function scores are more desirable.
+ *      2b) If one or more feasible insertions have been found, chose the insertion with the smallest
+ *          objective function scores. Otherwise, reject the trip as unschedulable
+ *     
  * Efficiency? 0.0347619x^2 - 0.730952x + 1.64286
- * @author Nathan P
- *
+ * @author Nathan Pastor
  */
 public class Rebus {
 	
-	public static final String TAG = "REBUS";
+	public static final String TAG = "Rebus";
 	
-	private static final int NUM_SCHEDULE_THREADS = 4;
+	private static final int NUM_SCHEDULER_THREADS = 4;
 
 	// *****************************************
 	//         REBUS function constants
@@ -55,7 +64,7 @@ public class Rebus {
 	public Rebus() {
 		mJobQueue = new PriorityQueue<REBUSJob>();
 		mTotalJobsHandled = 0;
-		mScheduleExecutor = Executors.newFixedThreadPool(NUM_SCHEDULE_THREADS);
+		mScheduleExecutor = Executors.newFixedThreadPool(NUM_SCHEDULER_THREADS);
 		mRouter = new Routefinder();
 	}
 	
@@ -84,7 +93,7 @@ public class Rebus {
 	 * @param plan The existing route scheduling
 	 * @result A list of trips which REBUS was not able to schedule
 	 */
-	public ArrayList<Trip> scheduleQueuedJobs(ArrayList<Vehicle> plan) {
+	public ArrayList<Trip> scheduleQueuedJobs(Vehicle[] plan) {
 		Log.info(TAG, "*************************************");
 		Log.info(TAG, "       Scheduling " + mJobQueue.size() + " job(s)");
 		ArrayList<Trip> rejectedTrips = new ArrayList<Trip>();
@@ -107,7 +116,7 @@ public class Rebus {
 	 * @param plan The existing vehicle plans
 	 * @result true if job was successfully placed in a schedule, false if otherwise
 	 */
-	private boolean scheduleJob(REBUSJob job, ArrayList<Vehicle> plan) {
+	private boolean scheduleJob(REBUSJob job, Vehicle[] plan) {
 		boolean scheduleSuccessful = false;
 		if(job.getType() == REBUSJob.JOB_NEW_REQUEST) {
 			Trip t = job.getTrip();
@@ -127,8 +136,8 @@ public class Rebus {
 			
 			// Job must be evaluated in every vehicle.
 			// Prepare threads to execute in parallel
-			for(int i = 0; i < plan.size(); i++) {
-				Vehicle v = plan.get(i);
+			for(int i = 0; i < plan.length; i++) {
+				Vehicle v = plan[i];
 				
 				// Build new worker threads and copy schedules and jobs. We don't want to modify existing schedule
 				ArrayList<VehicleScheduleJob> existingSchedule = v.getSchedule();
@@ -140,6 +149,7 @@ public class Rebus {
 			}
 			
 			// Execute all threads and wait
+			// TODO: faster to run threads as they're built?
 			List<Future<ScheduleResult>> threadResults = null;
 			try {
 				threadResults = mScheduleExecutor.invokeAll(threadTasks);
@@ -171,7 +181,7 @@ public class Rebus {
 			
 			if(optimalScheduling != null) {
 				// Do the scheduling if a feasible result has been found
-				Vehicle optimalVehicle = plan.get(optimalScheduling.mVehicleIndex);
+				Vehicle optimalVehicle = plan[optimalScheduling.mVehicleIndex];
 				ArrayList<VehicleScheduleJob> optimalSchedule = optimalVehicle.getSchedule();
 				optimalSchedule.add(optimalScheduling.mOptimalPickupIndex, pickupJob);
 				optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
@@ -309,10 +319,10 @@ public class Rebus {
 			int compareVal;
 			double result = mJobCost - REBUSJob.getCost();
 			
-			// We could run in to round down errors if we just return the cost difference
+			// We could run in to round-down errors if we just return the cost difference
 			// e.g 0.4d -> 0 if returned as an int
-			if (result < 0) compareVal = -1;
-			else if(result > 0) compareVal = 1;
+			if (result < 0) compareVal = 1;
+			else if(result > 0) compareVal = -1;
 			else compareVal = 0;
 			
 			return compareVal;
