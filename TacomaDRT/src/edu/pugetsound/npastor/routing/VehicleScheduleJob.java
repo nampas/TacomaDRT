@@ -32,16 +32,6 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		mPlannedServiceTime = startTime;
 	}
 	
-	
-	/**
-	 * Every VehicleScheduleJob can contain one reference to another VehicleScheduleJob. 
-	 * This is useful for linking pickup and dropoff jobs of the same trip
-	 * @param job The job to link
-	 */
-//	public void setCorrespondingJob(VehicleScheduleJob job) {
-//		mCorrespondingJob = job;
-//	}
-	
 	public void setServiceTime(int serviceTime) {
 		mPlannedServiceTime = serviceTime;
 	}

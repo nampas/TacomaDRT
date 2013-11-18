@@ -1,8 +1,6 @@
 package edu.pugetsound.npastor.routing;
 
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.Callable;
 
 import edu.pugetsound.npastor.utils.Constants;
@@ -53,64 +51,57 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 		
 		// Initialize the result
 		ScheduleResult schedResult = new ScheduleResult();
-		schedResult.mSchedule = schedule;
 		schedResult.mSolutionFound = false;
 		schedResult.mVehicleIndex = vehicleIndex;
-		
-		// Copy the list so we don't mess it up
-		ArrayList<VehicleScheduleJob> scheduleCopy  = new ArrayList<VehicleScheduleJob>();
-		for(int i = 0; i < schedule.size(); i++) {
-			scheduleCopy.add(schedule.get(i).clone());
-		}
 		
 		int pickupIndex = 1; //s1 in Madsen's notation
 		int dropoffIndex = 2; //s2 in Madsen's notation
 		
 		// FOLLOWING COMMENTS (except parenthetical comments) ARE MADSEN'S REBUS PSEUDO-CODE
 		// Step 1: Place s1, s2 just after this first stop T0 in the schedule, and update the schedule
-		scheduleCopy.add(pickupIndex, pickupJob);
-		scheduleCopy.add(dropoffIndex, dropoffJob);
+		schedule.add(pickupIndex, pickupJob);
+		schedule.add(dropoffIndex, dropoffJob);
 		
 		// Step 2: While all insertions have not been evaluated, do
 		boolean isFirstEval = true;
 		outerloop:
-		while(pickupIndex < scheduleCopy.size() - 2) {
+		while(pickupIndex < schedule.size() - 2) {
 			if(isFirstEval) {
 				isFirstEval = false;
 			//  a) if s2 is before the last stop T1 in the schedule...
-			} else if(scheduleCopy.get(dropoffIndex+1).getType() == VehicleScheduleJob.JOB_TYPE_END) {
+			} else if(schedule.get(dropoffIndex+1).getType() == VehicleScheduleJob.JOB_TYPE_END) {
 //				Log.info(TAG, " --- FIRST");
 				// then move s1 one step to the right...
-				scheduleCopy.remove(dropoffIndex); // Remove so we don't swap pickup/dropoff order
-				scheduleCopy.set(pickupIndex, scheduleCopy.get(pickupIndex+1)); // (swap elements, save time!)
+				schedule.remove(dropoffIndex); // Remove so we don't swap pickup/dropoff order
+				schedule.set(pickupIndex, schedule.get(pickupIndex+1)); // (swap elements, save time!)
 				pickupIndex++;
-				scheduleCopy.set(pickupIndex, pickupJob);
+				schedule.set(pickupIndex, pickupJob);
 				// and place s2 just after s1 and update the schedule. Go to 2(b).
 				dropoffIndex = pickupIndex + 1;
-				scheduleCopy.add(dropoffIndex, dropoffJob);
+				schedule.add(dropoffIndex, dropoffJob);
 			//     else, move s2 one step to the right
 			} else {
 //				Log.info(TAG, " --- SECOND");
-				scheduleCopy.set(dropoffIndex, scheduleCopy.get(dropoffIndex+1)); // (swap elements)
+				schedule.set(dropoffIndex, schedule.get(dropoffIndex+1)); // (swap elements)
 				dropoffIndex++;
-				scheduleCopy.set(dropoffIndex, dropoffJob);
+				schedule.set(dropoffIndex, dropoffJob);
 			}
 			
 			// b) Check for feasibility.
 			boolean potentiallyFeasible = true;			
 			while(potentiallyFeasible) {
 				// (ensure this is a valid schedule ordering. Trip related jobs cannot be last schedule)
-				if(dropoffIndex == scheduleCopy.size() - 1 || pickupIndex == scheduleCopy.size() - 1) {
+				if(dropoffIndex == schedule.size() - 1 || pickupIndex == schedule.size() - 1) {
 //					Log.info(TAG, "-------BREAKING ON INDEX TOO HIGH");
 					break;
 				}
-				FeasibilityResult feasResult = checkScheduleFeasibility(scheduleCopy);
+				FeasibilityResult feasResult = checkScheduleFeasibility(schedule);
 				int feasCode = feasResult.mResultCode;
 				VehicleScheduleJob failsOn = feasResult.mFailsOn; // The job the test failed on
 				//  i. if the insertion is feasible...
 				if(feasCode == FeasibilityResult.SUCCESS) {
 					// then calculate the change in the objective and compare to the previously found insertions
-					double objectiveFunc = calculateObjFunc(scheduleCopy);
+					double objectiveFunc = calculateObjFunc(schedule);
 //					Log.info(TAG, "success, objective func is " + objectiveFunc);
 					if(objectiveFunc < schedResult.mOptimalScore || schedResult.mSolutionFound == false) {
 						schedResult.mOptimalPickupIndex = pickupIndex;
@@ -128,13 +119,13 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 							failsOn.getTrip().getIdentifier() == pickupJob.getTrip().getIdentifier()) {
 //						Log.info(TAG, " --- THIRD");
 						// then move s1 one step to the right...
-						scheduleCopy.remove(dropoffIndex); // Remove so we don't swap pickup/dropoff order
-						scheduleCopy.set(pickupIndex, scheduleCopy.get(pickupIndex+1)); // (swap elements, save time!)
+						schedule.remove(dropoffIndex); // Remove so we don't swap pickup/dropoff order
+						schedule.set(pickupIndex, schedule.get(pickupIndex+1)); // (swap elements, save time!)
 						pickupIndex++;
-						scheduleCopy.set(pickupIndex, pickupJob);
+						schedule.set(pickupIndex, pickupJob);
 						// and place s2 just after s1 and update the schedule. Go to 2(b).
 						dropoffIndex = pickupIndex + 1;
-						scheduleCopy.add(dropoffIndex, dropoffJob);
+						schedule.add(dropoffIndex, dropoffJob);
 					// B. if the time window related to s1 is violated then stop
 					} else if(feasCode == FeasibilityResult.FAIL_WINDOW && 
 							failsOn.getTrip().getIdentifier() == pickupJob.getTrip().getIdentifier()) {

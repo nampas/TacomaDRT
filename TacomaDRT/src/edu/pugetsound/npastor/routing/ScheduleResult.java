@@ -6,7 +6,6 @@ import java.util.ArrayList;
 public class ScheduleResult {
 	public int mVehicleIndex;
 	public boolean mSolutionFound;
-	public ArrayList<VehicleScheduleJob> mSchedule;
 	public double mOptimalScore;
 	public int mOptimalPickupIndex;
 	public int mOptimalDropoffIndex;

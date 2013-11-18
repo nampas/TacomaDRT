@@ -18,7 +18,7 @@ import edu.pugetsound.npastor.utils.Trip;
 /**
  * An implementation of the REBUS algorithm. This is a heuristic solution to the dial-a-ride problem,
  * developed by Madsen et al. (1995)
- * 0.0347619x^2 - 0.730952x + 1.64286
+ * Efficiency? 0.0347619x^2 - 0.730952x + 1.64286
  * @author Nathan P
  *
  */
@@ -122,14 +122,21 @@ public class Rebus {
 			// Keep track of the most optimal insertion of the job
 			ScheduleResult optimalScheduling = null;
 			
-			// This will map thread IDs to their results
+			// A list of thread tasks, which will be invoked simultaneously 
 			Collection<RebusScheduleTask> threadTasks = new ArrayList<RebusScheduleTask>();
 			
-			// Evaluate the job in every vehicle. This is parallelized.
+			// Job must be evaluated in every vehicle.
+			// Prepare threads to execute in parallel
 			for(int i = 0; i < plan.size(); i++) {
 				Vehicle v = plan.get(i);
-				// Build new worker threads
-				threadTasks.add(new RebusScheduleTask(i, v.getSchedule(), pickupJob, dropoffJob));
+				
+				// Build new worker threads. Copy schedules: we don't want to modify existing schedule
+				ArrayList<VehicleScheduleJob> existingSchedule = v.getSchedule();
+				ArrayList<VehicleScheduleJob> scheduleCopy  = new ArrayList<VehicleScheduleJob>();
+				for(int j = 0; j < existingSchedule.size(); j++) {
+					scheduleCopy.add(existingSchedule.get(j).clone());
+				}
+				threadTasks.add(new RebusScheduleTask(i, scheduleCopy, pickupJob, dropoffJob));
 			}
 			
 			// Execute all threads and wait
@@ -137,36 +144,39 @@ public class Rebus {
 			try {
 				threadResults = mScheduleExecutor.invokeAll(threadTasks);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				Log.error(TAG, "MAIN THREAD INTERRUPTED WHILE WAITING FOR SCHEDULE TAKS TO COMPLETE");
 				e.printStackTrace();
 				System.exit(1);
 			}
 
-			// Find the most optimal scheduling
+			// Examine all scheduling results, and find the most optimal
 			for(Future<ScheduleResult> f : threadResults) {
 				ScheduleResult curResult = null;
 				try {
 					curResult = f.get();
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
+					Log.error(TAG, "MAIN THREAD INTERRUPTED WHILE EVALUATING SCHEDULE RESULTS");
 					e.printStackTrace();
+					System.exit(1);
 				} catch (ExecutionException e) {
-					// TODO Auto-generated catch block
+					Log.error(TAG, "MAIN THREAD INTERRUPTED WHILE EVALUATING SCHEDULE RESULTS");
 					e.printStackTrace();
+					System.exit(1);
 				}
-				if(curResult.mSolutionFound && optimalScheduling == null ||
-						curResult.mSolutionFound && curResult.mOptimalScore < optimalScheduling.mOptimalScore)
-					optimalScheduling = curResult;
+				if(curResult.mSolutionFound) {
+					if(optimalScheduling == null || curResult.mOptimalScore < optimalScheduling.mOptimalScore)
+						optimalScheduling = curResult;
+				}
 			}
 			
 			if(optimalScheduling != null) {
 				// Do the scheduling if a feasible result has been found
-				ArrayList<VehicleScheduleJob> optimalSchedule = optimalScheduling.mSchedule;
+				Vehicle optimalVehicle = plan.get(optimalScheduling.mVehicleIndex);
+				ArrayList<VehicleScheduleJob> optimalSchedule = optimalVehicle.getSchedule();
 				optimalSchedule.add(optimalScheduling.mOptimalPickupIndex, pickupJob);
 				optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
 				updateServiceTimes(optimalSchedule, mRouter);
-				Vehicle optimalVehicle = plan.get(optimalScheduling.mVehicleIndex);
+				
 				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
 							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
 							". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex);
@@ -299,8 +309,10 @@ public class Rebus {
 			int compareVal;
 			double result = mJobCost - REBUSJob.getCost();
 			
-			if (result < 0) compareVal = 1;
-			else if(result > 0) compareVal = -1;
+			// We could run in to round down errors if we just return the cost difference
+			// e.g 0.4d -> 0 if returned as an int
+			if (result < 0) compareVal = -1;
+			else if(result > 0) compareVal = 1;
 			else compareVal = 0;
 			
 			return compareVal;
