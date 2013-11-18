@@ -2,8 +2,10 @@ package edu.pugetsound.npastor.simulation;
 
 import java.awt.geom.Point2D;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
+import java.util.Scanner;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
@@ -33,6 +35,8 @@ public class DRTSimulation {
 	
 	public static final String TAG = "DRTSimulation";
 	
+	private static final String NUM_VEHICLES_FILE_LBL = "num_vehicles";
+	
 	ArrayList<Trip> mTrips;
 	PriorityQueue<SimEvent> mEventQueue;
 	ArrayList<Vehicle> mVehiclePlans;
@@ -50,10 +54,42 @@ public class DRTSimulation {
 		mRejectedTrips = new ArrayList<Trip>();
 	}
 	
-	public void runSimulation() {
+	/**
+	 * Runs the DRT simulation, but parses the specified file to determine
+	 * how many vehicles to model
+	 */
+	public void runSimulation(String filePath) {
 		
-		Log.info(TAG, "Running simulation");		
-		generateVehicles();
+		Log.info(TAG, "Running simulation");			
+		// If a file path is specified, parse out the number of vehicles to generate
+		// Otherwise, use the value defined in Constants
+		int vehicleQuantity = 0;
+		if(filePath == null) {
+			vehicleQuantity = Constants.VEHCILE_QUANTITY;
+		} else {
+			File file = new File(filePath);
+			Log.info(TAG, "Loading number of vehicles from: " + file.getPath());
+	
+			try {
+				Scanner scanner = new Scanner(file);
+				while (scanner.hasNextLine()) {
+					String[] tokens = scanner.nextLine().split(" ");
+					if(tokens[0].equals(NUM_VEHICLES_FILE_LBL)) {
+						vehicleQuantity = Integer.valueOf(tokens[1]);
+						break;
+					}						
+				}
+				scanner.close();
+				if(vehicleQuantity == 0)
+					throw new IllegalArgumentException("Vehicle quantity not specified in file at " + filePath);				
+			} catch(FileNotFoundException ex) {
+				Log.error(TAG, "Unable to find trip file at: " + filePath);
+				ex.printStackTrace();
+				System.exit(1);
+			}
+		}
+	
+		generateVehicles(vehicleQuantity);
 		enqueueTripRequestEvents();
 		doAPrioriScheduling();
 		
@@ -73,9 +109,16 @@ public class DRTSimulation {
 		onSimulationFinished();
 	}
 	
-	private void generateVehicles() {
-		Log.info(TAG, "Generating " + Constants.VEHCILE_QUANTITY + " vehicles");	
-		for(int i = 0; i < Constants.VEHCILE_QUANTITY; i++) {
+	/**
+	 * Runs the DRT simulation.
+	 */
+	public void runSimulation() {
+		runSimulation(null);
+	}
+	
+	private void generateVehicles(int numVehicles) {
+		Log.info(TAG, "Generating " + numVehicles + " vehicles");	
+		for(int i = 0; i < numVehicles; i++) {
 			mVehiclePlans.add(new Vehicle(i+1));
 		}
 	}
@@ -112,6 +155,7 @@ public class DRTSimulation {
 				". Rejection rate: " + rejectionRate + "%");
 		
 		// Write vehicle routing files
+		appendTripVehicleTxtFile();
 		writeScheduleTxtFile();
 		writeScheduleShpFile();
 	}
@@ -168,6 +212,15 @@ public class DRTSimulation {
 		
 		// Write file
 		DRTUtils.writeTxtFile(text, Constants.SCHED_PREFIX_TXT);
+	}
+	
+	/**
+	 * Append the vehicle quantity to the trip/vehicle file
+	 */
+	private void appendTripVehicleTxtFile() {
+		ArrayList<String> text = new ArrayList<String>(1);
+		text.add(NUM_VEHICLES_FILE_LBL + " " + mVehiclePlans.size());
+		DRTUtils.writeTxtFile(text, Constants.TRIPS_VEHICLES_PREFIX_TXT);
 	}
 	
 	private void writeStatisticsTxtFile() {

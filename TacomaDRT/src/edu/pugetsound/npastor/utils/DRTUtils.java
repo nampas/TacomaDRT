@@ -97,7 +97,7 @@ public class DRTUtils {
 		
 		// Write to file
 		try {
-			FileWriter writer = new FileWriter(filename, false);
+			FileWriter writer = new FileWriter(filename, true);
 			PrintWriter lineWriter = new PrintWriter(writer);
 			
 			for(String str : text) {

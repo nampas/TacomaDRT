@@ -32,25 +32,28 @@ public class TacomaDRTMain {
 		mTripGen = new TripGenerator();
 	}
 	
-	public void runModel(String tripFilePath) {
+	public void runModel(String tripVehicleFilePath) {
 		mTripGenStartTime = System.currentTimeMillis();
 		setSimulationDirectory();
 		
 		// Run the trip generation
-		if(tripFilePath == null)
+		if(tripVehicleFilePath == null)
 			mTripGen.generateTrips(); 
 		else 
-			mTripGen.generateTripsFromFile(tripFilePath);
+			mTripGen.generateTripsFromFile(tripVehicleFilePath);
 		
 		// Print trip gen time
 		long tripGenEndTime = System.currentTimeMillis();
-		String message = "Trip generation complete: " + Constants.TOTAL_TRIPS + " trips in ";
+		String message = "Trip generation complete: " + mTripGen.getTrips().size() + " trips in ";
 		printTime(message, tripGenEndTime, mTripGenStartTime);
 		
 		// Run the simulation!
 		mSimStartTime = System.currentTimeMillis();
 		mSimulation = new DRTSimulation(mTripGen.getTrips());
-		mSimulation.runSimulation();
+		if(tripVehicleFilePath == null)
+			mSimulation.runSimulation();
+		else 
+			mSimulation.runSimulation(tripVehicleFilePath);
 		
 		// Print simulation time
 		long simEndTime = System.currentTimeMillis();

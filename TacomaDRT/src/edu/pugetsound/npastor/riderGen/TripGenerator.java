@@ -45,6 +45,8 @@ public class TripGenerator {
 
 	public final static String TAG = "TripGenerator";
 	
+	private final static String TRIP_FILE_LBL = "Trip";
+	
 	private ArrayList<Trip> mTrips;
 	private RiderChars mRiderChars;
 	private PCAgeEmployment mPCData;
@@ -96,17 +98,19 @@ public class TripGenerator {
 			Scanner scanner = new Scanner(file);
 			while (scanner.hasNextLine()) {
 				String[] tokens = scanner.nextLine().split(" ");
+				if(!tokens[0].equals(TRIP_FILE_LBL))
+					continue;
 				// Build the trip from the file line
-				Trip newTrip = new Trip(Integer.valueOf(tokens[0]));
-				newTrip.setTripType(Integer.valueOf(tokens[1]));
-				newTrip.setRiderAge(Integer.valueOf(tokens[2]));
-				newTrip.setDirection(tokens[3].equals("1") ? true : false);
-				newTrip.setFirstTract(tokens[4]);
-				newTrip.setFirstEndpoint(new Point2D.Double(Double.valueOf(tokens[5]), Double.valueOf(tokens[6])));
-				newTrip.setSecondTract(tokens[7]);
-				newTrip.setSecondEndpoint(new Point2D.Double(Double.valueOf(tokens[8]), Double.valueOf(tokens[9])));
-				newTrip.setPickupTime(Integer.valueOf(tokens[10]));
-				newTrip.setCalInTime(Integer.valueOf(tokens[11]));
+				Trip newTrip = new Trip(Integer.valueOf(tokens[1]));
+				newTrip.setTripType(Integer.valueOf(tokens[2]));
+				newTrip.setRiderAge(Integer.valueOf(tokens[3]));
+				newTrip.setDirection(tokens[4].equals("1") ? true : false);
+				newTrip.setFirstTract(tokens[5]);
+				newTrip.setFirstEndpoint(new Point2D.Double(Double.valueOf(tokens[6]), Double.valueOf(tokens[7])));
+				newTrip.setSecondTract(tokens[8]);
+				newTrip.setSecondEndpoint(new Point2D.Double(Double.valueOf(tokens[9]), Double.valueOf(tokens[10])));
+				newTrip.setPickupTime(Integer.valueOf(tokens[11]));
+				newTrip.setCalInTime(Integer.valueOf(tokens[12]));
 				
 				// And add trip to list
 				mTrips.add(newTrip);
@@ -411,7 +415,7 @@ public class TripGenerator {
 		}
 		
 		// Write to file
-		DRTUtils.writeTxtFile(parsableText, Constants.TRIPS_PREFIX_TXT);
+		DRTUtils.writeTxtFile(parsableText, Constants.TRIPS_VEHICLES_PREFIX_TXT);
 		DRTUtils.writeTxtFile(readableText, Constants.TRIPS_READABLE_PREFIX_TXT);
 	}
 	
@@ -422,7 +426,8 @@ public class TripGenerator {
 	 */
 	private String buildParsableTripFileLine(Trip t) {
 		String sp = " ";
-		String line = t.getIdentifier() + sp + 
+		String line = TRIP_FILE_LBL + sp +
+				t.getIdentifier() + sp + 
 				t.getTripType() + sp +
 				t.getRiderAge() + sp + 
 				(t.getDirection() ? "1" : "0") + sp +
@@ -437,6 +442,10 @@ public class TripGenerator {
 		return line;
 	}
 	
+	/**
+	 * Builds a shapefile feature type for trips. Each trip endpoint is represented as a point.
+	 * @return A point feature type
+	 */
 	private SimpleFeatureType buildFeatureType() {
 		// Build feature type
         SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
