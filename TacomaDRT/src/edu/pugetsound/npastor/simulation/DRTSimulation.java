@@ -20,7 +20,7 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineString;
 
 import edu.pugetsound.npastor.TacomaDRTMain;
-import edu.pugetsound.npastor.routing.REBUS;
+import edu.pugetsound.npastor.routing.Rebus;
 import edu.pugetsound.npastor.routing.Vehicle;
 import edu.pugetsound.npastor.routing.VehicleScheduleJob;
 import edu.pugetsound.npastor.utils.Constants;
@@ -36,7 +36,7 @@ public class DRTSimulation {
 	ArrayList<Trip> mTrips;
 	PriorityQueue<SimEvent> mEventQueue;
 	ArrayList<Vehicle> mVehiclePlans;
-	REBUS mREBUS;
+	Rebus mRebus;
 	
 	ArrayList<Trip> mRejectedTrips;
 	private int mTotalTrips;
@@ -45,7 +45,7 @@ public class DRTSimulation {
 		mTrips = trips;
 		mTotalTrips = trips.size();
 		mEventQueue = new PriorityQueue<SimEvent>();
-		mREBUS = new REBUS();
+		mRebus = new Rebus();
 		mVehiclePlans = new ArrayList<Vehicle>();
 		mRejectedTrips = new ArrayList<Trip>();
 	}
@@ -100,6 +100,8 @@ public class DRTSimulation {
 		Log.info(TAG, "       SIMULATION COMPLETE");
 		Log.info(TAG, "*************************************");
 		
+		mRebus.onRebusFinished();
+		
 		for(Vehicle v : mVehiclePlans) {
 			Log.info(TAG, v.scheduleToString());
 		}
@@ -133,9 +135,9 @@ public class DRTSimulation {
 				}
 			}
 		}
-		Log.info(TAG, mREBUS.getQueueSize() + " static jobs queued");
+		Log.info(TAG, mRebus.getQueueSize() + " static jobs queued");
 		// Now that all static trips are enqueued we can schedule them.
-		mRejectedTrips.addAll(mREBUS.scheduleQueuedJobs(mVehiclePlans));
+		mRejectedTrips.addAll(mRebus.scheduleQueuedJobs(mVehiclePlans));
 	}
 	
 	/**
@@ -146,9 +148,9 @@ public class DRTSimulation {
 	private void consumeNewRequestEvent(SimEvent event, boolean schedule) {
 		Trip t = event.getTrip();
 		// Enqueue the trip in the REBUS queue, and schedule if requested
-		mREBUS.enqueueTripRequest(t);
+		mRebus.enqueueTripRequest(t);
 		if(schedule) {
-			mRejectedTrips.addAll(mREBUS.scheduleQueuedJobs(mVehiclePlans));
+			mRejectedTrips.addAll(mRebus.scheduleQueuedJobs(mVehiclePlans));
 		}
 	}
 	
