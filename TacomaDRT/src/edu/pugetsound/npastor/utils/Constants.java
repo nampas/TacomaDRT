@@ -27,7 +27,7 @@ public class Constants {
 	public final static String ROUTE_PREFIX_SHP = "/routes_";
 	
 	// Total trips per day
-	public final static int TOTAL_TRIPS = 40;
+	public final static int TOTAL_TRIPS = 60;
 	
 	// Agency constants
 	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour
