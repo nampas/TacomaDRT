@@ -1,6 +1,5 @@
 package edu.pugetsound.npastor.routing;
 
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -9,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
@@ -127,9 +127,9 @@ public class Rebus {
 			// Split the trip into pickup and dropoff jobs
 			int durationMins = (int)t.getRoute().getTime() / 60;
 			VehicleScheduleJob pickupJob = new VehicleScheduleJob(t, t.getFirstEndpoint(),
-					t.getPickupTime(), durationMins, VehicleScheduleJob.JOB_TYPE_PICKUP);
+					t.getPickupTime(), durationMins, VehicleScheduleJob.JOB_TYPE_PICKUP, plan.length);
 			VehicleScheduleJob dropoffJob = new VehicleScheduleJob(t, t.getSecondEndpoint(),
-					t.getPickupTime() + durationMins, 0, VehicleScheduleJob.JOB_TYPE_DROPOFF);
+					t.getPickupTime() + durationMins, 0, VehicleScheduleJob.JOB_TYPE_DROPOFF, plan.length);
 			
 			// Keep track of the most optimal insertion of the job
 			ScheduleResult optimalScheduling = null;
@@ -146,9 +146,9 @@ public class Rebus {
 				ArrayList<VehicleScheduleJob> existingSchedule = v.getSchedule();
 				ArrayList<VehicleScheduleJob> scheduleCopy  = new ArrayList<VehicleScheduleJob>();
 				for(int j = 0; j < existingSchedule.size(); j++) {
-					scheduleCopy.add(existingSchedule.get(j).clone());
+					scheduleCopy.add(existingSchedule.get(j));
 				}
-				threadTasks.add(new RebusScheduleTask(i, scheduleCopy, pickupJob.clone(), dropoffJob.clone()));
+				threadTasks.add(new RebusScheduleTask(i, scheduleCopy, pickupJob, dropoffJob));
 			}
 			
 			// Execute all threads and wait
@@ -188,11 +188,11 @@ public class Rebus {
 				ArrayList<VehicleScheduleJob> optimalSchedule = optimalVehicle.getSchedule();
 				optimalSchedule.add(optimalScheduling.mOptimalPickupIndex, pickupJob);
 				optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
-				updateServiceTimes(optimalSchedule, mRouter);
+				updateServiceTimes(optimalSchedule, mRouter, -1);
 				
-				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
-							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
-							". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex);
+//				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
+//							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
+//							". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex);
 				
 //				String str = "New schedule is:\n";
 //				for(int i = 0; i < optimalSchedule.size(); i++) {
@@ -216,7 +216,7 @@ public class Rebus {
 	 * @param lastIndexModified the index of the last modification. THIS ASSUMES THAT ONLY ONE MODIFICATION HAS HAPPENED SINCE
 	 *        THE LAST CALL TO THIS METHOD ON THE SPECIFIED SCHEDULE
 	 */
-	public static void updateServiceTimes(ArrayList<VehicleScheduleJob> schedule, Routefinder router) {
+	public static void updateServiceTimes(ArrayList<VehicleScheduleJob> schedule, Routefinder router, int vehicleNum) {
 		int curTime = -1;
 		for(int i = 0; i < schedule.size(); i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
@@ -228,13 +228,12 @@ public class Rebus {
 			// Initialize time
 			if(curTime < 0) {
 				curTime = curJob.getStartTime();
-				curJob.setServiceTime(curTime);
 			} else {
 				// Check if the distance between this job and the previous is already known
 				// If so, update the current time from the previously known value
 				VehicleScheduleJob lastJob = schedule.get(i-1);
-				if(lastJob.nextJobIs(curJob)) {
-					curTime += lastJob.getTimeToNextJob();
+				if(lastJob.nextJobIs(vehicleNum, curJob)) {
+					curTime += lastJob.getTimeToNextJob(vehicleNum);
 				
 				// If the distance was not known, route between the previous job and this,
 				// and update the previous job 
@@ -244,8 +243,8 @@ public class Rebus {
 					curTime += lastLegMins;
 					
 					// Update the previous job
-					lastJob.setNextJob(curJob);
-					lastJob.setTimeToNextJob(lastLegMins);
+					lastJob.setNextJob(vehicleNum, curJob);
+					lastJob.setTimeToNextJob(vehicleNum, lastLegMins);
 				}
 				// Don't service pickup jobs early
 				if(curTime < curJob.getStartTime()) {
@@ -253,7 +252,10 @@ public class Rebus {
 				}
 			}
 			// Finally, we can update the current job's service time
-			curJob.setServiceTime(curTime);
+			if(vehicleNum == -1)
+				curJob.setServiceTime(curTime);
+			else 
+				curJob.setWorkingServiceTime(vehicleNum, curTime);
 		}
 	}
 	

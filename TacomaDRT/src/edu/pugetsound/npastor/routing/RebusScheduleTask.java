@@ -95,7 +95,7 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 //					Log.info(TAG, "-------BREAKING ON INDEX TOO HIGH");
 					break;
 				}
-				FeasibilityResult feasResult = checkScheduleFeasibility(mSchedule);
+				FeasibilityResult feasResult = checkScheduleFeasibility(mSchedule, mVehiclePlanIndex);
 				int feasCode = feasResult.mResultCode;
 				VehicleScheduleJob failsOn = feasResult.mFailsOn; // The job the test failed on
 				//  i. if the insertion is feasible...
@@ -151,8 +151,8 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 	 * @return A FeasibilityResult object containing the result code (mResultCode). In the case of a failure, this
 	 *         result also includes the job (mFailsOn) that the result code applies to. 
 	 */
-	private FeasibilityResult checkScheduleFeasibility(ArrayList<VehicleScheduleJob> schedule) {
-		Rebus.updateServiceTimes(schedule, mRouter);
+	private FeasibilityResult checkScheduleFeasibility(ArrayList<VehicleScheduleJob> schedule, int vehicleNum) {
+		Rebus.updateServiceTimes(schedule, mRouter, vehicleNum);
 //		String str = "Checking schedule feasibility: \n";
 //		for(int i = 0; i < schedule.size(); i++) {
 //			VehicleScheduleJob job = schedule.get(i);
@@ -177,7 +177,7 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 				}
 				// Check if pickup window is satisfied
 				// If current time exceeds the max pickup window, fail the feasibility test
-				if(curJob.getServiceTime() > curJob.getStartTime() + Constants.PICKUP_SERVICE_WINDOW) {
+				if(curJob.getWorkingServiceTime(mVehiclePlanIndex) > curJob.getStartTime() + Constants.PICKUP_SERVICE_WINDOW) {
 					result.mFailsOn = curJob;
 					result.mResultCode = FeasibilityResult.FAIL_WINDOW;
 					break;
@@ -187,7 +187,7 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 				numPassengers--;
 
 				// Get the travel time between last location and here
-				int totalTripTravelTime = curJob.getServiceTime() - findCorrespondingJob(curJob, schedule).getServiceTime();
+				int totalTripTravelTime = curJob.getWorkingServiceTime(mVehiclePlanIndex) - findCorrespondingJob(curJob, schedule).getWorkingServiceTime(mVehiclePlanIndex);
 				
 				// If the total trip travel time exceeds the max allowable trip travel time,
 				// fail the feasibility test.
@@ -291,10 +291,10 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 		int minDrivingTimeMins = (int)t.getRoute().getTime() / 60;
 		int waitingTime;
 		if(job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP)
-			waitingTime = job.getServiceTime() - job.getStartTime();
+			waitingTime = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
 		else {
 			VehicleScheduleJob corJob = findCorrespondingJob(job, schedule);
-			waitingTime = corJob.getServiceTime() - corJob.getStartTime();
+			waitingTime = corJob.getWorkingServiceTime(mVehiclePlanIndex) - corJob.getStartTime();
 		}
 		
 		// TODO: WHAT IS HANDLING TIME???? (0.0)
@@ -313,7 +313,7 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 		double cost = 0;
 		//TODO: should this only apply to pickup jobs?
 		if(job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP) {
-			int waitingTime = job.getServiceTime() - job.getStartTime();
+			int waitingTime = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
 			cost = Rebus.WAIT_C2 * (waitingTime * waitingTime) + Rebus.WAIT_C1 * waitingTime;
 		}
 		return cost;
@@ -327,7 +327,7 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 	 */
 	private double loadDesiredServiceTimeDeviation(VehicleScheduleJob job) {
 		//TODO: what is deviation?
-		int deviation = job.getServiceTime() - job.getStartTime();
+		int deviation = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
 		double cost = Rebus.DEV_C * (deviation * deviation);
 		return cost;
 	}
