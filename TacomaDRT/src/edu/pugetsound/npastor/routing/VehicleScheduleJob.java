@@ -1,5 +1,7 @@
 package edu.pugetsound.npastor.routing;
 
+import java.awt.geom.Point2D;
+
 import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
@@ -13,27 +15,65 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 
 	public static final String TAG = "VehicleScheduleJob";
 	
+	public static final int TIME_TO_NEXT_UNKNOWN = -1;
+	
 	public static final int JOB_TYPE_PICKUP = 0;
 	public static final int JOB_TYPE_DROPOFF = 1;
 	public static final int JOB_TYPE_START = 2;
 	public static final int JOB_TYPE_END = 3;
 	
-	int mType;
-	Trip mTrip;
-	int mStartTime;
-	int mDuration;
-	int mPlannedServiceTime;
+	private int mType;
+	private Trip mTrip;
+	private int mStartTime;
+	private int mDuration;
+	private int mPlannedServiceTime;
+	private Point2D mLocation;
 	
-	public VehicleScheduleJob(Trip trip, int startTime, int duration, int type) {
+	// For keeping track of next job
+	private int mTimeToNextJob;
+	private VehicleScheduleJob mNextJob;
+	
+	public VehicleScheduleJob(Trip trip, Point2D location, int startTime, int duration, int type) {
 		mTrip = trip;
 		mStartTime = startTime;
 		mDuration = duration;
 		mType = type;
 		mPlannedServiceTime = startTime;
+		mLocation = location;
+		mTimeToNextJob = TIME_TO_NEXT_UNKNOWN;
+		mNextJob = null;
+	}
+	
+	public void setNextJob(VehicleScheduleJob nextJob) {
+		mNextJob = nextJob;
 	}
 	
 	public void setServiceTime(int serviceTime) {
 		mPlannedServiceTime = serviceTime;
+	}
+	
+	public void setTimeToNextJob(int timeMins) {
+		mTimeToNextJob = timeMins;
+	}
+	
+	/**
+	 * Checks if the specified job is the next job that this instance is aware of
+	 * @param toCheck Job to check 
+	 * @return True if toCheck is equal to the next job that this is aware of, false otherwise
+	 */
+	public boolean nextJobIs(VehicleScheduleJob toCheck) {
+		if(mNextJob == null) 
+			return false;
+		else
+			return toCheck.equals(mNextJob);
+	}
+	
+	public Point2D getLocation() {
+		return mLocation;
+	}
+	
+	public int getTimeToNextJob() {
+		return mTimeToNextJob;
 	}
 	
 	public int getType() {
@@ -69,7 +109,20 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		
 		return returnVal;
 	}
-	
+//	
+//	@Override
+//	public boolean equals(Object obj) {
+//		VehicleScheduleJob job = (VehicleScheduleJob) obj;
+//		int jobType = job.getType();
+//		
+//		if(jobType == VehicleScheduleJob.JOB_TYPE_START || jobType == VehicleScheduleJob.JOB_TYPE_END)
+//			return false;
+//		else {
+//			Trip jobTrip = job.getTrip();
+//			if(jobTrip.getIdentifier() == )
+//		}
+//	}
+//	
 	public String toString() {
 		String str = "Job type: " + mType + ". Start time: " + DRTUtils.minsToHrMin(mStartTime) +
 						". Service time: " + DRTUtils.minsToHrMin(mPlannedServiceTime);
@@ -85,7 +138,7 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		int startTime = mStartTime;
 		int duration = mDuration;
 		int serviceTime = mPlannedServiceTime;
-		VehicleScheduleJob clone = new VehicleScheduleJob(mTrip, startTime, duration, type);
+		VehicleScheduleJob clone = new VehicleScheduleJob(mTrip, mLocation, startTime, duration, type);
 		clone.setServiceTime(serviceTime);
 		return clone;
 		

@@ -35,7 +35,7 @@ public class Rebus {
 	
 	public static final String TAG = "Rebus";
 	
-	private static final int NUM_SCHEDULER_THREADS = 4;
+	private static final int NUM_SCHEDULER_THREADS = 1;
 
 	// *****************************************
 	//         REBUS function constants
@@ -120,13 +120,16 @@ public class Rebus {
 		boolean scheduleSuccessful = false;
 		if(job.getType() == REBUSJob.JOB_NEW_REQUEST) {
 			Trip t = job.getTrip();
+			if(mTotalJobsHandled % 50 == 0)
 			Log.info(TAG, "On trip " + mTotalJobsHandled + ". Scheduling " + t.toString().replace("\n", "") +
 					   "\n           Cost: " + job.getCost());
 			
 			// Split the trip into pickup and dropoff jobs
 			int durationMins = (int)t.getRoute().getTime() / 60;
-			VehicleScheduleJob pickupJob = new VehicleScheduleJob(t, t.getPickupTime(), durationMins, VehicleScheduleJob.JOB_TYPE_PICKUP);
-			VehicleScheduleJob dropoffJob = new VehicleScheduleJob(t, t.getPickupTime() + durationMins, 0, VehicleScheduleJob.JOB_TYPE_DROPOFF);
+			VehicleScheduleJob pickupJob = new VehicleScheduleJob(t, t.getFirstEndpoint(),
+					t.getPickupTime(), durationMins, VehicleScheduleJob.JOB_TYPE_PICKUP);
+			VehicleScheduleJob dropoffJob = new VehicleScheduleJob(t, t.getSecondEndpoint(),
+					t.getPickupTime() + durationMins, 0, VehicleScheduleJob.JOB_TYPE_DROPOFF);
 			
 			// Keep track of the most optimal insertion of the job
 			ScheduleResult optimalScheduling = null;
@@ -190,6 +193,14 @@ public class Rebus {
 				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
 							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
 							". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex);
+				
+//				String str = "New schedule is:\n";
+//				for(int i = 0; i < optimalSchedule.size(); i++) {
+//					VehicleScheduleJob printJob = optimalSchedule.get(i);
+//					str += printJob.toString();
+//					if(i != optimalSchedule.size()-1) str += "\n";
+//				}
+//				Log.d(TAG, str);
 				scheduleSuccessful = true;
 			}
 		} else {
@@ -201,11 +212,12 @@ public class Rebus {
 	/**
 	 * TODO: Do this during scheduling so that we don't have to pathfind for the same routes twice
 	 * Updates the service times of each job in this schedule
-	 * @param schedule
+	 * @param schedule The schedule to update times for
+	 * @param lastIndexModified the index of the last modification. THIS ASSUMES THAT ONLY ONE MODIFICATION HAS HAPPENED SINCE
+	 *        THE LAST CALL TO THIS METHOD ON THE SPECIFIED SCHEDULE
 	 */
 	public static void updateServiceTimes(ArrayList<VehicleScheduleJob> schedule, Routefinder router) {
-		int curTime = 0;
-		Point2D lastLoc = null;
+		int curTime = -1;
 		for(int i = 0; i < schedule.size(); i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
 			int type = curJob.getType();
@@ -213,32 +225,35 @@ public class Rebus {
 			if(type == VehicleScheduleJob.JOB_TYPE_START || type == VehicleScheduleJob.JOB_TYPE_END)
 				continue;
 	
-			// Initialize location and time
-			if(lastLoc == null) {
-				lastLoc = curJob.getTrip().getFirstEndpoint();
+			// Initialize time
+			if(curTime < 0) {
 				curTime = curJob.getStartTime();
 				curJob.setServiceTime(curTime);
 			} else {
-				// Set current location to pickup or dropoff coordinates
-				Point2D curLoc;
-				if(type == VehicleScheduleJob.JOB_TYPE_PICKUP)
-					curLoc = curJob.getTrip().getFirstEndpoint();
-				else 
-					curLoc = curJob.getTrip().getSecondEndpoint();
-	
-				// Calculate time to travel from last point to here
-				int lastLegSec = router.getTravelTimeSec(lastLoc, curLoc);
-				// Add to current time, and set job's schedule service time
-				curTime += lastLegSec / 60;
+				// Check if the distance between this job and the previous is already known
+				// If so, update the current time from the previously known value
+				VehicleScheduleJob lastJob = schedule.get(i-1);
+				if(lastJob.nextJobIs(curJob)) {
+					curTime += lastJob.getTimeToNextJob();
+				
+				// If the distance was not known, route between the previous job and this,
+				// and update the previous job 
+				} else {
+					// Calculate time to travel from last point to here, and update current time
+					int lastLegMins = router.getTravelTimeSec(lastJob.getLocation(), curJob.getLocation()) / 60;
+					curTime += lastLegMins;
+					
+					// Update the previous job
+					lastJob.setNextJob(curJob);
+					lastJob.setTimeToNextJob(lastLegMins);
+				}
 				// Don't service pickup jobs early
 				if(curTime < curJob.getStartTime()) {
 					curTime = curJob.getStartTime();
 				}
-				curJob.setServiceTime(curTime);
-
-				// Update location
-				lastLoc = curLoc;
 			}
+			// Finally, we can update the current job's service time
+			curJob.setServiceTime(curTime);
 		}
 	}
 	

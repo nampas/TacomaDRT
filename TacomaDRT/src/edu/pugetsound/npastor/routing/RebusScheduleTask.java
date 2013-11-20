@@ -54,6 +54,9 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 		int pickupIndex = 1; //s1 in Madsen's notation
 		int dropoffIndex = 2; //s2 in Madsen's notation
 		
+		// By tracking the last index modified, we can optimize schedule update by only pathfinding on new paths
+		int lastIndexModified = 1;
+		
 		// FOLLOWING COMMENTS (except those in parenthesis) ARE MADSEN'S REBUS PSEUDO-CODE
 		// Step 1: Place s1, s2 just after this first stop T0 in the mSchedule, and update the mSchedule
 		mSchedule.add(pickupIndex, mPickupJob);
@@ -150,10 +153,13 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 	 */
 	private FeasibilityResult checkScheduleFeasibility(ArrayList<VehicleScheduleJob> schedule) {
 		Rebus.updateServiceTimes(schedule, mRouter);
+//		String str = "Checking schedule feasibility: \n";
 //		for(int i = 0; i < schedule.size(); i++) {
 //			VehicleScheduleJob job = schedule.get(i);
-//			Log.info(TAG, job.toString());
+//			str += job.toString();
+//			if(i != schedule.size()-1) str += "\n";
 //		}
+//		Log.d(TAG, str);
 		
 		int numPassengers = 0;
 		FeasibilityResult result = new FeasibilityResult();
@@ -192,6 +198,7 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 				}
 			}
 		}
+		Log.d(TAG, "Returning feasibility code: " + result.mResultCode + "\n");
 		return result;
 	}
 	
