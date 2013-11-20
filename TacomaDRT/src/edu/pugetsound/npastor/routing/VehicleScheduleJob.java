@@ -109,20 +109,25 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		
 		return returnVal;
 	}
-//	
-//	@Override
-//	public boolean equals(Object obj) {
-//		VehicleScheduleJob job = (VehicleScheduleJob) obj;
-//		int jobType = job.getType();
-//		
-//		if(jobType == VehicleScheduleJob.JOB_TYPE_START || jobType == VehicleScheduleJob.JOB_TYPE_END)
-//			return false;
-//		else {
-//			Trip jobTrip = job.getTrip();
-//			if(jobTrip.getIdentifier() == )
-//		}
-//	}
-//	
+	
+	@Override
+	public boolean equals(Object obj) {
+		VehicleScheduleJob compareJob = (VehicleScheduleJob) obj;
+		int compareType = compareJob.getType();
+		
+		if(compareType == VehicleScheduleJob.JOB_TYPE_START || compareType == VehicleScheduleJob.JOB_TYPE_END ||
+				mType == VehicleScheduleJob.JOB_TYPE_START || mType == VehicleScheduleJob.JOB_TYPE_END)
+			return false;
+		else {
+			Trip compareTrip = compareJob.getTrip();
+			if(compareTrip.getIdentifier() == mTrip.getIdentifier() &&
+					compareType == mType)
+				return true;
+			else
+				return false;
+		}
+	}
+	
 	public String toString() {
 		String str = "Job type: " + mType + ". Start time: " + DRTUtils.minsToHrMin(mStartTime) +
 						". Service time: " + DRTUtils.minsToHrMin(mPlannedServiceTime);
@@ -138,8 +143,11 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		int startTime = mStartTime;
 		int duration = mDuration;
 		int serviceTime = mPlannedServiceTime;
+		int timeToNextJob = mTimeToNextJob;
 		VehicleScheduleJob clone = new VehicleScheduleJob(mTrip, mLocation, startTime, duration, type);
 		clone.setServiceTime(serviceTime);
+		clone.setNextJob(mNextJob);
+		clone.setTimeToNextJob(timeToNextJob);
 		return clone;
 		
 	}

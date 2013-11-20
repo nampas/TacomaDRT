@@ -35,7 +35,7 @@ public class Rebus {
 	
 	public static final String TAG = "Rebus";
 	
-	private static final int NUM_SCHEDULER_THREADS = 1;
+	private static final int NUM_SCHEDULER_THREADS = 8;
 
 	// *****************************************
 	//         REBUS function constants
