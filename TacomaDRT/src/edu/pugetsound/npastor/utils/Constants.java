@@ -6,7 +6,7 @@ package edu.pugetsound.npastor.utils;
  */
 public class Constants {
 	
-	public final static boolean DEBUG = true;
+	public final static boolean DEBUG = false;
 	
 	// Filenames and paths
 	public final static String RIDER_CHARS_FILE = "files/RiderCharacteristics.txt"; //Contains APTA rider age and trip type distributions, trip distributions across day and more
@@ -27,7 +27,7 @@ public class Constants {
 	public final static String ROUTE_PREFIX_SHP = "/routes_";
 	
 	// Total trips per day
-	public final static int TOTAL_TRIPS = 40;
+	public final static int TOTAL_TRIPS = 10;
 	
 	// Agency constants
 	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour
@@ -35,7 +35,7 @@ public class Constants {
 	public final static int BEGIN_REQUEST_WINDOW = 0; // Time when riders can begin to make requests
 	public final static int END_REQUEST_WINDOW = 18; // Cutoff time for making request known to agency for the day
 	public final static int CALL_REQUEST_BUFFER_MINS = 30; // Minimum buffer between call in time and request time
-	public final static int VEHCILE_QUANTITY = 4; //TODO: determine how many, to be pinned to fixed route cost
+	public final static int VEHCILE_QUANTITY = 1; //TODO: determine how many, to be pinned to fixed route cost
 	public final static int PICKUP_SERVICE_WINDOW = 30; //Max difference between actual pickup time and requested pickup time
 	
 	// Dynamic requests

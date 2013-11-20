@@ -1,12 +1,16 @@
 package edu.pugetsound.npastor;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 
 import edu.pugetsound.npastor.riderGen.TripGenerator;
+import edu.pugetsound.npastor.routing.VehicleScheduleJob;
+import edu.pugetsound.npastor.routing.VehicleScheduleNode;
 import edu.pugetsound.npastor.simulation.DRTSimulation;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
+import edu.pugetsound.npastor.utils.Trip;
 
 public class TacomaDRTMain {
 
@@ -22,6 +26,7 @@ public class TacomaDRTMain {
 	
 	public static void main(String[] args) {
 		TacomaDRTMain drt = new TacomaDRTMain();
+//		drt.testNodes();
 		String tripFile = null;
 		if(args.length > 0)
 			tripFile = args[0];
@@ -104,5 +109,18 @@ public class TacomaDRTMain {
 	
 	public static String getTripShpSimDirectory() {
 		return getSimulationDirectory() + Constants.TRIP_SHP_DIR;
+	}
+	
+	public void testNodes() {
+		VehicleScheduleNode firstNode = new VehicleScheduleNode(new VehicleScheduleJob(new Trip(1), new Point2D.Double(1, 2), 5, 5), null, null);
+		VehicleScheduleNode secondNode = new VehicleScheduleNode(new VehicleScheduleJob(new Trip(2), new Point2D.Double(1, 2), 5, 5), null, null);
+		VehicleScheduleNode.setNext(firstNode, secondNode);
+		VehicleScheduleNode thirdNode = new VehicleScheduleNode(new VehicleScheduleJob(new Trip(3), new Point2D.Double(1, 2), 5, 5), null, null);
+		VehicleScheduleNode.setNext(firstNode, thirdNode);
+		VehicleScheduleNode fourthNode = new VehicleScheduleNode(new VehicleScheduleJob(new Trip(4), new Point2D.Double(1, 2), 5, 5), null, null);
+		VehicleScheduleNode.setPrevious(firstNode, fourthNode);
+		System.out.println(VehicleScheduleNode.getListString(fourthNode));
+		VehicleScheduleNode.remove(thirdNode);
+		System.out.println(VehicleScheduleNode.getListString(fourthNode));
 	}
 }

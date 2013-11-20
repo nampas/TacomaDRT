@@ -3,6 +3,8 @@ package edu.pugetsound.npastor.routing;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.ExecutionException;
@@ -74,7 +76,7 @@ public class Rebus {
 	
 	
 	public void onRebusFinished() {
-		mScheduleExecutor.shutdown();
+		mScheduleExecutor.shutdownNow();
 	}
 	
 	/**
@@ -125,8 +127,10 @@ public class Rebus {
 			
 			// Split the trip into pickup and dropoff jobs
 			int durationMins = (int)t.getRoute().getTime() / 60;
-			VehicleScheduleJob pickupJob = new VehicleScheduleJob(t, t.getPickupTime(), durationMins, VehicleScheduleJob.JOB_TYPE_PICKUP);
-			VehicleScheduleJob dropoffJob = new VehicleScheduleJob(t, t.getPickupTime() + durationMins, 0, VehicleScheduleJob.JOB_TYPE_DROPOFF);
+			VehicleScheduleJob pickupJob = new VehicleScheduleJob(t, t.getFirstEndpoint(), 
+					t.getPickupTime(), VehicleScheduleJob.JOB_TYPE_PICKUP);
+			VehicleScheduleJob dropoffJob = new VehicleScheduleJob(t, t.getSecondEndpoint(), 
+					t.getPickupTime() + durationMins, VehicleScheduleJob.JOB_TYPE_DROPOFF);
 			
 			// Keep track of the most optimal insertion of the job
 			ScheduleResult optimalScheduling = null;
@@ -140,12 +144,18 @@ public class Rebus {
 				Vehicle v = plan[i];
 				
 				// Build new worker threads and copy schedules and jobs. We don't want to modify existing schedule
-				ArrayList<VehicleScheduleJob> existingSchedule = v.getSchedule();
-				ArrayList<VehicleScheduleJob> scheduleCopy  = new ArrayList<VehicleScheduleJob>();
-				for(int j = 0; j < existingSchedule.size(); j++) {
-					scheduleCopy.add(existingSchedule.get(j).clone());
+				VehicleScheduleNode existingScheduleNode = v.getScheduleRoot();
+				VehicleScheduleNode scheduleCopyRoot  = new VehicleScheduleNode(existingScheduleNode.getJob().clone(), null, null);
+				VehicleScheduleNode scheduleCopyCurNode = scheduleCopyRoot;
+				while(existingScheduleNode.hasNext()) {
+					existingScheduleNode = existingScheduleNode.getNext();
+					// Build new node and insert after the last node
+					VehicleScheduleNode newNode = new VehicleScheduleNode(existingScheduleNode.getJob().clone(), scheduleCopyCurNode, null);
+					VehicleScheduleNode.setNext(scheduleCopyCurNode, newNode);
+					// Update the last node
+					scheduleCopyCurNode = newNode;
 				}
-				threadTasks.add(new RebusScheduleTask(i, scheduleCopy, pickupJob.clone(), dropoffJob.clone()));
+				threadTasks.add(new RebusScheduleTask(i, scheduleCopyRoot, pickupJob.clone(), dropoffJob.clone()));
 			}
 			
 			// Execute all threads and wait
@@ -154,10 +164,12 @@ public class Rebus {
 			try {
 				threadResults = mScheduleExecutor.invokeAll(threadTasks);
 			} catch (InterruptedException e) {
-				Log.error(TAG, "MAIN THREAD INTERRUPTED WHILE WAITING FOR SCHEDULE TAKS TO COMPLETE");
+				Log.error(TAG, "Main thread interrupted while waiting for schedule tasks to complete");
 				e.printStackTrace();
 				System.exit(1);
 			}
+			
+			Log.d(TAG, "Worker threads have finished evaluating trip " + t.getIdentifier() + ", evaluating their results");
 			
 			// Examine all scheduling results, and find the most optimal
 			for(Future<ScheduleResult> f : threadResults) {
@@ -165,11 +177,11 @@ public class Rebus {
 				try {
 					curResult = f.get();
 				} catch (InterruptedException e) {
-					Log.error(TAG, "MAIN THREAD INTERRUPTED WHILE EVALUATING SCHEDULE RESULTS");
+					Log.error(TAG, "Main thread interrupted while evaluating schedule results");
 					e.printStackTrace();
 					System.exit(1);
 				} catch (ExecutionException e) {
-					Log.error(TAG, "MAIN THREAD INTERRUPTED WHILE EVALUATING SCHEDULE RESULTS");
+					Log.error(TAG, "Main thread interrupted while evaluating schedule results");
 					e.printStackTrace();
 					System.exit(1);
 				}
@@ -179,17 +191,24 @@ public class Rebus {
 				}
 			}
 			
+			// Do the scheduling if a feasible result has been found
 			if(optimalScheduling != null) {
-				// Do the scheduling if a feasible result has been found
+				// Build pickup and dropoff nodes
+				VehicleScheduleNode pickupNode = new VehicleScheduleNode(pickupJob, null, null);
+				VehicleScheduleNode dropoffNode = new VehicleScheduleNode(dropoffJob, null, null);
+				
+				// Add to schedule
 				Vehicle optimalVehicle = plan[optimalScheduling.mVehicleIndex];
-				ArrayList<VehicleScheduleJob> optimalSchedule = optimalVehicle.getSchedule();
-				optimalSchedule.add(optimalScheduling.mOptimalPickupIndex, pickupJob);
-				optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
-				updateServiceTimes(optimalSchedule, mRouter);
+				VehicleScheduleNode optimalScheduleRoot = optimalVehicle.getScheduleRoot();
+				
+				VehicleScheduleNode.put(optimalScheduleRoot, pickupNode, optimalScheduling.mOptimalPickupIndex);
+				VehicleScheduleNode.put(optimalScheduleRoot, dropoffNode, optimalScheduling.mOptimalDropoffIndex);
+				updateServiceTimes(optimalScheduleRoot, mRouter);
 				
 				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
 							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
 							". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex);
+				Log.d(TAG, "New schedule: \n" + VehicleScheduleNode.getListString(optimalScheduleRoot));
 				scheduleSuccessful = true;
 			}
 		} else {
@@ -201,45 +220,67 @@ public class Rebus {
 	/**
 	 * TODO: Do this during scheduling so that we don't have to pathfind for the same routes twice
 	 * Updates the service times of each job in this schedule
-	 * @param schedule
+	 * @param schedule Schedule to update times for
+	 * @param startIndex The index to the start the updates at
+	 * @param router A Routefinder instance so this method can find travel time between different jobs
 	 */
-	public static void updateServiceTimes(ArrayList<VehicleScheduleJob> schedule, Routefinder router) {
+	public static void updateServiceTimes(VehicleScheduleNode scheduleRoot, Routefinder router) {
 		int curTime = 0;
 		Point2D lastLoc = null;
-		for(int i = 0; i < schedule.size(); i++) {
-			VehicleScheduleJob curJob = schedule.get(i);
+		VehicleScheduleNode curNode = scheduleRoot;
+		while(curNode.hasNext()) {
+			curNode = curNode.getNext();
+			VehicleScheduleJob curJob = curNode.getJob();
 			int type = curJob.getType();
 			// For now, skip start and end jobs
 			if(type == VehicleScheduleJob.JOB_TYPE_START || type == VehicleScheduleJob.JOB_TYPE_END)
 				continue;
-	
-			// Initialize location and time
-			if(lastLoc == null) {
-				lastLoc = curJob.getTrip().getFirstEndpoint();
-				curTime = curJob.getStartTime();
-				curJob.setServiceTime(curTime);
-			} else {
-				// Set current location to pickup or dropoff coordinates
-				Point2D curLoc;
-				if(type == VehicleScheduleJob.JOB_TYPE_PICKUP)
-					curLoc = curJob.getTrip().getFirstEndpoint();
-				else 
-					curLoc = curJob.getTrip().getSecondEndpoint();
-	
-				// Calculate time to travel from last point to here
-				int lastLegSec = router.getTravelTimeSec(lastLoc, curLoc);
-				// Add to current time, and set job's schedule service time
-				curTime += lastLegSec / 60;
-				// Don't service pickup jobs early
-				if(curTime < curJob.getStartTime()) {
-					curTime = curJob.getStartTime();
-				}
-				curJob.setServiceTime(curTime);
 
-				// Update location
-				lastLoc = curLoc;
+			// Initialize location and time
+            if(lastLoc == null) {
+                    lastLoc = curJob.getLocation();
+                    curTime = curJob.getStartTime();
+                    curJob.setServiceTime(curTime);
+            } else {
+                    // Set current location to pickup or dropoff coordinates
+                    Point2D curLoc = curJob.getLocation();
+
+                    // Calculate time to travel from last point to here
+                    int lastLegSec = router.getTravelTimeSec(lastLoc, curLoc);
+                    // Add to current time, and set job's schedule service time
+                    curTime += lastLegSec / 60;
+                    // Don't service pickup jobs early
+                    if(curTime < curJob.getStartTime()) {
+                            curTime = curJob.getStartTime();
+                    }
+                    curJob.setServiceTime(curTime);
+
+                    // Update location
+                    lastLoc = curLoc;
+            }
+			
+			
+//			// Initialize location and time
+//			if(lastLoc == null) {
+//				lastLoc = curJob.getLocation();
+//				curTime = curJob.getServiceTime(); // service time is initialized to requested time
+//			} else {
+//				// Set current location
+//				Point2D curLoc = curJob.getLocation();
+//	
+//				// Calculate time to travel from last point to here
+//				int lastLegSec = router.getTravelTimeSec(lastLoc, curLoc);
+//				// Add to current time, and set job's scheduled service time
+//				curTime += lastLegSec / 60;
+//				// Don't service pickup jobs early
+//				if(curTime < curJob.getStartTime()) {
+//					curTime = curJob.getStartTime();
+//				}
+//				curJob.setServiceTime(curTime);
+//
+//				// Update location
+//				lastLoc = curLoc;
 			}
-		}
 	}
 	
 	// *************************************************

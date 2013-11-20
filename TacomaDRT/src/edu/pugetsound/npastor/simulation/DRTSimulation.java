@@ -25,6 +25,7 @@ import edu.pugetsound.npastor.TacomaDRTMain;
 import edu.pugetsound.npastor.routing.Rebus;
 import edu.pugetsound.npastor.routing.Vehicle;
 import edu.pugetsound.npastor.routing.VehicleScheduleJob;
+import edu.pugetsound.npastor.routing.VehicleScheduleNode;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
@@ -268,20 +269,27 @@ public class DRTSimulation {
         
         // Loop through vehicles
         for(Vehicle v : mVehiclePlans) {
-        	ArrayList<VehicleScheduleJob> schedule = v.getSchedule();
-        	Coordinate[] coordinates = new Coordinate[schedule.size()-2];
+        	VehicleScheduleNode curNode = v.getScheduleRoot();
+        	ArrayList<Coordinate> coords = new ArrayList<Coordinate>();
         	// Add all pickup/dropoff points to the line
-        	for(int i = 1; i < schedule.size()-1; i++) {
-        		VehicleScheduleJob curJob = schedule.get(i);
+        	while(curNode != null) {
+        		VehicleScheduleJob curJob = curNode.getJob();
         		Point2D loc = null;
         		if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP)
         			loc = curJob.getTrip().getFirstEndpoint();
         		else if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_DROPOFF)
         			loc = curJob.getTrip().getSecondEndpoint();
 
-        		coordinates[i-1] = new Coordinate(loc.getX(), loc.getY());	
-        	}	        	
-        	LineString line = geometryFactory.createLineString(coordinates);
+        		if(loc != null)
+        			coords.add(new Coordinate(loc.getX(), loc.getY()));	
+        		
+        		curNode = curNode.getNext();
+        	}	     
+        	
+        	// Convert ArrayList to array, and build a line
+        	Coordinate[] coordArray = new Coordinate[coords.size()];
+        	coords.toArray(coordArray);
+        	LineString line = geometryFactory.createLineString(coordArray);
         	
         	// Build the feature
             featureBuilder.add(line); // Geo data

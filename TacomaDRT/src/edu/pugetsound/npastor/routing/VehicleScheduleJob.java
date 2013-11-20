@@ -1,7 +1,8 @@
 package edu.pugetsound.npastor.routing;
 
+import java.awt.geom.Point2D;
+
 import edu.pugetsound.npastor.utils.DRTUtils;
-import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 
 /**
@@ -21,15 +22,15 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	int mType;
 	Trip mTrip;
 	int mStartTime;
-	int mDuration;
 	int mPlannedServiceTime;
+	Point2D mLocation;
 	
-	public VehicleScheduleJob(Trip trip, int startTime, int duration, int type) {
+	public VehicleScheduleJob(Trip trip, Point2D location, int startTime, int type) {
 		mTrip = trip;
 		mStartTime = startTime;
-		mDuration = duration;
 		mType = type;
 		mPlannedServiceTime = startTime;
+		mLocation = location;
 	}
 	
 	public void setServiceTime(int serviceTime) {
@@ -48,16 +49,12 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		return mStartTime;
 	}
 	
-	public int getEndTime() {
-		return mStartTime + mDuration;
-	}
-	
-	public int getDuration() {
-		return mDuration;
-	}
-	
 	public int getServiceTime() {
 		return mPlannedServiceTime;
+	}
+	
+	public Point2D getLocation() {
+		return mLocation;
 	}
 	
 	public int compareTo(VehicleScheduleJob job) {
@@ -83,9 +80,8 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	public VehicleScheduleJob clone() {
 		int type = mType;
 		int startTime = mStartTime;
-		int duration = mDuration;
 		int serviceTime = mPlannedServiceTime;
-		VehicleScheduleJob clone = new VehicleScheduleJob(mTrip, startTime, duration, type);
+		VehicleScheduleJob clone = new VehicleScheduleJob(mTrip, mLocation, startTime, type);
 		clone.setServiceTime(serviceTime);
 		return clone;
 		

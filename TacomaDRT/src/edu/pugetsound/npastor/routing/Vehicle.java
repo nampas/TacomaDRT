@@ -1,10 +1,9 @@
 package edu.pugetsound.npastor.routing;
 
 import java.util.ArrayList;
-import java.util.PriorityQueue;
+import java.util.LinkedList;
 
 import edu.pugetsound.npastor.utils.Constants;
-import edu.pugetsound.npastor.utils.Trip;
 
 public class Vehicle {
 
@@ -12,46 +11,28 @@ public class Vehicle {
 	public static final int VEHICLE_CAPACITY = 20;
 	
 	private int mVehicleId;
-	private ArrayList<Trip> mPassengers;
-	private ArrayList<VehicleScheduleJob> mSchedule;
+	private VehicleScheduleNode mScheduleRoot;
+	private int mScheduleSize = 0;
 	
 	
 	public Vehicle(int id) {
-		mPassengers = new ArrayList<Trip>();
 		mVehicleId = id;
 		initSchedule();
 		
 	}
 	
 	private void initSchedule() {
-		mSchedule = new ArrayList<VehicleScheduleJob>();
 		// Add start and end jobs
-		mSchedule.add(new VehicleScheduleJob(null, Constants.BEGIN_OPERATION_HOUR*60, 0, VehicleScheduleJob.JOB_TYPE_START));
-		mSchedule.add(new VehicleScheduleJob(null, Constants.END_OPERATION_HOUR*60, 0, VehicleScheduleJob.JOB_TYPE_END));
+		VehicleScheduleJob startJob = new VehicleScheduleJob(null, null, Constants.BEGIN_OPERATION_HOUR*60, VehicleScheduleJob.JOB_TYPE_START);
+		VehicleScheduleJob endJob = new VehicleScheduleJob(null, null, Constants.END_OPERATION_HOUR*60, VehicleScheduleJob.JOB_TYPE_END);
+		mScheduleRoot = new VehicleScheduleNode(startJob, null, null);
+		VehicleScheduleNode endNode = new VehicleScheduleNode(endJob, mScheduleRoot, null);
+		VehicleScheduleNode.setNext(mScheduleRoot, endNode);
+		mScheduleSize = 2;
 	}
 	
-	public void addPassenger(Trip t) {
-		mPassengers.add(t);
-	}
-	
-	public void addPassengers(ArrayList<Trip> passengers) {
-		mPassengers.addAll(passengers);
-	}
-	
-	public void removePassenger(Trip t) {
-		mPassengers.remove(t);
-	}
-	
-	public void removeAllPassengers() {
-		mPassengers.clear();
-	}
-	
-	public int getCurrentLoad() {
-		return mPassengers.size();
-	}
-	
-	public ArrayList<VehicleScheduleJob> getSchedule() {
-		return mSchedule;
+	public VehicleScheduleNode getScheduleRoot() {
+		return mScheduleRoot;
 	}
 	
 	public int getIdentifier() {
@@ -60,8 +41,11 @@ public class Vehicle {
 	
 	public String scheduleToString() {
 		String str = "Vehicle " + mVehicleId + " schedule:";
-		for(int i = 0; i < mSchedule.size(); i++) {
-			str += "\n " + mSchedule.get(i) ;
+		
+		VehicleScheduleNode curNode = mScheduleRoot;
+		while(curNode != null) {
+			str += "\n " + curNode.getJob();
+			curNode = curNode.getNext();
 		}
 		return str;
 	}
