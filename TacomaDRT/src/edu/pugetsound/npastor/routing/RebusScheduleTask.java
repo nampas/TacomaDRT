@@ -97,7 +97,7 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 //					Log.info(TAG, "-------BREAKING ON INDEX TOO HIGH");
 					break;
 				}
-				FeasibilityResult feasResult = checkScheduleFeasibility(mScheduleRoot);
+				FeasibilityResult feasResult = checkScheduleFeasibility(mScheduleRoot, pickupNode);
 				int feasCode = feasResult.mResultCode;
 				//  i. if the insertion is feasible...
 				if(feasCode == FeasibilityResult.SUCCESS) {
@@ -154,8 +154,8 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 	 * @return A FeasibilityResult object containing the result code (mResultCode). In the case of a failure, this
 	 *         result also includes the job (mFailsOn) that the result code applies to. 
 	 */
-	private FeasibilityResult checkScheduleFeasibility(VehicleScheduleNode scheduleRoot) {
-		Rebus.updateServiceTimes(scheduleRoot, mRouter);
+	private FeasibilityResult checkScheduleFeasibility(VehicleScheduleNode scheduleRoot, VehicleScheduleNode updateFrom) {
+		Rebus.updateServiceTimes(updateFrom, mRouter);
 
 		Log.d(TAG, "Checking schedule feasibility\n" + VehicleScheduleNode.getListString(scheduleRoot));
 		
@@ -199,6 +199,7 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 			// Move to next node
 			curNode = curNode.getNext();
 		}
+		Log.d(TAG, "Returning schedule feas code " + result.mResultCode);
 		return result;
 	}
 	
@@ -247,15 +248,15 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 	 * @param job Job to find corresponding pair for
 	 * @return The corresponding job
 	 */
-	private VehicleScheduleJob findCorrespondingJob(VehicleScheduleJob job, VehicleScheduleNode mScheduleRoot) {
+	private VehicleScheduleJob findCorrespondingJob(VehicleScheduleJob keyJob, VehicleScheduleNode scheduleRoot) {
 		//For now, assume this is a pickup/dropoff
-		int keyId = job.getTrip().getIdentifier();
+		int keyId = keyJob.getTrip().getIdentifier();
 		VehicleScheduleJob correspondingJob = null;
-		VehicleScheduleNode curNode = mScheduleRoot;
+		VehicleScheduleNode curNode = scheduleRoot;
 		while(curNode != null) {
 			VehicleScheduleJob j = curNode.getJob();
 			if(j.getTrip() != null) {
-				if(j.getTrip().getIdentifier() == keyId && j.getType() != job.getType()) {
+				if(j.getTrip().getIdentifier() == keyId && j.getType() != keyJob.getType()) {
 					correspondingJob = j;
 					break;
 				}
@@ -266,7 +267,7 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 		}
 		if(correspondingJob == null) 
 			Log.error(TAG, "No corresponding job found for job type " +
-					job.getType() + ", trip " + job.getTrip().getIdentifier());
+					keyJob.getType() + ", trip " + keyJob.getTrip().getIdentifier());
 		return correspondingJob;
 	}
 	

@@ -3,6 +3,7 @@ package edu.pugetsound.npastor.routing;
 import java.awt.geom.Point2D;
 
 import edu.pugetsound.npastor.utils.DRTUtils;
+import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 
 /**

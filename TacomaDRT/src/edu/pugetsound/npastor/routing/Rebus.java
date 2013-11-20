@@ -3,8 +3,6 @@ package edu.pugetsound.npastor.routing;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.ExecutionException;
@@ -203,7 +201,7 @@ public class Rebus {
 				
 				VehicleScheduleNode.put(optimalScheduleRoot, pickupNode, optimalScheduling.mOptimalPickupIndex);
 				VehicleScheduleNode.put(optimalScheduleRoot, dropoffNode, optimalScheduling.mOptimalDropoffIndex);
-				updateServiceTimes(optimalScheduleRoot, mRouter);
+				updateServiceTimes(optimalScheduleRoot.getNext(), mRouter);
 				
 				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
 							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
@@ -220,67 +218,63 @@ public class Rebus {
 	/**
 	 * TODO: Do this during scheduling so that we don't have to pathfind for the same routes twice
 	 * Updates the service times of each job in this schedule
-	 * @param schedule Schedule to update times for
-	 * @param startIndex The index to the start the updates at
+	 * @param fromNode Node at which to begin updating service times
 	 * @param router A Routefinder instance so this method can find travel time between different jobs
 	 */
-	public static void updateServiceTimes(VehicleScheduleNode scheduleRoot, Routefinder router) {
+	public static void updateServiceTimes(VehicleScheduleNode pickupNode, Routefinder router) {
 		int curTime = 0;
 		Point2D lastLoc = null;
-		VehicleScheduleNode curNode = scheduleRoot;
-		while(curNode.hasNext()) {
-			curNode = curNode.getNext();
+		VehicleScheduleNode curNode;
+		// TODO: clean this mess up
+		// Try to move two nodes back, which will be the last node in the list not affected by
+		// any pickup node movement, which only increments by one spot at a time. If we can't
+		// move two nodes back - the preceding node is the start - then we're doing an update
+		// through the whole list
+		VehicleScheduleNode prev = pickupNode.getPrevious();
+		VehicleScheduleNode prevPrev = prev.getPrevious();
+		if(prevPrev == null) {
+			// Node is just after start node
+			lastLoc = pickupNode.getJob().getLocation();
+			curTime = pickupNode.getJob().getStartTime();
+			curNode = pickupNode.getNext();
+			pickupNode.getJob().setServiceTime(curTime);
+		} else if(prevPrev.getPrevious() == null) {
+			// Node is one away from start node
+			lastLoc = prev.getJob().getLocation();
+			curTime = prev.getJob().getStartTime();
+			curNode = pickupNode;
+			pickupNode.getPrevious().getJob().setServiceTime(curTime);
+		} else {
+			// Node is two or more away from start node
+			lastLoc = prevPrev.getJob().getLocation();
+			curTime = prevPrev.getJob().getServiceTime();
+			curNode = prev;
+		}
+		
+		while(curNode != null) {
 			VehicleScheduleJob curJob = curNode.getJob();
 			int type = curJob.getType();
 			// For now, skip start and end jobs
-			if(type == VehicleScheduleJob.JOB_TYPE_START || type == VehicleScheduleJob.JOB_TYPE_END)
-				continue;
+			if(type != VehicleScheduleJob.JOB_TYPE_START && type != VehicleScheduleJob.JOB_TYPE_END) {
 
-			// Initialize location and time
-            if(lastLoc == null) {
-                    lastLoc = curJob.getLocation();
-                    curTime = curJob.getStartTime();
-                    curJob.setServiceTime(curTime);
-            } else {
-                    // Set current location to pickup or dropoff coordinates
-                    Point2D curLoc = curJob.getLocation();
+                // Set current location to pickup or dropoff coordinates
+                Point2D curLoc = curJob.getLocation();
 
-                    // Calculate time to travel from last point to here
-                    int lastLegSec = router.getTravelTimeSec(lastLoc, curLoc);
-                    // Add to current time, and set job's schedule service time
-                    curTime += lastLegSec / 60;
-                    // Don't service pickup jobs early
-                    if(curTime < curJob.getStartTime()) {
-                            curTime = curJob.getStartTime();
-                    }
-                    curJob.setServiceTime(curTime);
+                // Calculate time to travel from last point to here
+                int lastLegSec = router.getTravelTimeSec(lastLoc, curLoc);
+                // Add to current time, and set job's schedule service time
+                curTime += lastLegSec / 60;
+                // Don't service pickup jobs early
+                if(curTime < curJob.getStartTime()) {
+                        curTime = curJob.getStartTime();
+                }
+                curJob.setServiceTime(curTime);
 
-                    // Update location
-                    lastLoc = curLoc;
-            }
-			
-			
-//			// Initialize location and time
-//			if(lastLoc == null) {
-//				lastLoc = curJob.getLocation();
-//				curTime = curJob.getServiceTime(); // service time is initialized to requested time
-//			} else {
-//				// Set current location
-//				Point2D curLoc = curJob.getLocation();
-//	
-//				// Calculate time to travel from last point to here
-//				int lastLegSec = router.getTravelTimeSec(lastLoc, curLoc);
-//				// Add to current time, and set job's scheduled service time
-//				curTime += lastLegSec / 60;
-//				// Don't service pickup jobs early
-//				if(curTime < curJob.getStartTime()) {
-//					curTime = curJob.getStartTime();
-//				}
-//				curJob.setServiceTime(curTime);
-//
-//				// Update location
-//				lastLoc = curLoc;
+                // Update location
+                lastLoc = curLoc;
 			}
+            curNode = curNode.getNext();
+		}
 	}
 	
 	// *************************************************
