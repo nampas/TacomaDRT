@@ -120,7 +120,7 @@ public class Rebus {
 		boolean scheduleSuccessful = false;
 		if(job.getType() == REBUSJob.JOB_NEW_REQUEST) {
 			Trip t = job.getTrip();
-			if(mTotalJobsHandled % 50 == 0)
+//			if(mTotalJobsHandled % 50 == 0)
 			Log.info(TAG, "On trip " + mTotalJobsHandled + ". Scheduling " + t.toString().replace("\n", "") +
 					   "\n           Cost: " + job.getCost());
 			
