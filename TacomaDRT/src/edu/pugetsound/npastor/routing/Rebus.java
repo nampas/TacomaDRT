@@ -234,12 +234,16 @@ public class Rebus {
 				VehicleScheduleJob lastJob = schedule.get(i-1);
 				if(lastJob.nextJobIs(vehicleNum, curJob)) {
 					curTime += lastJob.getTimeToNextJob(vehicleNum);
-				
-				// If the distance was not known, route between the previous job and this,
-				// and update the previous job 
 				} else {
-					// Calculate time to travel from last point to here, and update current time
-					int lastLegMins = router.getTravelTimeSec(lastJob.getLocation(), curJob.getLocation()) / 60;
+					// If this distance was not known, check the cache
+					LRURouteCache cache = LRURouteCache.getInstance();
+					Byte lastLegMins = cache.get(LRURouteCache.makeRouteHash(lastJob.getLocation(), curJob.getLocation()));
+					if(lastLegMins == null) {
+						// If the distance was not in the cache, we'll have to calculate it
+						lastLegMins = (byte) (router.getTravelTimeSec(lastJob.getLocation(), curJob.getLocation()) / 60);
+					}
+					
+					// Update the current time
 					curTime += lastLegMins;
 					
 					// Update the previous job

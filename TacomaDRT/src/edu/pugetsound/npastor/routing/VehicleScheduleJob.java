@@ -15,8 +15,6 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 
 	public static final String TAG = "VehicleScheduleJob";
 	
-	public static final int TIME_TO_NEXT_UNKNOWN = -1;
-	
 	public static final int JOB_TYPE_PICKUP = 0;
 	public static final int JOB_TYPE_DROPOFF = 1;
 	public static final int JOB_TYPE_START = 2;
@@ -27,15 +25,19 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	private int mStartTime;
 	private int mDuration;
 	private int mPlannedServiceTime;
-	private int[] mWorkingServiceTimes;
-	private Point2D mLocation;
-	
-	// For keeping track of next job
-	private int[] mWorkingTimesToNextJob;
-	private VehicleScheduleJob[] mWorkingNextJobs;
-	
 	private int mTimeToNextJob;
 	private VehicleScheduleJob mNextJob;
+	private Point2D mLocation;
+	
+	// These arrays allow for worker threads to set their own
+	// "working" values as they evaluate this job in their 
+	// respective schedules. With these arrays, we can avoid cloning
+	// VehicleScheduleJob objects into new lists every time we start
+	// a new thread
+	private int[] mWorkingTimesToNextJob;
+	private VehicleScheduleJob[] mWorkingNextJobs;
+	private int[] mWorkingServiceTimes;
+
 	
 	public VehicleScheduleJob(Trip trip, Point2D location, int startTime, int duration, int type, int vehicleNum) {
 		mTrip = trip;
@@ -49,6 +51,12 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		mWorkingServiceTimes = new int[vehicleNum];
 	}
 	
+	/**
+	 * Sets the working service time for the specified vehicle index
+	 * to the specified value
+	 * @param vehicleIndex Vehicle index
+	 * @param value Working service time for specified vehicle index
+	 */
 	public void setWorkingServiceTime(int vehicleIndex, int value) {
 		mWorkingServiceTimes[vehicleIndex] = value;
 	}
