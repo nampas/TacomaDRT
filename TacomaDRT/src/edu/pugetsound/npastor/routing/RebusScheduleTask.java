@@ -1,21 +1,21 @@
 package edu.pugetsound.npastor.routing;
 
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 
 /**
- * This Callable class checks the feasibility of scheduling a trip in a vehicle schedule, using the 
+ * This Runnable class checks the feasibility of scheduling a trip in a vehicle schedule, using the 
  * REBUS algorithm. Because REBUS requires that every trip be evaluated in every vehicle, we can 
  * parallelize the process by delegating work related to different vehicles to different worker 
  * threads. This class represents one of those threads.
  * 
  * @author Nathan Pastor
  */
-public class RebusScheduleTask implements Callable<ScheduleResult> {
+public class RebusScheduleTask implements Runnable {
 	
 	private static final String TAG = "RebusScheduleTask";
 	
@@ -24,20 +24,28 @@ public class RebusScheduleTask implements Callable<ScheduleResult> {
 	private VehicleScheduleJob mDropoffJob;
 	private Routefinder mRouter;
 	ArrayList<VehicleScheduleJob> mSchedule;
+	ScheduleResult[] mResults;
+	CountDownLatch mLatch;
 	
-	public RebusScheduleTask (int vehicleIndex, ArrayList<VehicleScheduleJob> schedule, VehicleScheduleJob pickupJob, VehicleScheduleJob dropoffJob) {
+	public RebusScheduleTask (int vehicleIndex, ArrayList<VehicleScheduleJob> schedule, 
+			VehicleScheduleJob pickupJob, VehicleScheduleJob dropoffJob, ScheduleResult[] results, CountDownLatch latch) {
 		mVehiclePlanIndex = vehicleIndex;
 		mPickupJob = pickupJob;
 		mDropoffJob = dropoffJob;
 		mSchedule = schedule;
 		mRouter = new Routefinder();
+		mResults = results;
+		mLatch = latch;		
 	}
 
 	/**
 	 * Similar to a Runnable's run(), this method begins thread operations
 	 */
-	public ScheduleResult call() {
-		return evaluateTripInVehicle();
+	public void run() {
+		ScheduleResult result = evaluateTripInVehicle();
+		mResults[mVehiclePlanIndex] = result;
+		// This task's work is done: decrement the counter
+		mLatch.countDown();
 	}
 	
 	/**
