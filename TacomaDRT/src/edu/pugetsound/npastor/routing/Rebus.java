@@ -33,6 +33,10 @@ import edu.pugetsound.npastor.utils.Trip;
  */
 public class Rebus {
 	
+	static AtomicInteger cacheHits = new AtomicInteger(0);
+	static AtomicInteger cacheSize = new AtomicInteger(0);
+	static AtomicInteger localHits = new AtomicInteger(0);
+	
 	public static final String TAG = "Rebus";
 	
 	private static final int NUM_SCHEDULER_THREADS = 8;
@@ -120,9 +124,9 @@ public class Rebus {
 		boolean scheduleSuccessful = false;
 		if(job.getType() == REBUSJob.JOB_NEW_REQUEST) {
 			Trip t = job.getTrip();
-			if(mTotalJobsHandled % 50 == 0)
+//			if(mTotalJobsHandled % 50 == 0)
 			Log.info(TAG, "On trip " + mTotalJobsHandled + ". Scheduling " + t.toString().replace("\n", "") +
-					   "\n           Cost: " + job.getCost());
+					   "\n                    Cost: " + job.getCost() + " hits: " + cacheHits + " size " + cacheSize + " local hits "+ localHits);
 			
 			// Split the trip into pickup and dropoff jobs
 			int durationMins = (int)t.getRoute().getTime() / 60;
@@ -190,9 +194,9 @@ public class Rebus {
 				optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
 				updateServiceTimes(optimalSchedule, mRouter, -1);
 				
-//				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
-//							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
-//							". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex);
+				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
+							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
+							". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex);
 				
 //				String str = "New schedule is:\n";
 //				for(int i = 0; i < optimalSchedule.size(); i++) {
@@ -234,13 +238,20 @@ public class Rebus {
 				VehicleScheduleJob lastJob = schedule.get(i-1);
 				if(lastJob.nextJobIs(vehicleNum, curJob)) {
 					curTime += lastJob.getTimeToNextJob(vehicleNum);
+					localHits.incrementAndGet();
 				} else {
 					// If this distance was not known, check the cache
 					LRURouteCache cache = LRURouteCache.getInstance();
-					Byte lastLegMins = cache.get(LRURouteCache.makeRouteHash(lastJob.getLocation(), curJob.getLocation()));
+					int hash = LRURouteCache.makeRouteHash(lastJob.getLocation(), curJob.getLocation());
+					Short lastLegMins = cache.get(hash);
 					if(lastLegMins == null) {
-						// If the distance was not in the cache, we'll have to calculate it
-						lastLegMins = (byte) (router.getTravelTimeSec(lastJob.getLocation(), curJob.getLocation()) / 60);
+						// If the distance was not in the cache, we'll have to calculate it, and add to cache
+						lastLegMins = (short)(router.getTravelTimeSec(lastJob.getLocation(), curJob.getLocation()) / 60);
+						cache.put(hash, lastLegMins);
+						
+					} else {
+						cacheSize.set(cache.size());
+						cacheHits.incrementAndGet();
 					}
 					
 					// Update the current time

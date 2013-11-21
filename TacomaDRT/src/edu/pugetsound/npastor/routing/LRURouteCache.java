@@ -10,11 +10,17 @@ import java.util.Map;
  * @author Nathan P
  *
  */
-public class LRURouteCache extends LinkedHashMap<Integer, Byte>{
+public class LRURouteCache extends LinkedHashMap<Integer, Short>{
 
-	private static final int MAX_ENTRIES = 1000000;
+	private static final int MAX_ENTRIES = 11000000;
+	
+	private static final int INIT_SIZE = 1000000;
 	
 	private static LRURouteCache mInstance = null;
+	
+	private LRURouteCache(int initSize) {
+		super(initSize);
+	}
 
 	/**
 	 * This class implements a concurrent singleton pattern. Method is synchronized
@@ -23,21 +29,21 @@ public class LRURouteCache extends LinkedHashMap<Integer, Byte>{
 	 */
 	public synchronized static LRURouteCache getInstance() {
 		if(mInstance == null)
-			mInstance = new LRURouteCache();
+			mInstance = new LRURouteCache(INIT_SIZE);
 		return mInstance;			
 	}
 	
-	public synchronized Byte get(Integer key) {
+	public synchronized Short get(Integer key) {
 		return super.get(key);
 	}
 	
-	public synchronized Byte put(Integer key, Byte value) {
+	public synchronized Short put(Integer key, Short value) {
 		return super.put(key, value);
 	}
 	
 	// This class acts as a LRU cache, so remove eldest entries when we've exceeded capacity
 	@Override
-	protected synchronized boolean removeEldestEntry(Map.Entry<Integer, Byte> eldest) {
+	protected synchronized boolean removeEldestEntry(Map.Entry<Integer, Short> eldest) {
         return size() > MAX_ENTRIES;
     }
 	
