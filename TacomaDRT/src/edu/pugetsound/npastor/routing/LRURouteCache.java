@@ -10,7 +10,7 @@ import java.util.Map;
  * @author Nathan P
  *
  */
-public class LRURouteCache extends LinkedHashMap<Integer, Short>{
+public class LRURouteCache extends LinkedHashMap<Integer, RouteWrapper>{
 
 	private static final int MAX_ENTRIES = 11000000;
 	
@@ -33,39 +33,17 @@ public class LRURouteCache extends LinkedHashMap<Integer, Short>{
 		return mInstance;			
 	}
 	
-	public synchronized Short get(Integer key) {
+	public RouteWrapper get(Integer key) {
 		return super.get(key);
 	}
 	
-	public synchronized Short put(Integer key, Short value) {
+	public synchronized RouteWrapper put(Integer key, RouteWrapper value) {
 		return super.put(key, value);
 	}
 	
 	// This class acts as a LRU cache, so remove eldest entries when we've exceeded capacity
 	@Override
-	protected synchronized boolean removeEldestEntry(Map.Entry<Integer, Short> eldest) {
+	protected synchronized boolean removeEldestEntry(Map.Entry<Integer, RouteWrapper> eldest) {
         return size() > MAX_ENTRIES;
     }
-	
-	/**
-	 * Hashes the specified route. This hash should be used to get and set elmements
-	 * in thte cache. Based on the algorithm described by Joshua Bloch in Effective
-	 * Java 2nd Edition 
-	 * @param origin Origin point
-	 * @param destination Destination point
-	 * @return The hash of thet two route
-	 */
-	public static int makeRouteHash(Point2D origin, Point2D destination) {
-		int result = 17;
-		long temp = Double.doubleToLongBits(origin.getX());
-		result = result * 31 * (int)(temp ^ (temp >>> 32));
-		temp = Double.doubleToLongBits(origin.getY());
-		result = result * 31 * (int)(temp ^ (temp >>> 32));
-		temp = Double.doubleToLongBits(destination.getX());
-		result = result * 31 * (int)(temp ^ (temp >>> 32));
-		temp = Double.doubleToLongBits(destination.getY());
-		result = result * 31 * (int)(temp ^ (temp >>> 32));
-		
-		return result;
-	}
 }

@@ -1,5 +1,6 @@
 package edu.pugetsound.npastor.routing;
 
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -39,7 +40,7 @@ public class Rebus {
 	
 	public static final String TAG = "Rebus";
 	
-	private static final int NUM_SCHEDULER_THREADS = 8;
+	private static final int NUM_SCHEDULER_THREADS = 4;
 
 	// *****************************************
 	//         REBUS function constants
@@ -240,18 +241,26 @@ public class Rebus {
 					curTime += lastJob.getTimeToNextJob(vehicleNum);
 					localHits.incrementAndGet();
 				} else {
-					// If this distance was not known, check the cache
+					// If this distance was not known, check the cache. To do this we wrap
+					// the points in a RouteWrapper which is hashed into the cache map
+					RouteWrapper curRoute = new RouteWrapper(lastJob.getLocation(), curJob.getLocation());
 					LRURouteCache cache = LRURouteCache.getInstance();
-					int hash = LRURouteCache.makeRouteHash(lastJob.getLocation(), curJob.getLocation());
-					Short lastLegMins = cache.get(hash);
-					if(lastLegMins == null) {
-						// If the distance was not in the cache, we'll have to calculate it, and add to cache
-						lastLegMins = (short)(router.getTravelTimeSec(lastJob.getLocation(), curJob.getLocation()) / 60);
-						cache.put(hash, lastLegMins);
-						
-					} else {
-						cacheSize.set(cache.size());
+					int hash = curRoute.hashCode();
+					
+					// Query cache, and ensure equal routes
+					RouteWrapper result = cache.get(hash);
+					byte lastLegMins;
+					if(curRoute.equals(result)) {
+						// if the routes match, use the cached time
+						lastLegMins = result.timeMins;
 						cacheHits.incrementAndGet();
+						cacheSize.set(cache.size());
+					} else {
+						// If the distance was not in the cache, or the routes did not match,
+						// we'll have to calculate it and add to cache
+						lastLegMins = (byte) (router.getTravelTimeSec(curRoute) / 60);
+						curRoute.timeMins = lastLegMins;
+						cache.put(hash, curRoute);
 					}
 					
 					// Update the current time

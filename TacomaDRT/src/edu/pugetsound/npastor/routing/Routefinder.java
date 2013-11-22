@@ -66,4 +66,9 @@ public class Routefinder {
 		GHResponse response = findRoute(origin, destination);
 		return (int)response.getTime();
 	}
+	
+	public int getTravelTimeSec(RouteWrapper route) {
+		GHResponse response = findRoute(route.origin, route.dest);
+		return (int)response.getTime();
+	}
 }
