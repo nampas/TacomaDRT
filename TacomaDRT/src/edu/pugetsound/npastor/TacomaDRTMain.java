@@ -1,12 +1,17 @@
 package edu.pugetsound.npastor;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import edu.pugetsound.npastor.riderGen.TripGenerator;
+import edu.pugetsound.npastor.routing.LRURouteCache;
+import edu.pugetsound.npastor.routing.RouteWrapper;
+import edu.pugetsound.npastor.routing.Routefinder;
 import edu.pugetsound.npastor.simulation.DRTSimulation;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
+import edu.pugetsound.npastor.utils.Trip;
 
 public class TacomaDRTMain {
 
@@ -49,12 +54,10 @@ public class TacomaDRTMain {
 		
 		// Run the simulation!
 		mSimStartTime = System.currentTimeMillis();
-		mSimulation = new DRTSimulation(mTripGen.getTrips());
-		if(tripVehicleFilePath == null)
-			mSimulation.runSimulation();
-		else 
-			mSimulation.runSimulation(tripVehicleFilePath);
+	
+		testRoutingTimes(mTripGen.getTrips());
 		
+				
 		// Print simulation time
 		long simEndTime = System.currentTimeMillis();
 		message = "Simulation finished in ";
@@ -65,6 +68,40 @@ public class TacomaDRTMain {
 		
 		// Write any remaining messages to log file
 		Log.writeBufferToLogFile();
+	}
+	
+	private void testRoutingTimes(ArrayList<Trip> trips) {
+		LRURouteCache cache = LRURouteCache.getInstance();
+		Routefinder router = new Routefinder();
+		
+		for(Trip t: trips) {
+			RouteWrapper curRoute = new RouteWrapper(t.getFirstEndpoint(), t.getSecondEndpoint());
+			curRoute.timeMins = (byte) (router.getTravelTimeSec(curRoute) / 60); 
+			cache.put(curRoute.hashCode(), curRoute);
+			for(Trip v : trips) {
+				if(t.getIdentifier() == v.getIdentifier()) continue;
+				
+				RouteWrapper oToO = new RouteWrapper(t.getFirstEndpoint(), v.getFirstEndpoint());
+				oToO.timeMins = (byte) (router.getTravelTimeSec(oToO) / 60);
+				
+				RouteWrapper oToD = new RouteWrapper(t.getFirstEndpoint(), v.getSecondEndpoint());
+				oToD.timeMins = (byte) (router.getTravelTimeSec(oToD)/ 60);
+				
+				RouteWrapper dToO = new RouteWrapper(t.getSecondEndpoint(), v.getFirstEndpoint());
+				dToO.timeMins = (byte) (router.getTravelTimeSec(dToO)/ 60);
+				
+				RouteWrapper dToD = new RouteWrapper(t.getSecondEndpoint(), v.getSecondEndpoint());
+				dToD.timeMins = (byte) (router.getTravelTimeSec(dToD) / 60);
+				
+				cache.put(oToO.hashCode(), oToO);
+				cache.put(oToD.hashCode(), oToD);
+				cache.put(dToO.hashCode(), dToO);
+				cache.put(dToD.hashCode(), dToD);
+				
+				if(cache.size() % 10000 == 0)
+					Log.info(TAG, "Cache size at " + cache.size());
+			}
+		}
 	}
 	
 	private void printTime(String message, long endTimeMillis, long startTimeMillis) {

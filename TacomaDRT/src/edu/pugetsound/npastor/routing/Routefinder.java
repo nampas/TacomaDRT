@@ -6,9 +6,7 @@ import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
 import com.graphhopper.GraphHopperAPI;
-import com.graphhopper.util.PointList;
-
-import edu.pugetsound.npastor.utils.Log;
+import com.graphhopper.routing.ch.PrepareContractionHierarchies;
 
 /**
  * For finding quickest driving distances between two points
@@ -27,16 +25,18 @@ public class Routefinder {
 	private static final String DIJKSTRA_NATIVE = "dijkstraNative";
 	
 	// The pathfinding algorithm we'll use
-	private static final String ROUTE_ALGORITHM = A_STAR_BI;
+	private static final String ROUTE_ALGORITHM = DIJKSTRA_NATIVE;
 	
 	GraphHopperAPI mRouter;
 	
 	public Routefinder() {
-		mRouter = new GraphHopper().forServer();
+		mRouter = new GraphHopper().forDesktop();
 		((GraphHopper) mRouter).setCHShortcuts("fastest");
 		
 		// Load the pre-built Tacoma street graph
 		mRouter.load("files/tac-gh");
+		
+//		new PrepareContractionHierarchies().
 	}
 	
 	/**
