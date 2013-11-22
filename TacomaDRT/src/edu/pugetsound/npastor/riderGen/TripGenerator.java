@@ -47,16 +47,23 @@ public class TripGenerator {
 	
 	private final static String TRIP_FILE_LBL = "Trip";
 	
+	// Minimum allowed trip time
+	public final static int MIN_TRIP_TIME_MINS = 5;
+	
 	private ArrayList<Trip> mTrips;
 	private RiderChars mRiderChars;
 	private PCAgeEmployment mPCData;
 	private Random mRandom;
+	private Routefinder mRouter;
+	private TractPointGenerator mPointGen;
 
 	public TripGenerator() {
 		mTrips = new ArrayList<Trip>();
 		mRiderChars = new RiderChars();
 		mPCData = new PCAgeEmployment();
 		mRandom = new Random();
+		mRouter = new Routefinder();
+		mPointGen = new TractPointGenerator();
 	}
 
 	/**
@@ -70,17 +77,13 @@ public class TripGenerator {
 		generateTripTypes();
 		generateAges();
 		assignDirections();
-		generateEndpointTracts();
-		generateEndpoints();
+		generateRoutes();
 		generatePickupTimes();
-//		for(int i = 0; i < mTrips.size(); i++)
-//			Log.info(TAG, mTrips.get(i).toString());
 				
 		onTripsGenerated();
 	}
 	
 	private void onTripsGenerated() {
-		generateDirections();
 		writeTripsToFile();
 		writeTripGeoToShp();
 	}
@@ -112,6 +115,7 @@ public class TripGenerator {
 				newTrip.setPickupTime(Integer.valueOf(tokens[11]));
 				newTrip.setCalInTime(Integer.valueOf(tokens[12]));
 				
+				generateDirections(newTrip);
 				// And add trip to list
 				mTrips.add(newTrip);
 			}
@@ -229,57 +233,82 @@ public class TripGenerator {
 		}
 	}
 	
-	private void generateEndpointTracts() {
-		Log.info(TAG, "Generating trip endpoint tracts");
-		for(Trip t: mTrips) {
-			int[] riderAgeGroup = {DRTUtils.getGroupForAge(t.getRiderAge())};
-			String firstTract = Trip.TRACT_NOT_SET;
-			String secondTract = Trip.TRACT_NOT_SET;
-			switch(t.getTripType()) {
-				case Constants.TRIP_COMMUTE:
-					int[] commuteCode = {Constants.PSRC_TOTAL};
-					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
-					secondTract = mPCData.getWeightedTract(commuteCode, true);
-					break;
-				case Constants.TRIP_MEDICAL_DENTAL:
-					int[] medCodes = {Constants.PSRC_SERVS, Constants.PSRC_GOVT};
-					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
-					secondTract = mPCData.getWeightedTract(medCodes, true);
-					break;
-				case Constants.TRIP_OTHER:
-					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
-					//TODO: should this be random?
-					secondTract = mPCData.getRandomTract();
-					break;
-				case Constants.TRIP_PERSONAL_BUSINESS:
-					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
-					//TODO: should this be random?
-					secondTract = mPCData.getRandomTract();
-					break;
-				case Constants.TRIP_SCHOOL:
-					int [] schoolCode = {Constants.PSRC_EDU};
-					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
-					secondTract = mPCData.getWeightedTract(schoolCode, true);
-					break;
-				case Constants.TRIP_SHOPPING_DINING:
-					int[] shopCodes = {Constants.PSRC_SERVS, Constants.PSRC_RETAIL};
-					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
-					secondTract = mPCData.getWeightedTract(shopCodes, true);
-					break;
-				case Constants.TRIP_SOCIAL:
-					firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
-					//TODO: should this be weighted for total population level?
-					secondTract = mPCData.getWeightedTract(riderAgeGroup, false);
-			}
-			if(t.getDirection()) {
-				t.setFirstTract(firstTract);
-				t.setSecondTract(secondTract);
-			} else {
-				t.setFirstTract(secondTract);
-				t.setSecondTract(firstTract);
+	/**
+	 * Generates the trip routes, including pickup and dropoff location
+	 * and routing
+	 */
+	private void generateRoutes() {
+		for(int i = 0; i < mTrips.size(); i++) {
+			if(i % 500 == 0)
+				Log.info(TAG, "Generating routes, on trip " + i);
+			else if(i % 100 == 0)
+				Log.d(TAG, "Generating routes, on trip " + i);
+			Trip t = mTrips.get(i);
+			
+			int tripTime = -1;
+			// Loop until we've generate a trip longer than the min allowed time
+			while (tripTime < MIN_TRIP_TIME_MINS) {
+				generateEndpointTracts(t);
+				generateEndpoints(t);
+				tripTime = generateDirections(t);
 			}
 		}
 	}
+	
+	private void generateEndpointTracts(Trip t) {
+		int[] riderAgeGroup = {DRTUtils.getGroupForAge(t.getRiderAge())};
+		String firstTract = Trip.TRACT_NOT_SET;
+		String secondTract = Trip.TRACT_NOT_SET;
+		switch(t.getTripType()) {
+			case Constants.TRIP_COMMUTE:
+				int[] commuteCode = {Constants.PSRC_TOTAL};
+				firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
+				secondTract = mPCData.getWeightedTract(commuteCode, true);
+				break;
+			case Constants.TRIP_MEDICAL_DENTAL:
+				int[] medCodes = {Constants.PSRC_SERVS, Constants.PSRC_GOVT};
+				firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
+				secondTract = mPCData.getWeightedTract(medCodes, true);
+				break;
+			case Constants.TRIP_OTHER:
+				firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
+				//TODO: should this be random?
+				secondTract = mPCData.getRandomTract();
+				break;
+			case Constants.TRIP_PERSONAL_BUSINESS:
+				firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
+				//TODO: should this be random?
+				secondTract = mPCData.getRandomTract();
+				break;
+			case Constants.TRIP_SCHOOL:
+				int [] schoolCode = {Constants.PSRC_EDU};
+				firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
+				secondTract = mPCData.getWeightedTract(schoolCode, true);
+				break;
+			case Constants.TRIP_SHOPPING_DINING:
+				int[] shopCodes = {Constants.PSRC_SERVS, Constants.PSRC_RETAIL};
+				firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
+				secondTract = mPCData.getWeightedTract(shopCodes, true);
+				break;
+			case Constants.TRIP_SOCIAL:
+				firstTract = mPCData.getWeightedTract(riderAgeGroup, false);
+				//TODO: should this be weighted for total population level?
+				secondTract = mPCData.getWeightedTract(riderAgeGroup, false);
+		}
+		if(t.getDirection()) {
+			t.setFirstTract(firstTract);
+			t.setSecondTract(secondTract);
+		} else {
+			t.setFirstTract(secondTract);
+			t.setSecondTract(firstTract);
+		}
+	}
+	
+	private void generateEndpoints(Trip t) {
+		t.setFirstEndpoint(mPointGen.randomPointInTract(t.getFirstTract()));
+		t.setSecondEndpoint(mPointGen.randomPointInTract(t.getSecondTract()));
+	}
+	
 	
 	//TODO: determine time distribution across day
 	//TODO: determine when requests are made known to agency
@@ -370,33 +399,20 @@ public class TripGenerator {
 		return percentByHour;
 	}
 	
-	private void generateEndpoints() {
-		Log.info(TAG, "Generating trip endpoints");
-		TractPointGenerator pointGen = new TractPointGenerator();
-		for(int i = 0; i < mTrips.size(); i++) {
-			Trip t = mTrips.get(i);
-			t.setFirstEndpoint(pointGen.randomPointInTract(t.getFirstTract()));
-			t.setSecondEndpoint(pointGen.randomPointInTract(t.getSecondTract()));
-			if(i % 500 == 0)
-				Log.info(TAG, "  Endpoint generation at trip " + i);
-		}
-	}
-	
 	/**
 	 * Generates directions between trip endpoints
+	 * @return Driving time in minutes between endpoints
 	 */
-	private void generateDirections() {
-		Log.info(TAG, "Generating trip directions");
-		Routefinder router = new Routefinder();
-		for(Trip t : mTrips) {
-			GHResponse routeResponse;
-			if(t.getDirection())
-				routeResponse = router.findRoute(t.getFirstEndpoint(), t.getSecondEndpoint());
-			else 
-				routeResponse = router.findRoute(t.getSecondEndpoint(), t.getFirstEndpoint());
-			
-			t.setRoute(routeResponse);
-		}
+	private int generateDirections(Trip t) {
+
+		GHResponse routeResponse;
+		if(t.getDirection())
+			routeResponse = mRouter.findRoute(t.getFirstEndpoint(), t.getSecondEndpoint());
+		else 
+			routeResponse = mRouter.findRoute(t.getSecondEndpoint(), t.getFirstEndpoint());
+		
+		t.setRoute(routeResponse);
+		return (int) (routeResponse.getTime() / 60);
 	}
 	
 	/**

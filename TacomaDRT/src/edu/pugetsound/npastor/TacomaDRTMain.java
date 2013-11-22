@@ -12,7 +12,6 @@ public class TacomaDRTMain {
 
 	//Note to self: Run from .\TacomaDRT\bin
 	//execute: java edu/pugetsound/npastor/TacomaDRT
-	private TripGenerator mTripGen;
 	private DRTSimulation mSimulation;
 	private static String mSimulationDirectory;
 	public static long mTripGenStartTime;
@@ -28,28 +27,28 @@ public class TacomaDRTMain {
 		drt.runModel(tripFile);
 	}
 	
-	public TacomaDRTMain() {
-		mTripGen = new TripGenerator();
-	}
-	
 	public void runModel(String tripVehicleFilePath) {
+
 		mTripGenStartTime = System.currentTimeMillis();
 		setSimulationDirectory();
 		
+		TripGenerator tripGen = new TripGenerator();
+		
 		// Run the trip generation
 		if(tripVehicleFilePath == null)
-			mTripGen.generateTrips(); 
+			tripGen.generateTrips(); 
 		else 
-			mTripGen.generateTripsFromFile(tripVehicleFilePath);
+			tripGen.generateTripsFromFile(tripVehicleFilePath);
 		
 		// Print trip gen time
 		long tripGenEndTime = System.currentTimeMillis();
-		String message = "Trip generation complete: " + mTripGen.getTrips().size() + " trips in ";
+		String message = "Trip generation complete: " + tripGen.getTrips().size() + " trips in ";
 		printTime(message, tripGenEndTime, mTripGenStartTime);
 		
 		// Run the simulation!
 		mSimStartTime = System.currentTimeMillis();
-		mSimulation = new DRTSimulation(mTripGen.getTrips());
+		mSimulation = new DRTSimulation(tripGen.getTrips());
+		tripGen = null; // Deallocate the trip generator
 		if(tripVehicleFilePath == null)
 			mSimulation.runSimulation();
 		else 

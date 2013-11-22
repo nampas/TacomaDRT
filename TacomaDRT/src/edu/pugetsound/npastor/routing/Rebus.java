@@ -1,15 +1,12 @@
 package edu.pugetsound.npastor.routing;
 
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.PriorityQueue;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
 
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
@@ -136,11 +133,10 @@ public class Rebus {
 			VehicleScheduleJob dropoffJob = new VehicleScheduleJob(t, t.getSecondEndpoint(),
 					t.getPickupTime() + durationMins, 0, VehicleScheduleJob.JOB_TYPE_DROPOFF, plan.length);
 			
-			// Keep track of the most optimal insertion of the job
-			ScheduleResult optimalScheduling = null;
-			
-			// A list of thread tasks, which will be invoked simultaneously 
-			Collection<RebusScheduleTask> threadTasks = new ArrayList<RebusScheduleTask>();
+			// A list of thread results. Each thread will insert into this lost at the index
+			// corresponding to the index of the vehicle it's evaluating
+			ScheduleResult[] results = new ScheduleResult[plan.length];
+			CountDownLatch latch = new CountDownLatch(plan.length);
 			
 			// Job must be evaluated in every vehicle.
 			// Prepare threads to execute in parallel
@@ -153,34 +149,22 @@ public class Rebus {
 				for(int j = 0; j < existingSchedule.size(); j++) {
 					scheduleCopy.add(existingSchedule.get(j));
 				}
-				threadTasks.add(new RebusScheduleTask(i, scheduleCopy, pickupJob, dropoffJob));
+				RebusScheduleTask task = new RebusScheduleTask(i, scheduleCopy, pickupJob, dropoffJob, results, latch);
+				mScheduleExecutor.execute(task);
 			}
 			
-			// Execute all threads and wait
-			// TODO: faster to run threads as they're built?
-			List<Future<ScheduleResult>> threadResults = null;
+			// Wait on the countdown latch for thread completion
 			try {
-				threadResults = mScheduleExecutor.invokeAll(threadTasks);
+				latch.await();
 			} catch (InterruptedException e) {
-				Log.error(TAG, "MAIN THREAD INTERRUPTED WHILE WAITING FOR SCHEDULE TAKS TO COMPLETE");
+				Log.error(TAG, "Main thread interrupted while waiting for worker thread to complete");
 				e.printStackTrace();
-				System.exit(1);
 			}
 			
-			// Examine all scheduling results, and find the most optimal
-			for(Future<ScheduleResult> f : threadResults) {
-				ScheduleResult curResult = null;
-				try {
-					curResult = f.get();
-				} catch (InterruptedException e) {
-					Log.error(TAG, "MAIN THREAD INTERRUPTED WHILE EVALUATING SCHEDULE RESULTS");
-					e.printStackTrace();
-					System.exit(1);
-				} catch (ExecutionException e) {
-					Log.error(TAG, "MAIN THREAD INTERRUPTED WHILE EVALUATING SCHEDULE RESULTS");
-					e.printStackTrace();
-					System.exit(1);
-				}
+			// Keep track of the most optimal insertion of the job
+			ScheduleResult optimalScheduling = null;
+			
+			for(ScheduleResult curResult : results) {
 				if(curResult.mSolutionFound) {
 					if(optimalScheduling == null || curResult.mOptimalScore < optimalScheduling.mOptimalScore)
 						optimalScheduling = curResult;
