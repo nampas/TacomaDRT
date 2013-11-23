@@ -74,6 +74,8 @@ public class TacomaDRTMain {
 		LRURouteCache cache = LRURouteCache.getInstance();
 		Routefinder router = new Routefinder();
 		
+		int routed = 0;
+		
 		for(Trip t: trips) {
 			RouteWrapper curRoute = new RouteWrapper(t.getFirstEndpoint(), t.getSecondEndpoint());
 			curRoute.timeMins = (byte) (router.getTravelTimeSec(curRoute) / 60); 
@@ -100,8 +102,13 @@ public class TacomaDRTMain {
 				
 				if(cache.size() % 10000 == 0)
 					Log.info(TAG, "Cache size at " + cache.size());
+				
+				routed += 4;
 			}
+			routed++;
 		}
+		Log.info(TAG, "End cache size " + cache.size());
+		Log.info(TAG, "Routes routed " + routed);
 	}
 	
 	private void printTime(String message, long endTimeMillis, long startTimeMillis) {
