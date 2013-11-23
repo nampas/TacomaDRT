@@ -62,13 +62,8 @@ public class Routefinder {
 	 * @param destination Trip destination location
 	 * @return The time in seconds to travel between the specified points
 	 */
-	public int getTravelTimeSec(Point2D origin, Point2D destination) {
+	public byte getTravelTimeMins(Point2D origin, Point2D destination) {
 		GHResponse response = findRoute(origin, destination);
-		return (int)response.getTime();
-	}
-	
-	public int getTravelTimeSec(RouteWrapper route) {
-		GHResponse response = findRoute(route.origin, route.dest);
-		return (int)response.getTime();
+		return (byte) (response.getTime() / 60);
 	}
 }

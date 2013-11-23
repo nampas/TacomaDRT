@@ -62,12 +62,14 @@ public class Rebus {
 	private int mTotalJobsHandled;
 	private ExecutorService mScheduleExecutor;
 	private Routefinder mRouter;
+	private RouteCache mCache;
 	
-	public Rebus() {
+	public Rebus(RouteCache cache) {
 		mJobQueue = new PriorityQueue<REBUSJob>();
 		mTotalJobsHandled = 0;
 		mScheduleExecutor = Executors.newFixedThreadPool(NUM_SCHEDULER_THREADS);
 		mRouter = new Routefinder();
+		mCache = cache;
 	}
 	
 	public int getQueueSize() {
@@ -149,7 +151,8 @@ public class Rebus {
 				for(int j = 0; j < existingSchedule.size(); j++) {
 					scheduleCopy.add(existingSchedule.get(j));
 				}
-				RebusScheduleTask task = new RebusScheduleTask(i, scheduleCopy, pickupJob, dropoffJob, results, latch);
+				RebusScheduleTask task = new RebusScheduleTask(i, scheduleCopy, 
+						mCache, pickupJob, dropoffJob, results, latch);
 				mScheduleExecutor.execute(task);
 			}
 			
@@ -177,7 +180,7 @@ public class Rebus {
 				ArrayList<VehicleScheduleJob> optimalSchedule = optimalVehicle.getSchedule();
 				optimalSchedule.add(optimalScheduling.mOptimalPickupIndex, pickupJob);
 				optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
-				updateServiceTimes(optimalSchedule, mRouter, -1);
+				updateServiceTimes(optimalSchedule, mCache, mRouter, -1);
 				
 				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
 							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
@@ -205,59 +208,42 @@ public class Rebus {
 	 * @param lastIndexModified the index of the last modification. THIS ASSUMES THAT ONLY ONE MODIFICATION HAS HAPPENED SINCE
 	 *        THE LAST CALL TO THIS METHOD ON THE SPECIFIED SCHEDULE
 	 */
-	public static void updateServiceTimes(ArrayList<VehicleScheduleJob> schedule, Routefinder router, int vehicleNum) {
-		int curTime = -1;
-		for(int i = 0; i < schedule.size(); i++) {
+	public static void updateServiceTimes(ArrayList<VehicleScheduleJob> schedule, RouteCache cache, Routefinder router, int vehicleNum) {
+		// Initialize time to first pickup/dropoff job in the list
+		int curTime = schedule.get(1).getStartTime();
+		if(vehicleNum < 0)
+			schedule.get(1).setServiceTime(curTime);
+		else
+			schedule.get(1).setWorkingServiceTime(vehicleNum, curTime);
+		
+		for(int i = 2; i < schedule.size() - 1; i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
 			int type = curJob.getType();
-			// For now, skip start and end jobs
-			if(type == VehicleScheduleJob.JOB_TYPE_START || type == VehicleScheduleJob.JOB_TYPE_END)
-				continue;
-	
-			// Initialize time
-			if(curTime < 0) {
-				curTime = curJob.getStartTime();
+			
+			// Check if the distance between this job and the previous is already known
+			// If so, update the current time from the previously known value
+			VehicleScheduleJob lastJob = schedule.get(i-1);
+			if(lastJob.nextJobIs(vehicleNum, curJob)) {
+				curTime += lastJob.getTimeToNextJob(vehicleNum);
+				localHits.incrementAndGet();
 			} else {
-				// Check if the distance between this job and the previous is already known
-				// If so, update the current time from the previously known value
-				VehicleScheduleJob lastJob = schedule.get(i-1);
-				if(lastJob.nextJobIs(vehicleNum, curJob)) {
-					curTime += lastJob.getTimeToNextJob(vehicleNum);
-					localHits.incrementAndGet();
-				} else {
-					// If this distance was not known, check the cache. To do this we wrap
-					// the points in a RouteWrapper which is hashed into the cache map
-					RouteWrapper curRoute = new RouteWrapper(lastJob.getLocation(), curJob.getLocation());
-					LRURouteCache cache = LRURouteCache.getInstance();
-					int hash = curRoute.hashCode();
-					
-					// Query cache, and ensure equal routes
-					RouteWrapper result = cache.get(hash);
-					byte lastLegMins;
-					if(curRoute.equals(result)) {
-						// if the routes match, use the cached time
-						lastLegMins = result.timeMins;
-						cacheHits.incrementAndGet();
-						cacheSize.set(cache.size());
-					} else {
-						// If the distance was not in the cache, or the routes did not match,
-						// we'll have to calculate it and add to cache
-						lastLegMins = (byte) (router.getTravelTimeSec(curRoute) / 60);
-						curRoute.timeMins = lastLegMins;
-						cache.put(hash, curRoute);
-					}
-					
-					// Update the current time
-					curTime += lastLegMins;
-					
-					// Update the previous job
-					lastJob.setNextJob(vehicleNum, curJob);
-					lastJob.setTimeToNextJob(vehicleNum, lastLegMins);
-				}
-				// Don't service pickup jobs early
-				if(curTime < curJob.getStartTime()) {
-					curTime = curJob.getStartTime();
-				}
+				// If this distance was not known, check the cache.
+				boolean lastJobIsOrigin = (lastJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP);
+				int lastJobId = lastJob.getTrip().getIdentifier();
+
+				byte lastLegMins = cache.getHash(lastJobId, lastJobIsOrigin, 
+						curJob.getTrip().getIdentifier(), type == VehicleScheduleJob.JOB_TYPE_PICKUP);
+				
+				// Update the current time
+				curTime += lastLegMins;
+				
+				// Update the previous job
+				lastJob.setNextJob(vehicleNum, curJob);
+				lastJob.setTimeToNextJob(vehicleNum, lastLegMins);
+			}
+			// Don't service pickup jobs early
+			if(curTime < curJob.getStartTime()) {
+				curTime = curJob.getStartTime();
 			}
 			// Finally, we can update the current job's service time
 			if(vehicleNum == -1)

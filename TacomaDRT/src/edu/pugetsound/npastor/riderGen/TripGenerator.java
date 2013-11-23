@@ -71,7 +71,7 @@ public class TripGenerator {
 	 */
 	public void generateTrips() {
 		for(int i = 0; i < Constants.TOTAL_TRIPS; i++) {
-			mTrips.add(new Trip(i+1));
+			mTrips.add(new Trip(i));
 		}
 		// Generate all trip attributes. ORDER IS IMPORTANT!
 		generateTripTypes();
@@ -431,8 +431,8 @@ public class TripGenerator {
 		}
 		
 		// Write to file
-		DRTUtils.writeTxtFile(parsableText, Constants.TRIPS_VEHICLES_PREFIX_TXT);
-		DRTUtils.writeTxtFile(readableText, Constants.TRIPS_READABLE_PREFIX_TXT);
+		DRTUtils.writeTxtFile(parsableText, Constants.TRIPS_VEHICLES_TXT);
+		DRTUtils.writeTxtFile(readableText, Constants.TRIPS_READABLE_TXT);
 	}
 	
 	/**

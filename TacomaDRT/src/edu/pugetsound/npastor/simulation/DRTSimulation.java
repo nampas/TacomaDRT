@@ -3,9 +3,13 @@ package edu.pugetsound.npastor.simulation;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
@@ -23,6 +27,8 @@ import com.vividsolutions.jts.geom.LineString;
 
 import edu.pugetsound.npastor.TacomaDRTMain;
 import edu.pugetsound.npastor.routing.Rebus;
+import edu.pugetsound.npastor.routing.RouteCache;
+import edu.pugetsound.npastor.routing.RoutefinderTask;
 import edu.pugetsound.npastor.routing.Vehicle;
 import edu.pugetsound.npastor.routing.VehicleScheduleJob;
 import edu.pugetsound.npastor.utils.Constants;
@@ -37,19 +43,22 @@ public class DRTSimulation {
 	
 	private static final String NUM_VEHICLES_FILE_LBL = "num_vehicles";
 	
-	ArrayList<Trip> mTrips;
-	PriorityQueue<SimEvent> mEventQueue;
-	Vehicle[] mVehiclePlans;
-	Rebus mRebus;
+	private static final int NUM_PATHFINDING_THREADS = 4;
 	
-	ArrayList<Trip> mRejectedTrips;
+	private ArrayList<Trip> mTrips;
+	private PriorityQueue<SimEvent> mEventQueue;
+	private Vehicle[] mVehiclePlans;
+	private Rebus mRebus;
+	private boolean mFromFile;
+	private RouteCache mCache;
+	private ArrayList<Trip> mRejectedTrips;
 	private int mTotalTrips;
 
-	public DRTSimulation(ArrayList<Trip> trips) {
+	public DRTSimulation(ArrayList<Trip> trips, boolean fromFile) {
+		mFromFile = fromFile;
 		mTrips = trips;
 		mTotalTrips = trips.size();
 		mEventQueue = new PriorityQueue<SimEvent>();
-		mRebus = new Rebus();
 		mVehiclePlans = new Vehicle[0];
 		mRejectedTrips = new ArrayList<Trip>();
 	}
@@ -58,16 +67,22 @@ public class DRTSimulation {
 	 * Runs the DRT simulation, but parses the specified file to determine
 	 * how many vehicles to model
 	 */
-	public void runSimulation(String filePath) {
+	public void runSimulation() {
+			
+		Log.info(TAG, "Running simulation");
 		
-		Log.info(TAG, "Running simulation");			
+		if(mCache == null) {
+			throw new IllegalStateException("Cache has not been instantiated. Call buildCache() before runSimulation()");
+		}
+		mRebus = new Rebus(mCache);
+		
 		// If a file path is specified, parse out the number of vehicles to generate
 		// Otherwise, use the value defined in Constants
 		int vehicleQuantity = 0;
-		if(filePath == null) {
+		if(!mFromFile) {
 			vehicleQuantity = Constants.VEHCILE_QUANTITY;
 		} else {
-			File file = new File(filePath);
+			File file = new File(TacomaDRTMain.getSourceTripVehDir());
 			Log.info(TAG, "Loading number of vehicles from: " + file.getPath());
 	
 			try {
@@ -81,9 +96,9 @@ public class DRTSimulation {
 				}
 				scanner.close();
 				if(vehicleQuantity == 0)
-					throw new IllegalArgumentException("Vehicle quantity not specified in file at " + filePath);				
+					throw new IllegalArgumentException("Vehicle quantity not specified in file at " + file.getPath());				
 			} catch(FileNotFoundException ex) {
-				Log.error(TAG, "Unable to find trip file at: " + filePath);
+				Log.error(TAG, "Unable to find trip file at: " + file.getPath());
 				ex.printStackTrace();
 				System.exit(1);
 			}
@@ -107,13 +122,6 @@ public class DRTSimulation {
 		}
 		
 		onSimulationFinished();
-	}
-	
-	/**
-	 * Runs the DRT simulation.
-	 */
-	public void runSimulation() {
-		runSimulation(null);
 	}
 	
 	private void generateVehicles(int numVehicles) {
@@ -212,7 +220,7 @@ public class DRTSimulation {
 		}	
 		
 		// Write file
-		DRTUtils.writeTxtFile(text, Constants.SCHED_PREFIX_TXT);
+		DRTUtils.writeTxtFile(text, Constants.SCHED_TXT);
 	}
 	
 	/**
@@ -221,11 +229,11 @@ public class DRTSimulation {
 	private void appendTripVehicleTxtFile() {
 		ArrayList<String> text = new ArrayList<String>(1);
 		text.add(NUM_VEHICLES_FILE_LBL + " " + mVehiclePlans.length);
-		DRTUtils.writeTxtFile(text, Constants.TRIPS_VEHICLES_PREFIX_TXT);
+		DRTUtils.writeTxtFile(text, Constants.TRIPS_VEHICLES_TXT);
 	}
 	
 	private void writeStatisticsTxtFile() {
-		
+		//TODO: ALL DA STATISTICKS
 	}
 	
 	/**
@@ -290,5 +298,109 @@ public class DRTSimulation {
             ((DefaultFeatureCollection)collection).add(feature);			
         }
         return collection;
+	}
+	
+	// **************************************
+	//             CACHE STUFF
+	// **************************************
+	
+	/**
+	 * Builds the route cache. If this simulation instance is a re-run, we can use
+	 * the previously generated cache. Otherwise, we compute every route...
+	 */
+	public void buildCache() {
+		mCache = new RouteCache(mTrips.size());
+		// If we're re-running a simulation, we can re-use the previous routes
+		if(mFromFile) {
+			buildCacheFromFile();
+		} else {
+			doAllRoutefinding();
+		}
+		writeCacheToFile();
+	}
+	
+	/**
+	 * Delegates routefinding to worker threads
+	 */
+	private void doAllRoutefinding() {
+		long routeStartTime = System.currentTimeMillis();
+		Log.info(TAG, "Building route cache with " + NUM_PATHFINDING_THREADS + " threads. This may take a while...");
+		CountDownLatch latch = new CountDownLatch(NUM_PATHFINDING_THREADS);
+		
+		// Number of trips each thread will be calculating routes from
+		int threadTaskSize = mTrips.size() / NUM_PATHFINDING_THREADS;
+		
+		for(int i = 0; i < NUM_PATHFINDING_THREADS; i++) {
+			int startIndex = threadTaskSize * i;
+			int endIndex = (i+1 == NUM_PATHFINDING_THREADS) ? mTrips.size() : startIndex + threadTaskSize;
+			RoutefinderTask routeTask = new RoutefinderTask(mCache, mTrips, startIndex, endIndex, latch, i);
+			new Thread(routeTask).start();
+		}
+		
+		try {
+			// Wait until all routes are calculated. You should bring a book.
+			latch.await();
+		} catch (InterruptedException e) {
+			Log.error(TAG, "Main thread interrupted while waiting for routefinding tasks to complete");
+			e.printStackTrace();
+		}
+		long routeEndTime = System.currentTimeMillis();
+		TacomaDRTMain.printTime("All routes calculated and cached in ", routeEndTime, routeStartTime);
+	}
+	
+	/**
+	 * Moves a source cache into memory
+	 */
+	private void buildCacheFromFile() {
+		File file = new File(TacomaDRTMain.getSourceCacheDir());
+		Log.info(TAG, "Loading cache from file at " + file.getPath());
+		
+		Scanner scanner;
+		try {
+			scanner = new Scanner(file);
+			int size = mTrips.size()*2;
+			for(int i = 0; i < size; i++) {
+				for(int j = 0; j < size; j++) {
+					mCache.putDirect(i, j, scanner.nextByte());
+				}				
+			}
+			scanner.close();	
+		} catch(FileNotFoundException ex) {
+			Log.error(TAG, "Unable to find trip file at: " + file.getPath());
+			ex.printStackTrace();
+			System.exit(1);
+		}
+	}
+	
+	/**
+	 * Writes the cache to file. Re-runs of this simulation can read 
+	 * the cache file to avoid recomputing travel times
+	 */
+	private void writeCacheToFile() {
+		
+		// Get filename
+		String path = TacomaDRTMain.getSimulationDirectory() + Constants.ROUTE_CACHE_RC;
+		Log.info(TAG, "Writing cache file to: " + path);
+		
+		// Write to file
+		try {
+			FileWriter writer = new FileWriter(path, true);
+			PrintWriter lineWriter = new PrintWriter(writer);
+			
+			int size = mTrips.size() * 2;
+			for(int i = 0; i < size; i++) {
+				for(int j = 0; j < size; j++) {
+					// Write distances to file
+					lineWriter.println(mCache.getDirect(i, j));	
+				}
+			}
+
+			lineWriter.close();
+			writer.close();
+			Log.info(TAG, "  File succesfully writen at:" + path);
+		} catch (IOException ex) {
+			Log.error(TAG, "Unable to write to file");
+			ex.printStackTrace();
+		}		
 	}
 }

@@ -87,17 +87,15 @@ public class DRTUtils {
 		return dateFormatted;
 	}
 	
-	public static void writeTxtFile(ArrayList<String> text, String filePrefix) {
-		// Format the simulation start time
-		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mTripGenStartTime);
+	public static void writeTxtFile(ArrayList<String> text, String filename) {
 		
-		// Get filename and add current time and file extension
-		String filename = TacomaDRTMain.getSimulationDirectory() + filePrefix + dateFormatted + ".txt";
+		// Get filename
+		String path = TacomaDRTMain.getSimulationDirectory() + filename;
 		Log.info(TAG, "Writing txt file to: " + filename);
 		
 		// Write to file
 		try {
-			FileWriter writer = new FileWriter(filename, true);
+			FileWriter writer = new FileWriter(path, true);
 			PrintWriter lineWriter = new PrintWriter(writer);
 			
 			for(String str : text) {
@@ -106,7 +104,7 @@ public class DRTUtils {
 			}
 			lineWriter.close();
 			writer.close();
-			Log.info(TAG, "  File succesfully writen at:" + filename);
+			Log.info(TAG, "  File succesfully writen at:" + path);
 		} catch (IOException ex) {
 			Log.error(TAG, "Unable to write to file");
 			ex.printStackTrace();

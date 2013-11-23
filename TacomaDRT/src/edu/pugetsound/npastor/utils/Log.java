@@ -71,11 +71,8 @@ public class Log {
 	
 	public static void writeBufferToLogFile() {
 		
-		// Format the simulation start time
-		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mTripGenStartTime);
-		
 		// Get filename and add current time and file extension
-		String filename = TacomaDRTMain.getSimulationDirectory() + Constants.LOG_PREFIX_TXT + dateFormatted + ".txt";
+		String filename = TacomaDRTMain.getSimulationDirectory() + Constants.LOG_TXT;
 		
 		// Write to file
 		try {
