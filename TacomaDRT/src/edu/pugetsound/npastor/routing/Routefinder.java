@@ -26,7 +26,7 @@ public class Routefinder {
 	private static final String DIJKSTRA_BI = "dijkstrabi";
 	private static final String DIJKSTRA_NATIVE = "dijkstraNative";
 	
-	// The pathfinding algorithm we'll use
+	// The pathfinding algorithm we'll use. Dijkstra Native appears to be the fastest
 	private static final String ROUTE_ALGORITHM = A_STAR_BI;
 	
 	GraphHopperAPI mRouter;

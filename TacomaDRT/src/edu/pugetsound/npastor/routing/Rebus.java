@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.TimeUnit;
 
+import edu.pugetsound.npastor.simulation.DRTSimulation;
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 
@@ -31,13 +32,7 @@ import edu.pugetsound.npastor.utils.Trip;
  */
 public class Rebus {
 	
-	static AtomicInteger cacheHits = new AtomicInteger(0);
-	static AtomicInteger cacheSize = new AtomicInteger(0);
-	static AtomicInteger localHits = new AtomicInteger(0);
-	
 	public static final String TAG = "Rebus";
-	
-	private static final int NUM_SCHEDULER_THREADS = 4;
 
 	// *****************************************
 	//         REBUS function constants
@@ -67,7 +62,7 @@ public class Rebus {
 	public Rebus(RouteCache cache) {
 		mJobQueue = new PriorityQueue<REBUSJob>();
 		mTotalJobsHandled = 0;
-		mScheduleExecutor = Executors.newFixedThreadPool(NUM_SCHEDULER_THREADS);
+		mScheduleExecutor = Executors.newFixedThreadPool(DRTSimulation.NUM_THREADS);
 		mRouter = new Routefinder();
 		mCache = cache;
 	}
@@ -98,8 +93,8 @@ public class Rebus {
 	 * @result A list of trips which REBUS was not able to schedule
 	 */
 	public ArrayList<Trip> scheduleQueuedJobs(Vehicle[] plan) {
-		Log.info(TAG, "*************************************");
-		Log.info(TAG, "       Scheduling " + mJobQueue.size() + " job(s)");
+		Log.infoln(TAG, "*************************************");
+		Log.infoln(TAG, "       Scheduling " + mJobQueue.size() + " job(s)");
 		ArrayList<Trip> rejectedTrips = new ArrayList<Trip>();
 		while(!mJobQueue.isEmpty()) {
 			REBUSJob job = mJobQueue.poll();
@@ -107,10 +102,10 @@ public class Rebus {
 			if(!scheduleJob(job, plan)) {
 				// If job was not successfully scheduled, add to list of failed jobs
 				rejectedTrips.add(job.getTrip());
-				Log.info(TAG, "   REJECTED. Trip " + job.getTrip().getIdentifier());
+				Log.infoln(TAG, "   REJECTED. Trip " + job.getTrip().getIdentifier());
 			}
 		}
-		Log.info(TAG, rejectedTrips.size() + " trip(s) rejected from scheduling.");
+		Log.infoln(TAG, rejectedTrips.size() + " trip(s) rejected from scheduling.");
 		return rejectedTrips;
 	}
 	
@@ -124,9 +119,9 @@ public class Rebus {
 		boolean scheduleSuccessful = false;
 		if(job.getType() == REBUSJob.JOB_NEW_REQUEST) {
 			Trip t = job.getTrip();
-//			if(mTotalJobsHandled % 50 == 0)
-			Log.info(TAG, "On trip " + mTotalJobsHandled + ". Scheduling " + t.toString().replace("\n", "") +
-					   "\n                    Cost: " + job.getCost() + " hits: " + cacheHits + " size " + cacheSize + " local hits "+ localHits);
+			if(mTotalJobsHandled % 50 == 0)
+				Log.infoln(TAG, "On trip " + mTotalJobsHandled + ". Scheduling " + t.toString().replace("\n", "") +
+						   "\n                     Cost: " + job.getCost());
 			
 			// Split the trip into pickup and dropoff jobs
 			int durationMins = (int)t.getRoute().getTime() / 60;
@@ -182,9 +177,9 @@ public class Rebus {
 				optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
 				updateServiceTimes(optimalSchedule, mCache, mRouter, -1);
 				
-				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
-							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
-							". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex);
+//				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
+//							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
+//							". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex);
 				
 //				String str = "New schedule is:\n";
 //				for(int i = 0; i < optimalSchedule.size(); i++) {
@@ -225,7 +220,6 @@ public class Rebus {
 			VehicleScheduleJob lastJob = schedule.get(i-1);
 			if(lastJob.nextJobIs(vehicleNum, curJob)) {
 				curTime += lastJob.getTimeToNextJob(vehicleNum);
-				localHits.incrementAndGet();
 			} else {
 				// If this distance was not known, check the cache.
 				boolean lastJobIsOrigin = (lastJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP);

@@ -2,6 +2,7 @@ package edu.pugetsound.npastor.routing;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
@@ -10,30 +11,31 @@ public class RoutefinderTask implements Runnable {
 	
 	public static final String TAG = "RoutefinderTask";
 
-	private static final int PRINT_PERCENTAGE = 20; // print percentage after this increment
+	private static final int UPDATE_INTERVAL = 1000; // Update progress at this interval
 	
 	private RouteCache mCache;
 	private ArrayList<Trip> mTrips;
 	private int mStartIndex;
 	private int mEndIndex;
 	private CountDownLatch mLatch;
-	private int mThreadId;
+	private AtomicInteger mProgress;
+
 
 	public RoutefinderTask (RouteCache cache, ArrayList<Trip> trips, 
-			int startI, int endI, CountDownLatch latch, int threadId) {
+			int startI, int endI, CountDownLatch latch, AtomicInteger progress) {
 		mCache = cache;
 		mTrips = trips;
 		mStartIndex = startI;
 		mEndIndex = endI;
 		mLatch = latch;
-		mThreadId = threadId;
+		mProgress = progress;
 	}
 
 	public void run() {
 		Routefinder router = new Routefinder();
-		int totalToRoute = (mEndIndex - mStartIndex) * mTrips.size() * 4;
+		int routedAtLastUpdate = 0;
 		int totalRouted = 0;
-		int lastPercent = -1;
+
 		for(int i = mStartIndex; i < mEndIndex; i++) {
 
 			// This trip's route
@@ -68,10 +70,13 @@ public class RoutefinderTask implements Runnable {
 				
 				totalRouted = totalRouted + 4;
 			}
-			int percent = (int)(((double)totalRouted / totalToRoute) * 100);
-			if((percent / PRINT_PERCENTAGE) != (lastPercent / PRINT_PERCENTAGE)) {
-				Log.info(TAG, "Worker thread " + mThreadId + (percent < 10 ? " at 0" : " at ") + percent + "%");
-				lastPercent = percent;
+			int increment = totalRouted - routedAtLastUpdate;
+			
+			// To avoid synchronization bottlenecks on the AtomicInteger,
+			// don't update every iteration
+			if(increment > UPDATE_INTERVAL) {
+				mProgress.addAndGet(increment);
+				routedAtLastUpdate = totalRouted;
 			}
 		}
 		

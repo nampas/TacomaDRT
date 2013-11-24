@@ -23,14 +23,26 @@ public class Log {
 	private static int mBufferPos = 0;
 	
 	/**
-	 * Prints info strings
+	 * Prints info strings on a new line
 	 * @param tag Message tag (usually class name)
 	 * @param message Info message
 	 */
-	public static void info(String tag, String message) {
+	public static void infoln(String tag, String message) {
 		String msg = curTimeString() + ": " + tag + ": " + message;
 		System.out.println(msg);
 		addMsgToBuffer(msg);	
+	}
+	
+	public static void info(String tag, String message, boolean append, boolean addToLog) {
+		String msg;
+		if(append)
+			msg = message;
+		else 
+			msg = curTimeString() + ": " + tag + ": " + message;
+		
+		System.out.print(msg);
+		if(addToLog)
+			addMsgToBuffer(msg);
 	}
 	
 	/**
@@ -40,7 +52,7 @@ public class Log {
 	 */
 	public static void d(String tag, String message) {
 		if(Constants.DEBUG) {
-			info(tag,message);
+			infoln(tag,message);
 		}
 	}
 	

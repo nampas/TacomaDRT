@@ -78,7 +78,7 @@ public class TacomaDRTMain {
 		float elapsedSecs = (float)(endTimeMillis - startTimeMillis) / 1000;
 		int timeMins = (int)(elapsedSecs / 60);
 		float remainderSecs = elapsedSecs % 60.0f;
-		Log.info(TAG, message + elapsedSecs + " seconds (" + timeMins + ":" + remainderSecs + ")");
+		Log.infoln(TAG, message + elapsedSecs + " seconds (" + timeMins + ":" + remainderSecs + ")");
 	}
 	
 	private void setSimulationDirectory() {

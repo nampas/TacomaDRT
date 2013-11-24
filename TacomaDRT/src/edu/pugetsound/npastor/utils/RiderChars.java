@@ -29,8 +29,8 @@ public class RiderChars {
 		mTripTypePcts = new HashMap<Integer, Double>();
 		mDayDistributions = new HashMap<Integer, DayDivision>();
 		readRiderCharsFile();
-		Log.info(TAG, "Rider age mappings, group to percent: " + mRiderAgePcts.toString());
-		Log.info(TAG, "Trip type mappings, group to percent: " + mTripTypePcts.toString());
+		Log.infoln(TAG, "Rider age mappings, group to percent: " + mRiderAgePcts.toString());
+		Log.infoln(TAG, "Trip type mappings, group to percent: " + mTripTypePcts.toString());
 	}
 
 	/**

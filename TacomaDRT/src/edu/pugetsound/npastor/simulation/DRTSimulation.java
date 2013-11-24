@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.PriorityQueue;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
@@ -43,7 +45,9 @@ public class DRTSimulation {
 	
 	private static final String NUM_VEHICLES_FILE_LBL = "num_vehicles";
 	
-	private static final int NUM_PATHFINDING_THREADS = 4;
+	public static final int NUM_THREADS = 8;
+	
+	private static final int ROUTE_UPDATE_INCREMENT = 10; // Update route progress at this increment
 	
 	private ArrayList<Trip> mTrips;
 	private PriorityQueue<SimEvent> mEventQueue;
@@ -69,7 +73,7 @@ public class DRTSimulation {
 	 */
 	public void runSimulation() {
 			
-		Log.info(TAG, "Running simulation");
+		Log.infoln(TAG, "Running simulation");
 		
 		if(mCache == null) {
 			throw new IllegalStateException("Cache has not been instantiated. Call buildCache() before runSimulation()");
@@ -83,7 +87,7 @@ public class DRTSimulation {
 			vehicleQuantity = Constants.VEHCILE_QUANTITY;
 		} else {
 			File file = new File(TacomaDRTMain.getSourceTripVehDir());
-			Log.info(TAG, "Loading number of vehicles from: " + file.getPath());
+			Log.infoln(TAG, "Loading number of vehicles from: " + file.getPath());
 	
 			try {
 				Scanner scanner = new Scanner(file);
@@ -125,7 +129,7 @@ public class DRTSimulation {
 	}
 	
 	private void generateVehicles(int numVehicles) {
-		Log.info(TAG, "Generating " + numVehicles + " vehicles");
+		Log.infoln(TAG, "Generating " + numVehicles + " vehicles");
 		mVehiclePlans = new Vehicle[numVehicles];
 		for(int i = 0; i < numVehicles; i++) {
 			mVehiclePlans[i] = new Vehicle(i+1);
@@ -136,7 +140,7 @@ public class DRTSimulation {
 	 * Enqueues all trip requests in the event queue
 	 */
 	private void enqueueTripRequestEvents() {
-		Log.info(TAG, "Enqueueing all trip request events in simulation queue");
+		Log.infoln(TAG, "Enqueueing all trip request events in simulation queue");
 		for(Trip t: mTrips) {
 			int requestTime = t.getCallInTime();
 			SimEvent requestEvent = new SimEvent(SimEvent.EVENT_NEW_REQUEST, t, requestTime);
@@ -148,19 +152,19 @@ public class DRTSimulation {
 	 * Contains procedures to execute when a simulation has finished running
 	 */
 	private void onSimulationFinished() {
-		Log.info(TAG, "*************************************");
-		Log.info(TAG, "       SIMULATION COMPLETE");
-		Log.info(TAG, "*************************************");
+		Log.infoln(TAG, "*************************************");
+		Log.infoln(TAG, "       SIMULATION COMPLETE");
+		Log.infoln(TAG, "*************************************");
 		
 		mRebus.onRebusFinished();
 		
 		for(Vehicle v : mVehiclePlans) {
-			Log.info(TAG, v.scheduleToString());
+			Log.infoln(TAG, v.scheduleToString());
 		}
 		
 		// Print total rejected trips and rate
 		float rejectionRate = (float) mRejectedTrips.size() / mTotalTrips * 100;
-		Log.info(TAG, "Total trips simulated: " + mTotalTrips + ". Total trips rejected by REBUS: " + mRejectedTrips.size() +
+		Log.infoln(TAG, "Total trips simulated: " + mTotalTrips + ". Total trips rejected by REBUS: " + mRejectedTrips.size() +
 				". Rejection rate: " + rejectionRate + "%");
 		
 		// Write vehicle routing files
@@ -174,7 +178,7 @@ public class DRTSimulation {
 	 * are known to the agency before service hours begin. These are the static requests.
 	 */
 	private void doAPrioriScheduling() {
-		Log.info(TAG, "Doing a priori scheduling (all static trip requests)");
+		Log.infoln(TAG, "Doing a priori scheduling (all static trip requests)");
 		boolean moreStaticRequests = true;
 		while(moreStaticRequests) {
 			SimEvent event = mEventQueue.peek();
@@ -188,7 +192,7 @@ public class DRTSimulation {
 				}
 			}
 		}
-		Log.info(TAG, mRebus.getQueueSize() + " static jobs queued");
+		Log.infoln(TAG, mRebus.getQueueSize() + " static jobs queued");
 		// Now that all static trips are enqueued we can schedule them.
 		mRejectedTrips.addAll(mRebus.scheduleQueuedJobs(mVehiclePlans));
 	}
@@ -324,22 +328,35 @@ public class DRTSimulation {
 	 */
 	private void doAllRoutefinding() {
 		long routeStartTime = System.currentTimeMillis();
-		Log.info(TAG, "Building route cache with " + NUM_PATHFINDING_THREADS + " threads. This may take a while...");
-		CountDownLatch latch = new CountDownLatch(NUM_PATHFINDING_THREADS);
+		Log.infoln(TAG, "Building route cache with " + NUM_THREADS + " threads. This may take a while...");
+		CountDownLatch latch = new CountDownLatch(NUM_THREADS); // To inform of thread completion
+		AtomicInteger progress = new AtomicInteger(); // For tracking caching progress
+		int totalRoutes = (int) Math.pow(mTrips.size()*2, 2);
 		
 		// Number of trips each thread will be calculating routes from
-		int threadTaskSize = mTrips.size() / NUM_PATHFINDING_THREADS;
+		int threadTaskSize = mTrips.size() / NUM_THREADS;
 		
-		for(int i = 0; i < NUM_PATHFINDING_THREADS; i++) {
+		for(int i = 0; i < NUM_THREADS; i++) {
 			int startIndex = threadTaskSize * i;
-			int endIndex = (i+1 == NUM_PATHFINDING_THREADS) ? mTrips.size() : startIndex + threadTaskSize;
-			RoutefinderTask routeTask = new RoutefinderTask(mCache, mTrips, startIndex, endIndex, latch, i);
+			int endIndex = (i+1 == NUM_THREADS) ? mTrips.size() : startIndex + threadTaskSize;
+			RoutefinderTask routeTask = new RoutefinderTask(mCache, mTrips, startIndex, endIndex, latch, progress);
 			new Thread(routeTask).start();
 		}
 		
+		// Alternate waiting and updating progress. You should bring a book.
+		Log.info(TAG, "Routing at 0%", false, true);
+		int lastPercent = -1;
 		try {
-			// Wait until all routes are calculated. You should bring a book.
-			latch.await();
+			boolean tasksComplete = false;
+			while(!tasksComplete) {
+				int percent = (int)(((double)progress.get() / totalRoutes) * 100);
+				if(lastPercent + ROUTE_UPDATE_INCREMENT <= percent) {
+					Log.info(TAG, ", " + percent + "%", true,
+							(percent % 25 == 0 && percent / 25 != lastPercent / 25) ? true : false);
+					lastPercent = percent;
+				}
+				tasksComplete = latch.await(5, TimeUnit.SECONDS);
+			}
 		} catch (InterruptedException e) {
 			Log.error(TAG, "Main thread interrupted while waiting for routefinding tasks to complete");
 			e.printStackTrace();
@@ -353,7 +370,7 @@ public class DRTSimulation {
 	 */
 	private void buildCacheFromFile() {
 		File file = new File(TacomaDRTMain.getSourceCacheDir());
-		Log.info(TAG, "Loading cache from file at " + file.getPath());
+		Log.infoln(TAG, "Loading cache from file at " + file.getPath());
 		
 		Scanner scanner;
 		try {
@@ -380,7 +397,7 @@ public class DRTSimulation {
 		
 		// Get filename
 		String path = TacomaDRTMain.getSimulationDirectory() + Constants.ROUTE_CACHE_RC;
-		Log.info(TAG, "Writing cache file to: " + path);
+		Log.infoln(TAG, "Writing cache file to: " + path);
 		
 		// Write to file
 		try {
@@ -397,7 +414,7 @@ public class DRTSimulation {
 
 			lineWriter.close();
 			writer.close();
-			Log.info(TAG, "  File succesfully writen at:" + path);
+			Log.infoln(TAG, "  File succesfully writen at:" + path);
 		} catch (IOException ex) {
 			Log.error(TAG, "Unable to write to file");
 			ex.printStackTrace();

@@ -19,7 +19,7 @@ public class Constants {
 	public final static String SIM_BASE_DIRECTORY = "files/Simulations";
 	public final static String TRIPS_VEHICLES_TXT = "/trips_vehicles.txt";
 	public final static String TRIPS_READABLE_TXT = "/trips_readable.txt";
-	public final static String ROUTE_CACHE_RC = "/route_cache.rc";
+	public final static String ROUTE_CACHE_RC = "/route_cache.rcache";
 	public final static String LOG_TXT = "/log.txt";
 	public final static String SCHED_TXT = "/schedules.txt";
 	public final static String TRIP_SHP_DIR = "/trips_shp";
@@ -36,7 +36,7 @@ public class Constants {
 	public final static int BEGIN_REQUEST_WINDOW = 0; // Time when riders can begin to make requests
 	public final static int END_REQUEST_WINDOW = 18; // Cutoff time for making request known to agency for the day
 	public final static int CALL_REQUEST_BUFFER_MINS = 30; // Minimum buffer between call in time and request time
-	public final static int VEHCILE_QUANTITY = 24; //TODO: determine how many, to be pinned to fixed route cost
+	public final static int VEHCILE_QUANTITY = 10; //TODO: determine how many, to be pinned to fixed route cost
 	public final static int PICKUP_SERVICE_WINDOW = 30; //Max difference between actual pickup time and requested pickup time
 	
 	// Dynamic requests
