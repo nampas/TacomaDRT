@@ -1,11 +1,8 @@
 package edu.pugetsound.npastor.routing;
 
 import java.util.ArrayList;
-import java.util.PriorityQueue;
 
 import edu.pugetsound.npastor.utils.Constants;
-import edu.pugetsound.npastor.utils.Trip;
-
 public class Vehicle {
 
 	//TODO: what is capacity?

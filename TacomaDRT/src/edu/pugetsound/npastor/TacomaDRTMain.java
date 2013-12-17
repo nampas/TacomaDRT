@@ -15,8 +15,10 @@ public class TacomaDRTMain {
 	private DRTSimulation mSimulation;
 	private static String mSimulationDirectory;
 	private static String mSourceSimDirectory; //Points to the directory of the source sim, when we're re-running a simulation
-	public static long mTripGenStartTime;
-	public static long mSimStartTime;
+	public static long tripGenStartTime;
+	public static long simStartTime;
+	
+	public static int numThreads;
 	
 	public final static String TAG = "TacomaDRTMain";
 	
@@ -31,7 +33,10 @@ public class TacomaDRTMain {
 	
 	public void runModel(String sourceSimDir) {
 
-		mTripGenStartTime = System.currentTimeMillis();
+		// Use all the processors!
+		numThreads = Runtime.getRuntime().availableProcessors();
+		
+		tripGenStartTime = System.currentTimeMillis();
 		setSimulationDirectory();
 		
 		TripGenerator tripGen = new TripGenerator();
@@ -45,7 +50,7 @@ public class TacomaDRTMain {
 		// Print trip gen time
 		long tripGenEndTime = System.currentTimeMillis();
 		String message = "Trip generation complete: " + tripGen.getTrips().size() + " trips in ";
-		printTime(message, tripGenEndTime, mTripGenStartTime);
+		printTime(message, tripGenEndTime, tripGenStartTime);
 		
 		if(sourceSimDir == null)
 			mSimulation = new DRTSimulation(tripGen.getTrips(), false);
@@ -59,16 +64,16 @@ public class TacomaDRTMain {
 		
 		// Run the simulation! Inform the simulator if this is a re-run of a previous simulation,
 		// in which it will use that instance's route cache and trip/vehicle file
-		mSimStartTime = System.currentTimeMillis();
+		simStartTime = System.currentTimeMillis();
 		mSimulation.runSimulation();
 		
 		// Print simulation time
 		long simEndTime = System.currentTimeMillis();
 		message = "Simulation finished in ";
-		printTime(message, simEndTime, mSimStartTime);
+		printTime(message, simEndTime, simStartTime);
 		
 		// Print total time
-		printTime("Entire model finished in ", simEndTime, mTripGenStartTime);
+		printTime("Entire model finished in ", simEndTime, tripGenStartTime);
 		
 		// Write any remaining messages to log file
 		Log.writeBufferToLogFile();
@@ -82,7 +87,7 @@ public class TacomaDRTMain {
 	}
 	
 	private void setSimulationDirectory() {
-		mSimulationDirectory = Constants.SIM_BASE_DIRECTORY + "/sim" + DRTUtils.formatMillis(mTripGenStartTime);
+		mSimulationDirectory = Constants.SIM_BASE_DIRECTORY + "/sim" + DRTUtils.formatMillis(tripGenStartTime);
 		// Make base directory
 		boolean result = new File(mSimulationDirectory).mkdirs();
 		if(!result)
@@ -129,6 +134,6 @@ public class TacomaDRTMain {
 	}
 	
 	public static String getSourceCacheDir() {
-		return getSourceSimDirectory() + Constants.ROUTE_CACHE_RC;
+		return getSourceSimDirectory() + Constants.ROUTE_CACHE_CSV;
 	}
 }

@@ -529,7 +529,7 @@ public class TripGenerator {
 		SimpleFeatureCollection collection = createGeoFeatureCollection(featureType);
 		
 		// Format time and create filename
-		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mTripGenStartTime);
+		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.tripGenStartTime);
 		String filename = TacomaDRTMain.getTripShpSimDirectory() + Constants.TRIP_PREFIX_SHP + dateFormatted + ".shp";
         File shpFile = new File(filename);
         

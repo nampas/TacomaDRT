@@ -19,7 +19,7 @@ public class Constants {
 	public final static String SIM_BASE_DIRECTORY = "files/Simulations";
 	public final static String TRIPS_VEHICLES_TXT = "/trips_vehicles.txt";
 	public final static String TRIPS_READABLE_TXT = "/trips_readable.txt";
-	public final static String ROUTE_CACHE_RC = "/route_cache.rcache";
+	public final static String ROUTE_CACHE_CSV = "/route_cache.csv";
 	public final static String LOG_TXT = "/log.txt";
 	public final static String SCHED_TXT = "/schedules.txt";
 	public final static String STATS_CSV = "/statistics.csv";
@@ -29,7 +29,7 @@ public class Constants {
 	public final static String ROUTE_PREFIX_SHP = "/routes_";
 	
 	// Total trips per day
-	public final static int TOTAL_TRIPS = 200;
+	public final static int TOTAL_TRIPS = 60;
 	
 	// Agency constants
 	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour

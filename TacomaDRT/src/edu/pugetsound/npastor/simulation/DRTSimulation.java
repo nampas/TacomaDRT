@@ -45,11 +45,9 @@ public class DRTSimulation {
 	
 	private static final String NUM_VEHICLES_FILE_LBL = "num_vehicles";
 	
-	public static final int NUM_THREADS = 8;
-	
 	private static final int ROUTE_UPDATE_INCREMENT = 10; // Update route progress at this increment
 	
-	private static final char COMMA_DELIM = ',';
+	private static final String COMMA_DELIM = ",";
 	
 	private ArrayList<Trip> mTrips;
 	private PriorityQueue<SimEvent> mEventQueue;
@@ -341,7 +339,7 @@ public class DRTSimulation {
 		SimpleFeatureCollection collection = createShpFeatureCollection(featureType);
 		
 		// Format time and create filename
-		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.mTripGenStartTime);
+		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.tripGenStartTime);
 		String filename = TacomaDRTMain.getRouteShpSimDirectory() + Constants.ROUTE_PREFIX_SHP + dateFormatted + ".shp";
         File shpFile = new File(filename);
         
@@ -419,18 +417,20 @@ public class DRTSimulation {
 	 * Delegates routefinding to worker threads
 	 */
 	private void doAllRoutefinding() {
+		int numThreads = TacomaDRTMain.numThreads;
+		
 		long routeStartTime = System.currentTimeMillis();
-		Log.infoln(TAG, "Building route cache with " + NUM_THREADS + " threads. This may take a while...");
-		CountDownLatch latch = new CountDownLatch(NUM_THREADS); // To inform of thread completion
+		Log.infoln(TAG, "Building route cache with " + numThreads + " threads. This may take a while...");
+		CountDownLatch latch = new CountDownLatch(numThreads); // To inform of thread completion
 		AtomicInteger progress = new AtomicInteger(); // For tracking caching progress
 		int totalRoutes = (int) Math.pow(mTrips.size()*2, 2);
 		
 		// Number of trips each thread will be calculating routes from
-		int threadTaskSize = mTrips.size() / NUM_THREADS;
+		int threadTaskSize = mTrips.size() / numThreads;
 		
-		for(int i = 0; i < NUM_THREADS; i++) {
+		for(int i = 0; i < numThreads; i++) {
 			int startIndex = threadTaskSize * i;
-			int endIndex = (i+1 == NUM_THREADS) ? mTrips.size() : startIndex + threadTaskSize;
+			int endIndex = (i+1 == numThreads) ? mTrips.size() : startIndex + threadTaskSize;
 			RoutefinderTask routeTask = new RoutefinderTask(mCache, mTrips, startIndex, endIndex, latch, progress);
 			new Thread(routeTask).start();
 		}
@@ -450,7 +450,7 @@ public class DRTSimulation {
 				tasksComplete = latch.await(5, TimeUnit.SECONDS);
 			}
 		} catch (InterruptedException e) {
-			Log.error(TAG, "Main thread interrupted while waiting for routefinding tasks to complete");
+			Log.error(TAG, e.getMessage());
 			e.printStackTrace();
 		}
 		long routeEndTime = System.currentTimeMillis();
@@ -469,8 +469,9 @@ public class DRTSimulation {
 			scanner = new Scanner(file);
 			int size = mTrips.size()*2;
 			for(int i = 0; i < size; i++) {
+				String[] tokens = scanner.nextLine().split(COMMA_DELIM);
 				for(int j = 0; j < size; j++) {
-					mCache.putDirect(i, j, scanner.nextByte());
+					mCache.putDirect(i, j, Byte.valueOf(tokens[j]));
 				}				
 			}
 			scanner.close();	
@@ -488,24 +489,29 @@ public class DRTSimulation {
 	private void writeCacheToFile() {
 		
 		// Get filename
-		String path = TacomaDRTMain.getSimulationDirectory() + Constants.ROUTE_CACHE_RC;
+		String path = TacomaDRTMain.getSimulationDirectory() + Constants.ROUTE_CACHE_CSV;
 		Log.infoln(TAG, "Writing cache file to: " + path);
 		
-		// Write to file
+		// Build a table
 		try {
 			FileWriter writer = new FileWriter(path, true);
 			PrintWriter lineWriter = new PrintWriter(writer);
 			
 			int size = mTrips.size() * 2;
 			for(int i = 0; i < size; i++) {
+				StringBuilder str = new StringBuilder();
 				for(int j = 0; j < size; j++) {
-					// Write distances to file
-					lineWriter.println(mCache.getDirect(i, j));	
+					str.append(mCache.getDirect(i, j) + COMMA_DELIM);
 				}
+				// Write distances to file
+				lineWriter.println(str.toString());	
 			}
 
 			lineWriter.close();
 			writer.close();
+			
+			// This cache is valuable! Set read only
+			new File(path).setReadOnly();
 			Log.infoln(TAG, "  File succesfully writen at:" + path);
 		} catch (IOException ex) {
 			Log.error(TAG, "Unable to write to file");

@@ -36,7 +36,8 @@ public class RouteCache {
 	}
 	
 	/**
-	 * Puts an element in the cache at the specified index. This should be used with care.
+	 * Puts an element in the cache at the specified index. This should be used with care,
+	 * for normal access use putHash()
 	 * @param i1 First index
 	 * @param i2 Second index
 	 * @param value Value to insert at specified location
@@ -49,6 +50,15 @@ public class RouteCache {
 		return mCache[i1][i2];
 	}
 	
+	/**
+	 * Hashes the specified route, returning an array of cache indices where the
+	 * route can be found
+	 * @param t1Id Id of first trip
+	 * @param t1Origin True if route begins at the first trip's origin, false if it begins at the destination
+	 * @param t2Id Id of second trip
+	 * @param t2Origin True if route ends at second trip's origin, false if it ends at the destination
+	 * @return
+	 */
 	private int[] hash(int t1Id, boolean t1Origin, int t2Id, boolean t2Origin) {
 		int[] indices = new int[2];
 		indices[0] = t1Id * 2 + (t1Origin ? 0 : 1);

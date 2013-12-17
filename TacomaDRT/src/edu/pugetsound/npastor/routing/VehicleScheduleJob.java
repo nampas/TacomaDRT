@@ -166,9 +166,10 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	}
 	
 	public String toString() {
-		String str = "Job type: " + mType + ". Start time: " + DRTUtils.minsToHrMin(mStartTime) +
-						". Service time: " + DRTUtils.minsToHrMin(mPlannedServiceTime);
-		if(mTrip != null) str += ". Trip ID: " + mTrip.getIdentifier();
+		String str = "Job type: " + mType + ". Start time: " + DRTUtils.minsToHrMin(mStartTime)
+					+ ". Service time: " + DRTUtils.minsToHrMin(mPlannedServiceTime);
+		if(mTrip != null) str += ". Trip ID: " + mTrip.getIdentifier()
+								+ ". Location: " + mLocation;
 		return str;
 	}
 	

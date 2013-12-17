@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.TimeUnit;
 
+import edu.pugetsound.npastor.TacomaDRTMain;
 import edu.pugetsound.npastor.simulation.DRTSimulation;
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
@@ -62,7 +63,7 @@ public class Rebus {
 	public Rebus(RouteCache cache) {
 		mJobQueue = new PriorityQueue<REBUSJob>();
 		mTotalJobsHandled = 0;
-		mScheduleExecutor = Executors.newFixedThreadPool(DRTSimulation.NUM_THREADS);
+		mScheduleExecutor = Executors.newFixedThreadPool(TacomaDRTMain.numThreads);
 		mRouter = new Routefinder();
 		mCache = cache;
 	}

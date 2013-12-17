@@ -27,7 +27,9 @@ public class VerifyRouteUtility {
 		scanner.useDelimiter("\n");
 		while(!doQuit) {
 			System.out.print("origin: ");
-			String[] origin = scanner.next().split(",");
+			String[] origin = scanner.next()
+					.replaceAll(scanner.delimiter().pattern(), "")
+					.split(",");
 			System.out.print("destination: ");
 			String[] dest = scanner.next().split(",");
 			System.out.println("Routing " + origin[0] + ", " + origin[1] 
@@ -43,10 +45,11 @@ public class VerifyRouteUtility {
 			System.out.println("Route time in seconds: " + response.getTime());
 			
 			System.out.print("Continue? ");
-			String more = scanner.next().toLowerCase();
+			String more = scanner.next().toLowerCase()
+					.replaceAll(scanner.delimiter().pattern(), "");
+			System.out.println(more);
 			if(!more.equals("y") && !more.equals("yes"))
 				doQuit = true;
-			
 		}
 		scanner.close();
 	}
