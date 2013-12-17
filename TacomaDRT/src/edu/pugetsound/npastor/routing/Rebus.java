@@ -94,8 +94,8 @@ public class Rebus {
 	 * @result A list of trips which REBUS was not able to schedule
 	 */
 	public ArrayList<Trip> scheduleQueuedJobs(Vehicle[] plan) {
-		Log.infoln(TAG, "*************************************");
-		Log.infoln(TAG, "       Scheduling " + mJobQueue.size() + " job(s)");
+		Log.iln(TAG, "*************************************");
+		Log.iln(TAG, "       Scheduling " + mJobQueue.size() + " job(s)");
 		ArrayList<Trip> rejectedTrips = new ArrayList<Trip>();
 		while(!mJobQueue.isEmpty()) {
 			REBUSJob job = mJobQueue.poll();
@@ -103,10 +103,10 @@ public class Rebus {
 			if(!scheduleJob(job, plan)) {
 				// If job was not successfully scheduled, add to list of failed jobs
 				rejectedTrips.add(job.getTrip());
-				Log.infoln(TAG, "   REJECTED. Trip " + job.getTrip().getIdentifier());
+				Log.iln(TAG, "   REJECTED. Trip " + job.getTrip().getIdentifier());
 			}
 		}
-		Log.infoln(TAG, rejectedTrips.size() + " trip(s) rejected from scheduling.");
+		Log.iln(TAG, rejectedTrips.size() + " trip(s) rejected from scheduling.");
 		return rejectedTrips;
 	}
 	
@@ -120,9 +120,9 @@ public class Rebus {
 		boolean scheduleSuccessful = false;
 		if(job.getType() == REBUSJob.JOB_NEW_REQUEST) {
 			Trip t = job.getTrip();
-			if(mTotalJobsHandled % 50 == 0)
-				Log.infoln(TAG, "On trip " + mTotalJobsHandled + ". Scheduling " + t.toString().replace("\n", "") +
-						   "\n                     Cost: " + job.getCost());
+			
+			Log.iln(TAG, "On trip " + mTotalJobsHandled + ". Scheduling " + t.toString().replace("\n", "") +
+					   "\n                     Cost: " + job.getCost(), (mTotalJobsHandled % 50 == 0));
 			
 			// Split the trip into pickup and dropoff jobs
 			int durationMins = (int)t.getRoute().getTime() / 60;
@@ -156,7 +156,7 @@ public class Rebus {
 			try {
 				latch.await();
 			} catch (InterruptedException e) {
-				Log.error(TAG, "Main thread interrupted while waiting for worker thread to complete");
+				Log.e(TAG, "Main thread interrupted while waiting for worker thread to complete");
 				e.printStackTrace();
 			}
 			

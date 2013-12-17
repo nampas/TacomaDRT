@@ -18,7 +18,7 @@ public class Log {
 
 	public static final String TAG = "Log";
 	
-	private static final int MSG_BUFFER_LENGTH = 20; // Need to balance costs of buffer size and write-to-disk operations
+	private static final int MSG_BUFFER_LENGTH = 200; // Need to balance costs of buffer size and write-to-disk operations
 	private static String[] mMessageBuffer = new String[MSG_BUFFER_LENGTH];
 	private static int mBufferPos = 0;
 	
@@ -26,14 +26,26 @@ public class Log {
 	 * Prints info strings on a new line
 	 * @param tag Message tag (usually class name)
 	 * @param message Info message
+	 * @param True if message should be printed to screen, false if it
+	 *        should only be added to the log
 	 */
-	public static void infoln(String tag, String message) {
+	public static void iln(String tag, String message, boolean printToScreen) {
 		String msg = curTimeString() + ": " + tag + ": " + message;
-		System.out.println(msg);
+		if(printToScreen)
+			System.out.println(msg);
 		addMsgToBuffer(msg);	
 	}
 	
-	public static void info(String tag, String message, boolean append, boolean addToLog) {
+	/***
+	 * Convenience method for printing info lines to screen and log
+	 * @param tag Message tag (usually class name)
+	 * @param message Info message
+	 */
+	public static void iln(String tag, String message) {
+		iln(tag, message, true);
+	}
+	
+	public static void i(String tag, String message, boolean append, boolean addToLog) {
 		String msg;
 		if(append)
 			msg = message;
@@ -52,7 +64,7 @@ public class Log {
 	 */
 	public static void d(String tag, String message) {
 		if(Constants.DEBUG) {
-			infoln(tag,message);
+			iln(tag,message, true);
 		}
 	}
 	
@@ -61,7 +73,7 @@ public class Log {
 	 * @param tag Message tag (usually class name)
 	 * @param message Error message
 	 */
-	public static void error(String tag, String message) {
+	public static void e(String tag, String message) {
 		String msg = curTimeString() + ": ERROR: " + tag + ": " + message;
 		System.err.println(msg);
 		addMsgToBuffer(msg);

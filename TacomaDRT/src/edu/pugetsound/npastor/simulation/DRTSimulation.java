@@ -73,7 +73,7 @@ public class DRTSimulation {
 	 */
 	public void runSimulation() {
 			
-		Log.infoln(TAG, "Running simulation");
+		Log.iln(TAG, "Running simulation");
 		
 		if(mCache == null) {
 			throw new IllegalStateException("Cache has not been instantiated. Call buildCache() before runSimulation()");
@@ -87,7 +87,7 @@ public class DRTSimulation {
 			vehicleQuantity = Constants.VEHCILE_QUANTITY;
 		} else {
 			File file = new File(TacomaDRTMain.getSourceTripVehDir());
-			Log.infoln(TAG, "Loading number of vehicles from: " + file.getPath());
+			Log.iln(TAG, "Loading number of vehicles from: " + file.getPath());
 	
 			try {
 				Scanner scanner = new Scanner(file);
@@ -102,7 +102,7 @@ public class DRTSimulation {
 				if(vehicleQuantity == 0)
 					throw new IllegalArgumentException("Vehicle quantity not specified in file at " + file.getPath());				
 			} catch(FileNotFoundException ex) {
-				Log.error(TAG, "Unable to find trip file at: " + file.getPath());
+				Log.e(TAG, "Unable to find trip file at: " + file.getPath());
 				ex.printStackTrace();
 				System.exit(1);
 			}
@@ -129,7 +129,7 @@ public class DRTSimulation {
 	}
 	
 	private void generateVehicles(int numVehicles) {
-		Log.infoln(TAG, "Generating " + numVehicles + " vehicles");
+		Log.iln(TAG, "Generating " + numVehicles + " vehicles");
 		mVehiclePlans = new Vehicle[numVehicles];
 		for(int i = 0; i < numVehicles; i++) {
 			mVehiclePlans[i] = new Vehicle(i+1);
@@ -140,7 +140,7 @@ public class DRTSimulation {
 	 * Enqueues all trip requests in the event queue
 	 */
 	private void enqueueTripRequestEvents() {
-		Log.infoln(TAG, "Enqueueing all trip request events in simulation queue");
+		Log.iln(TAG, "Enqueueing all trip request events in simulation queue");
 		for(Trip t: mTrips) {
 			int requestTime = t.getCallInTime();
 			SimEvent requestEvent = new SimEvent(SimEvent.EVENT_NEW_REQUEST, t, requestTime);
@@ -152,19 +152,19 @@ public class DRTSimulation {
 	 * Contains procedures to execute when a simulation has finished running
 	 */
 	private void onSimulationFinished() {
-		Log.infoln(TAG, "*************************************");
-		Log.infoln(TAG, "       SIMULATION COMPLETE");
-		Log.infoln(TAG, "*************************************");
+		Log.iln(TAG, "*************************************");
+		Log.iln(TAG, "       SIMULATION COMPLETE");
+		Log.iln(TAG, "*************************************");
 		
 		mRebus.onRebusFinished();
 		
 		for(Vehicle v : mVehiclePlans) {
-			Log.infoln(TAG, v.scheduleToString());
+			Log.iln(TAG, v.scheduleToString());
 		}
 		
 		// Print total rejected trips and rate
 		float rejectionRate = (float) mRejectedTrips.size() / mTotalTrips * 100;
-		Log.infoln(TAG, "Total trips simulated: " + mTotalTrips + ". Total trips rejected by REBUS: " + mRejectedTrips.size() +
+		Log.iln(TAG, "Total trips simulated: " + mTotalTrips + ". Total trips rejected by REBUS: " + mRejectedTrips.size() +
 				". Rejection rate: " + rejectionRate + "%");
 		
 		// Write simulation files
@@ -179,7 +179,7 @@ public class DRTSimulation {
 	 * are known to the agency before service hours begin. These are the static requests.
 	 */
 	private void doAPrioriScheduling() {
-		Log.infoln(TAG, "Doing a priori scheduling (all static trip requests)");
+		Log.iln(TAG, "Doing a priori scheduling (all static trip requests)");
 		boolean moreStaticRequests = true;
 		while(moreStaticRequests) {
 			SimEvent event = mEventQueue.peek();
@@ -193,7 +193,7 @@ public class DRTSimulation {
 				}
 			}
 		}
-		Log.infoln(TAG, mRebus.getQueueSize() + " static jobs queued");
+		Log.iln(TAG, mRebus.getQueueSize() + " static jobs queued");
 		// Now that all static trips are enqueued we can schedule them.
 		mRejectedTrips.addAll(mRebus.scheduleQueuedJobs(mVehiclePlans));
 	}
@@ -420,7 +420,7 @@ public class DRTSimulation {
 		int numThreads = TacomaDRTMain.numThreads;
 		
 		long routeStartTime = System.currentTimeMillis();
-		Log.infoln(TAG, "Building route cache with " + numThreads + " threads. This may take a while...");
+		Log.iln(TAG, "Building route cache with " + numThreads + " threads. This may take a while...");
 		CountDownLatch latch = new CountDownLatch(numThreads); // To inform of thread completion
 		AtomicInteger progress = new AtomicInteger(); // For tracking caching progress
 		int totalRoutes = (int) Math.pow(mTrips.size()*2, 2);
@@ -436,21 +436,21 @@ public class DRTSimulation {
 		}
 		
 		// Alternate waiting and updating progress. You should bring a book.
-		Log.info(TAG, "Routing at 0%", false, true);
+		Log.i(TAG, "Routing at 0%", false, true);
 		int lastPercent = -1;
 		try {
 			boolean tasksComplete = false;
 			while(!tasksComplete) {
 				int percent = (int)(((double)progress.get() / totalRoutes) * 100);
 				if(lastPercent + ROUTE_UPDATE_INCREMENT <= percent) {
-					Log.info(TAG, ", " + percent + "%", true,
+					Log.i(TAG, ", " + percent + "%", true,
 							(percent % 25 == 0 && percent / 25 != lastPercent / 25) ? true : false);
 					lastPercent = percent;
 				}
 				tasksComplete = latch.await(5, TimeUnit.SECONDS);
 			}
 		} catch (InterruptedException e) {
-			Log.error(TAG, e.getMessage());
+			Log.e(TAG, e.getMessage());
 			e.printStackTrace();
 		}
 		long routeEndTime = System.currentTimeMillis();
@@ -462,7 +462,7 @@ public class DRTSimulation {
 	 */
 	private void buildCacheFromFile() {
 		File file = new File(TacomaDRTMain.getSourceCacheDir());
-		Log.infoln(TAG, "Loading cache from file at " + file.getPath());
+		Log.iln(TAG, "Loading cache from file at " + file.getPath());
 		
 		Scanner scanner;
 		try {
@@ -476,7 +476,7 @@ public class DRTSimulation {
 			}
 			scanner.close();	
 		} catch(FileNotFoundException ex) {
-			Log.error(TAG, "Unable to find trip file at: " + file.getPath());
+			Log.e(TAG, "Unable to find trip file at: " + file.getPath());
 			ex.printStackTrace();
 			System.exit(1);
 		}
@@ -490,7 +490,7 @@ public class DRTSimulation {
 		
 		// Get filename
 		String path = TacomaDRTMain.getSimulationDirectory() + Constants.ROUTE_CACHE_CSV;
-		Log.infoln(TAG, "Writing cache file to: " + path);
+		Log.iln(TAG, "Writing cache file to: " + path);
 		
 		// Build a table
 		try {
@@ -512,9 +512,9 @@ public class DRTSimulation {
 			
 			// This cache is valuable! Set read only
 			new File(path).setReadOnly();
-			Log.infoln(TAG, "  File succesfully writen at:" + path);
+			Log.iln(TAG, "  File succesfully writen at:" + path);
 		} catch (IOException ex) {
-			Log.error(TAG, "Unable to write to file");
+			Log.e(TAG, "Unable to write to file");
 			ex.printStackTrace();
 		}		
 	}

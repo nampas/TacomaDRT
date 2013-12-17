@@ -45,7 +45,7 @@ public class ShapefileWriter {
 	 */
 	public static void writeShapefile(SimpleFeatureType featureType, SimpleFeatureCollection collection, File shpFile) {
 		
-        Log.infoln(TAG, "Writing trips to shapefile at: " + shpFile.getPath());
+        Log.iln(TAG, "Writing trips to shapefile at: " + shpFile.getPath());
         
         ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
 
@@ -68,14 +68,14 @@ public class ShapefileWriter {
 	            featureStore.setTransaction(transaction);
                 featureStore.addFeatures(collection);
                 transaction.commit();
-                Log.infoln(TAG, "  File succesfully writen at:" + shpFile.getPath());
+                Log.iln(TAG, "  File succesfully writen at:" + shpFile.getPath());
 	        }
 	        transaction.close();
         } catch (MalformedURLException ex) {
-        	Log.error(TAG, "Unable to save trips to shapefile");
+        	Log.e(TAG, "Unable to save trips to shapefile");
         	ex.printStackTrace();
         } catch (IOException ex) {
-        	Log.error(TAG, "Unable to open or write to shapefile");
+        	Log.e(TAG, "Unable to open or write to shapefile");
         	ex.printStackTrace();
         }
 	}

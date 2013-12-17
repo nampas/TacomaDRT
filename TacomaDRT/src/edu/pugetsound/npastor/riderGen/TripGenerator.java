@@ -95,7 +95,7 @@ public class TripGenerator {
 	 */
 	public void generateTripsFromFile(String tripLogPath) {
 		File file = new File(tripLogPath);
-		Log.infoln(TAG, "Loading trips from: " + file.getPath());
+		Log.iln(TAG, "Loading trips from: " + file.getPath());
 		
 		try {
 			Scanner scanner = new Scanner(file);
@@ -121,7 +121,7 @@ public class TripGenerator {
 			}
 			scanner.close();
 		} catch(FileNotFoundException ex) {
-			Log.error(TAG, "Unable to find trip file at: " + tripLogPath);
+			Log.e(TAG, "Unable to find trip file at: " + tripLogPath);
 			ex.printStackTrace();
 			System.exit(1);
 		}
@@ -138,7 +138,7 @@ public class TripGenerator {
 	 */
 	private void generateAges() {
 		// Will contain all the generated ages
-		Log.infoln(TAG, "Generating trip ages");
+		Log.iln(TAG, "Generating trip ages");
 		ArrayList<Integer> ages = new ArrayList<Integer>();
 
 		Object[] keys = mRiderChars.getAgeGroupPcts().keySet().toArray();
@@ -172,7 +172,7 @@ public class TripGenerator {
 					ages.addAll(generateAgesInRange(groupTotal, 65, 80)); //TODO: DETERMINE MAX AGE HERE
 			}
 		}
-		Log.infoln(TAG, "Total ages genererated: " + ages.size());
+		Log.iln(TAG, "Total ages genererated: " + ages.size());
 		// Finally add ages to trips, but do it randomly
 		for(Trip t : mTrips) {
 			int randomIndex = mRandom.nextInt(ages.size());
@@ -192,7 +192,7 @@ public class TripGenerator {
 
 	private void generateTripTypes() {
 		
-		Log.infoln(TAG, "Generating trip types");
+		Log.iln(TAG, "Generating trip types");
 		// Will contain all the generated ages
 		ArrayList<Integer> trips = new ArrayList<Integer>();
 
@@ -216,7 +216,7 @@ public class TripGenerator {
 	}
 
 	private void assignDirections() {
-		Log.infoln(TAG, "Assigning trip directions");
+		Log.iln(TAG, "Assigning trip directions");
 		// Half of list is inbound, other half is outbound
 		ArrayList<Boolean> directions = new ArrayList<Boolean>();
 		for(int i = 0; i < mTrips.size(); i++) {
@@ -240,9 +240,9 @@ public class TripGenerator {
 	private void generateRoutes() {
 		for(int i = 0; i < mTrips.size(); i++) {
 			if(i % 500 == 0)
-				Log.infoln(TAG, "Generating routes, on trip " + i);
+				Log.iln(TAG, "Generating trips, on trip " + i);
 			else if(i % 100 == 0)
-				Log.d(TAG, "Generating routes, on trip " + i);
+				Log.d(TAG, "Generating trips, on trip " + i);
 			Trip t = mTrips.get(i);
 			
 			int tripTime = -1;
@@ -318,7 +318,7 @@ public class TripGenerator {
 	 */
 	private void generatePickupTimes() {
 		
-		Log.infoln(TAG, "Generating pickup times");
+		Log.iln(TAG, "Generating pickup times");
 		int minRequestableTime = Constants.BEGIN_OPERATION_HOUR * 60;
 		int maxRequestWindow = Constants.END_REQUEST_WINDOW * 60;
 		
@@ -358,7 +358,7 @@ public class TripGenerator {
 			t.setPickupTime(requestTime);
 			t.setCalInTime(callInTime);
 		}
-		Log.infoln(TAG, "Dynamic request: There were " + unsatisfiableConditions + 
+		Log.iln(TAG, "Dynamic request: There were " + unsatisfiableConditions + 
 				" times where max request time is less than minimum requestable time. Unsatisfiable condition");
 	}
 	

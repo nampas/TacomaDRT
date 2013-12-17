@@ -91,7 +91,7 @@ public class DRTUtils {
 		
 		// Get filename
 		String path = TacomaDRTMain.getSimulationDirectory() + filename;
-		Log.infoln(TAG, "Writing txt file to: " + filename);
+		Log.iln(TAG, "Writing txt file to: " + filename);
 		
 		// Write to file
 		try {
@@ -104,9 +104,9 @@ public class DRTUtils {
 			}
 			lineWriter.close();
 			writer.close();
-			Log.infoln(TAG, "  File succesfully writen at:" + path);
+			Log.iln(TAG, "  File succesfully writen at:" + path);
 		} catch (IOException ex) {
-			Log.error(TAG, "Unable to write to file");
+			Log.e(TAG, "Unable to write to file");
 			ex.printStackTrace();
 		}
 	}

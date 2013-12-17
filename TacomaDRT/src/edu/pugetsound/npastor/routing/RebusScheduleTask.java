@@ -266,7 +266,7 @@ public class RebusScheduleTask implements Runnable {
 			}
 		}
 		if(correspondingJob == null) 
-			Log.error(TAG, "No corresponding job found for job type " +
+			Log.e(TAG, "No corresponding job found for job type " +
 					job.getType() + ", trip " + job.getTrip().getIdentifier());
 		return correspondingJob;
 	}

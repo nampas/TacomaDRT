@@ -78,15 +78,15 @@ public class TractPointGenerator {
 			CoordinateReferenceSystem boundaryFileCRS = boundaryFeatureSource.getSchema().getCoordinateReferenceSystem();
 			mBoundaryProjectionTransform = CRS.findMathTransform(boundaryFileCRS, DefaultGeographicCRS.WGS84, true);
 		} catch(MalformedURLException ex) {
-			Log.error(TAG, "Error opening census tract file.");
+			Log.e(TAG, "Error opening census tract file.");
 			ex.printStackTrace();
 			System.exit(1);
 		} catch(IOException ex) {
-			Log.error(TAG, "Error opening census tract file.");
+			Log.e(TAG, "Error opening census tract file.");
 			ex.printStackTrace();
 			System.exit(1);
 		} catch(FactoryException ex) {
-			Log.error(TAG, "Error creating transformation from file CRS to WGS84 projection");
+			Log.e(TAG, "Error creating transformation from file CRS to WGS84 projection");
 			ex.printStackTrace();
 			System.exit(1);
 		}
@@ -148,7 +148,7 @@ public class TractPointGenerator {
 			if(!projectedShape.contains(mGeoFactory.createPoint(new Coordinate(point.getX(), point.getY()))))
 				inTacoma = false;
 		} catch (TransformException ex) {
-			Log.error(TAG, "Unable to transform the Tacoma boundary file into long/lat");
+			Log.e(TAG, "Unable to transform the Tacoma boundary file into long/lat");
 			ex.printStackTrace();
 		}
 		
@@ -170,7 +170,7 @@ public class TractPointGenerator {
 			// Then get a point in the polygon
 			return boundingBoxMethod(projectedPoly);
 		} catch (TransformException ex) {
-			Log.error(TAG, "Unable to transform polygon into long/lat");
+			Log.e(TAG, "Unable to transform polygon into long/lat");
 			ex.printStackTrace();
 			System.exit(1);
 		}

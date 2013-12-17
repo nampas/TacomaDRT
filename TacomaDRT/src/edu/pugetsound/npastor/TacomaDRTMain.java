@@ -35,13 +35,11 @@ public class TacomaDRTMain {
 
 		// Use all the processors!
 		numThreads = Runtime.getRuntime().availableProcessors();
-		
 		tripGenStartTime = System.currentTimeMillis();
 		setSimulationDirectory();
 		
-		TripGenerator tripGen = new TripGenerator();
-		
 		// Run the trip generation
+		TripGenerator tripGen = new TripGenerator();
 		if(sourceSimDir == null)
 			tripGen.generateTrips(); 
 		else 
@@ -63,7 +61,7 @@ public class TacomaDRTMain {
 		mSimulation.buildCache();
 		
 		// Run the simulation! Inform the simulator if this is a re-run of a previous simulation,
-		// in which it will use that instance's route cache and trip/vehicle file
+		// in which case it will use that instance's route cache and trip/vehicle file
 		simStartTime = System.currentTimeMillis();
 		mSimulation.runSimulation();
 		
@@ -83,7 +81,7 @@ public class TacomaDRTMain {
 		float elapsedSecs = (float)(endTimeMillis - startTimeMillis) / 1000;
 		int timeMins = (int)(elapsedSecs / 60);
 		float remainderSecs = elapsedSecs % 60.0f;
-		Log.infoln(TAG, message + elapsedSecs + " seconds (" + timeMins + ":" + remainderSecs + ")");
+		Log.iln(TAG, message + elapsedSecs + " seconds (" + timeMins + ":" + remainderSecs + ")");
 	}
 	
 	private void setSimulationDirectory() {
@@ -91,19 +89,19 @@ public class TacomaDRTMain {
 		// Make base directory
 		boolean result = new File(mSimulationDirectory).mkdirs();
 		if(!result)
-			Log.error(TAG, "Unable to create simulation directory at: " + mSimulationDirectory);
+			Log.e(TAG, "Unable to create simulation directory at: " + mSimulationDirectory);
 
 		// Make route shp directory
 		String routeShpDir = mSimulationDirectory + Constants.ROUTE_SHP_DIR;
 		result = new File(routeShpDir).mkdirs();
 		if(!result)
-			Log.error(TAG, "Unable to create route simulation directory at: " + routeShpDir);
+			Log.e(TAG, "Unable to create route simulation directory at: " + routeShpDir);
 		
 		// Make trip shp directory
 		String tripShpDir = mSimulationDirectory + Constants.TRIP_SHP_DIR;
 		result = new File(tripShpDir).mkdirs();
 		if(!result)
-			Log.error(TAG, "Unable to create trip simulation directory at: " + tripShpDir);
+			Log.e(TAG, "Unable to create trip simulation directory at: " + tripShpDir);
 	}
 	
 	// ***********************************************
