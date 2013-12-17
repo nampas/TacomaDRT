@@ -225,11 +225,18 @@ public class DRTSimulation {
 
 		// Build text list
 		ArrayList<String> text = new ArrayList<String>();
+		
+		// Add all vehicle schedules
 		for(Vehicle v : mVehiclePlans) {
-			// Write to file
 			text.add(v.scheduleToString());
 		}	
 		
+		// Add all rejected trips
+		text.add("\r\n REJECTED TRIPS \r\n");
+		for(Trip t : mRejectedTrips) {
+			text.add(t.toString());
+		}
+
 		// Write file
 		DRTUtils.writeTxtFile(text, Constants.SCHED_TXT);
 	}
@@ -241,6 +248,7 @@ public class DRTSimulation {
 		ArrayList<String> text = new ArrayList<String>(1);
 		text.add(NUM_VEHICLES_FILE_LBL + " " + mVehiclePlans.length);
 		DRTUtils.writeTxtFile(text, Constants.TRIPS_VEHICLES_TXT);
+		DRTUtils.writeTxtFile(text, Constants.TRIPS_READABLE_TXT);
 	}
 	
 	private void writeStatisticsTxtFile() {
@@ -290,7 +298,7 @@ public class DRTSimulation {
 							+ globalTotalPickupDev + "%" + COMMA_DELIM;
 		text.add(globalString);
 		
-		DRTUtils.writeTxtFile(text, Constants.STATS_TXT);
+		DRTUtils.writeTxtFile(text, Constants.STATS_CSV);
 	}
 	
 	private StatsWrapper calcVehicleStats(Vehicle v) {

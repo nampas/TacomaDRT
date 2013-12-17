@@ -22,14 +22,14 @@ public class Constants {
 	public final static String ROUTE_CACHE_RC = "/route_cache.rcache";
 	public final static String LOG_TXT = "/log.txt";
 	public final static String SCHED_TXT = "/schedules.txt";
-	public final static String STATS_TXT = "/statistics.csv";
+	public final static String STATS_CSV = "/statistics.csv";
 	public final static String TRIP_SHP_DIR = "/trips_shp";
 	public final static String TRIP_PREFIX_SHP = "/tripgeo_";
 	public final static String ROUTE_SHP_DIR = "/routes_shp";
 	public final static String ROUTE_PREFIX_SHP = "/routes_";
 	
 	// Total trips per day
-	public final static int TOTAL_TRIPS = 30;
+	public final static int TOTAL_TRIPS = 200;
 	
 	// Agency constants
 	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour
@@ -37,7 +37,7 @@ public class Constants {
 	public final static int BEGIN_REQUEST_WINDOW = 0; // Time when riders can begin to make requests
 	public final static int END_REQUEST_WINDOW = 18; // Cutoff time for making request known to agency for the day
 	public final static int CALL_REQUEST_BUFFER_MINS = 30; // Minimum buffer between call in time and request time
-	public final static int VEHCILE_QUANTITY = 2; //TODO: determine how many, to be pinned to fixed route cost
+	public final static int VEHCILE_QUANTITY = 1; //TODO: determine how many, to be pinned to fixed route cost
 	public final static int PICKUP_SERVICE_WINDOW = 30; //Max difference between actual pickup time and requested pickup time
 	
 	// Dynamic requests
