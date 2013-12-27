@@ -22,11 +22,10 @@ public class RebusScheduleTask implements Runnable {
 	private int mVehiclePlanIndex;
 	private VehicleScheduleJob mPickupJob;
 	private VehicleScheduleJob mDropoffJob;
-	private Routefinder mRouter;
-	ArrayList<VehicleScheduleJob> mSchedule;
-	ScheduleResult[] mResults;
-	CountDownLatch mLatch;
-	RouteCache mCache;
+	private ArrayList<VehicleScheduleJob> mSchedule;
+	private ScheduleResult[] mResults;
+	private CountDownLatch mLatch;
+	private RouteCache mCache;
 	
 	public RebusScheduleTask (int vehicleIndex, ArrayList<VehicleScheduleJob> schedule, RouteCache cache,
 			VehicleScheduleJob pickupJob, VehicleScheduleJob dropoffJob, ScheduleResult[] results, CountDownLatch latch) {
@@ -34,14 +33,13 @@ public class RebusScheduleTask implements Runnable {
 		mPickupJob = pickupJob;
 		mDropoffJob = dropoffJob;
 		mSchedule = schedule;
-		mRouter = new Routefinder();
 		mResults = results;
 		mLatch = latch;		
 		mCache = cache;
 	}
 
 	/**
-	 * Similar to a Runnable's run(), this method begins thread operations
+	 * Execute this thread
 	 */
 	public void run() {
 		ScheduleResult result = evaluateTripInVehicle();
@@ -162,7 +160,7 @@ public class RebusScheduleTask implements Runnable {
 	 *         result also includes the job (mFailsOn) that the result code applies to. 
 	 */
 	private FeasibilityResult checkScheduleFeasibility(ArrayList<VehicleScheduleJob> schedule, int vehicleNum) {
-		Rebus.updateServiceTimes(schedule, mCache, mRouter, vehicleNum);
+		Rebus.updateServiceTimes(schedule, mCache, vehicleNum);
 //		String str = "Checking schedule feasibility: \n";
 //		for(int i = 0; i < schedule.size(); i++) {
 //			VehicleScheduleJob job = schedule.get(i);

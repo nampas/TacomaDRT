@@ -35,9 +35,15 @@ public class Rebus {
 	
 	public static final String TAG = "Rebus";
 
-	// *****************************************
-	//         REBUS function constants
-	// *****************************************
+	// *************************
+	//     Scheduling Hints
+	// *************************
+	/** Use soft constraints on job insertions. This effectively leaves out step 2aa of the algorithm outlined above */
+	public static final int SOFT_CONSTRAINTS = 0x1; 
+	/** Reschedule all future trips when a trip is rejected. This can dramatically increase execution time */
+	public static final int RESCHEDULE_ALL_ON_REJECTION = 0x2;
+	
+	
 	// Job cost constants (job difficulty)
 	public static final float WINDOW_C1 = 1.0f;
 	public static final float WINDOW_C2 = 1.0f;
@@ -57,15 +63,15 @@ public class Rebus {
 	PriorityQueue<REBUSJob> mJobQueue;
 	private int mTotalJobsHandled;
 	private ExecutorService mScheduleExecutor;
-	private Routefinder mRouter;
 	private RouteCache mCache;
+	private static int mHints;
 	
-	public Rebus(RouteCache cache) {
+	public Rebus(RouteCache cache, int hints) {
 		mJobQueue = new PriorityQueue<REBUSJob>();
 		mTotalJobsHandled = 0;
 		mScheduleExecutor = Executors.newFixedThreadPool(TacomaDRTMain.numThreads);
-		mRouter = new Routefinder();
 		mCache = cache;
+		mHints= hints;
 	}
 	
 	public int getQueueSize() {
@@ -176,7 +182,7 @@ public class Rebus {
 				ArrayList<VehicleScheduleJob> optimalSchedule = optimalVehicle.getSchedule();
 				optimalSchedule.add(optimalScheduling.mOptimalPickupIndex, pickupJob);
 				optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
-				updateServiceTimes(optimalSchedule, mCache, mRouter, -1);
+				updateServiceTimes(optimalSchedule, mCache, -1);
 				
 //				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
 //							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
@@ -198,13 +204,13 @@ public class Rebus {
 	}
 	
 	/**
-	 * TODO: Do this during scheduling so that we don't have to pathfind for the same routes twice
 	 * Updates the service times of each job in this schedule
 	 * @param schedule The schedule to update times for
-	 * @param lastIndexModified the index of the last modification. THIS ASSUMES THAT ONLY ONE MODIFICATION HAS HAPPENED SINCE
-	 *        THE LAST CALL TO THIS METHOD ON THE SPECIFIED SCHEDULE
+	 * @param cache The route cache
+	 * @param vehicleNum the vehicle number if this should update a working schedule,
+	 *                   or -1 if this should update the finalized schedule 
 	 */
-	public static void updateServiceTimes(ArrayList<VehicleScheduleJob> schedule, RouteCache cache, Routefinder router, int vehicleNum) {
+	public static void updateServiceTimes(ArrayList<VehicleScheduleJob> schedule, RouteCache cache, int vehicleNum) {
 		// Initialize time to first pickup/dropoff job in the list
 		int curTime = schedule.get(1).getStartTime();
 		if(vehicleNum < 0)
@@ -212,12 +218,12 @@ public class Rebus {
 		else
 			schedule.get(1).setWorkingServiceTime(vehicleNum, curTime);
 		
+		// Start at index 2. We skip the start job and the first pickup job
 		for(int i = 2; i < schedule.size() - 1; i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
 			int type = curJob.getType();
 			
-			// Check if the distance between this job and the previous is already known
-			// If so, update the current time from the previously known value
+			// Update the current time by adding in transit time from last job to this job
 			VehicleScheduleJob lastJob = schedule.get(i-1);
 			if(lastJob.nextJobIs(vehicleNum, curJob)) {
 				curTime += lastJob.getTimeToNextJob(vehicleNum);
@@ -248,6 +254,15 @@ public class Rebus {
 		}
 	}
 	
+	/**
+	 * Checks if a setting is enabled. 
+	 * @param setting Setting to check, either USE_SOFT_CONSTRAINTS or RESCHEDULE_ALL_ON_REJECTION
+	 * @return True if specified setting is enabled, false otherwise
+	 */
+	public static boolean isSettingEnabled(int setting) {
+		return (mHints & setting) != 0;
+	}
+
 	// *************************************************
 	//                 COST FUNCTIONS
 	//  Cost functions assign a difficulty value to 

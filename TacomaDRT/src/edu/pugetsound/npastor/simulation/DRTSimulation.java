@@ -78,7 +78,7 @@ public class DRTSimulation {
 		if(mCache == null) {
 			throw new IllegalStateException("Cache has not been instantiated. Call buildCache() before runSimulation()");
 		}
-		mRebus = new Rebus(mCache);
+		mRebus = new Rebus(mCache, 0);
 		
 		// If a file path is specified, parse out the number of vehicles to generate
 		// Otherwise, use the value defined in Constants
