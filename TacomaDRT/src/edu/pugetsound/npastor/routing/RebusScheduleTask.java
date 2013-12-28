@@ -61,10 +61,7 @@ public class RebusScheduleTask implements Runnable {
 		
 		int pickupIndex = 1; //s1 in Madsen's notation
 		int dropoffIndex = 2; //s2 in Madsen's notation
-		
-		// By tracking the last index modified, we can optimize schedule update by only pathfinding on new paths
-		int lastIndexModified = 1;
-		
+
 		// FOLLOWING COMMENTS (except those in parenthesis) ARE MADSEN'S REBUS PSEUDO-CODE
 		// Step 1: Place s1, s2 just after this first stop T0 in the mSchedule, and update the mSchedule
 		mSchedule.add(pickupIndex, mPickupJob);
@@ -98,14 +95,15 @@ public class RebusScheduleTask implements Runnable {
 			// b) Check for feasibility.
 			boolean potentiallyFeasible = true;			
 			while(potentiallyFeasible) {
-				// (ensure this is a valid mSchedule ordering. Trip related jobs cannot be last mSchedule)
+				// (ensure this is a valid schedule ordering. Trip related jobs cannot be last in schedule)
 				if(dropoffIndex == mSchedule.size() - 1 || pickupIndex == mSchedule.size() - 1) {
 //					Log.info(TAG, "-------BREAKING ON INDEX TOO HIGH");
 					break;
 				}
 				FeasibilityResult feasResult = checkScheduleFeasibility(mSchedule, mVehiclePlanIndex);
-				int feasCode = feasResult.mResultCode;
-				VehicleScheduleJob failsOn = feasResult.mFailsOn; // The job the test failed on
+				int feasCode = feasResult.resultCode;
+				VehicleScheduleJob failsOn = feasResult.failsOn; // The job the test failed on
+				
 				//  i. if the insertion is feasible...
 				if(feasCode == FeasibilityResult.SUCCESS) {
 					// then calculate the change in the objective and compare to the previously found insertions
@@ -118,7 +116,7 @@ public class RebusScheduleTask implements Runnable {
 						schedResult.mSolutionFound = true;
 					}
 //					Log.info(TAG, "-------BREAKING ON SUCCESS");
-					potentiallyFeasible = false; // (No longer potentially feasible, mSchedule is certainly feasible)
+					potentiallyFeasible = false; // (No longer potentially feasible, schedule is certainly feasible)
 				// ii. If the insertion is not feasible, check for the following situations:
 				} else {
 					// A. if the capacity constraints, the maximum travel time or the time window
@@ -160,6 +158,16 @@ public class RebusScheduleTask implements Runnable {
 	 *         result also includes the job (mFailsOn) that the result code applies to. 
 	 */
 	private FeasibilityResult checkScheduleFeasibility(ArrayList<VehicleScheduleJob> schedule, int vehicleNum) {
+		
+		int numPassengers = 0;
+		FeasibilityResult result = new FeasibilityResult();
+		
+		// If soft constraints are enabled, all schedules pass the feasibility check
+		if(Rebus.isSettingEnabled(Rebus.SOFT_CONSTRAINTS)) {
+			result.resultCode = FeasibilityResult.SUCCESS;
+			return result;
+		}
+		
 		Rebus.updateServiceTimes(schedule, mCache, vehicleNum);
 //		String str = "Checking schedule feasibility: \n";
 //		for(int i = 0; i < schedule.size(); i++) {
@@ -169,8 +177,7 @@ public class RebusScheduleTask implements Runnable {
 //		}
 //		Log.d(TAG, str);
 		
-		int numPassengers = 0;
-		FeasibilityResult result = new FeasibilityResult();
+
 		for(int i = 0; i < schedule.size(); i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
 			int type = curJob.getType();
@@ -179,15 +186,15 @@ public class RebusScheduleTask implements Runnable {
 				numPassengers++;
 				// Check if vehicle capacity has been exceeded
 				if(numPassengers > Vehicle.VEHICLE_CAPACITY) {
-					result.mFailsOn = curJob;
-					result.mResultCode = FeasibilityResult.FAIL_CAPACITY;
+					result.failsOn = curJob;
+					result.resultCode = FeasibilityResult.FAIL_CAPACITY;
 					break;
 				}
 				// Check if pickup window is satisfied
 				// If current time exceeds the max pickup window, fail the feasibility test
 				if(curJob.getWorkingServiceTime(mVehiclePlanIndex) > curJob.getStartTime() + Constants.PICKUP_SERVICE_WINDOW) {
-					result.mFailsOn = curJob;
-					result.mResultCode = FeasibilityResult.FAIL_WINDOW;
+					result.failsOn = curJob;
+					result.resultCode = FeasibilityResult.FAIL_WINDOW;
 					break;
 				}
 			// For dropoff jobs we can test the maximal travel time constraint
@@ -200,13 +207,13 @@ public class RebusScheduleTask implements Runnable {
 				// If the total trip travel time exceeds the max allowable trip travel time,
 				// fail the feasibility test.
 				if(totalTripTravelTime > maxTravelTime(curJob.getTrip())) {
-					result.mFailsOn = curJob;
-					result.mResultCode = FeasibilityResult.FAIL_MAX_TRAVEL_TIME;
+					result.failsOn = curJob;
+					result.resultCode = FeasibilityResult.FAIL_MAX_TRAVEL_TIME;
 					break;
 				}
 			}
 		}
-		Log.d(TAG, "Returning feasibility code: " + result.mResultCode + "\n");
+		Log.d(TAG, "Returning feasibility code: " + result.resultCode + "\n");
 		return result;
 	}
 	
@@ -222,15 +229,13 @@ public class RebusScheduleTask implements Runnable {
 		
 		for(int i = 0; i < schedule.size(); i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
-			if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP) {
-				// Increment passengers and update total objective function
+			// Update passenger count
+			if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP)
 				passengers++;
-				objectiveFunction += getLoad(curJob, schedule, passengers);
-			} else if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_DROPOFF) {
-				// Decrement passengers and update total objective function
+			else if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_DROPOFF)
 				passengers--;	
-				objectiveFunction += getLoad(curJob, schedule, passengers);
-			}
+			// Add load cost of current job running total
+			objectiveFunction += getLoad(curJob, schedule, passengers);
 		}
 		return objectiveFunction;
 	}
@@ -271,21 +276,25 @@ public class RebusScheduleTask implements Runnable {
 	
 	// ********************************************
 	//               LOAD FUNCTIONS
-	//  Load functions estimate the feasibility of 
+	//  Load functions estimate the desirability of 
 	//  inserting a new job into an existing plan.
 	// ********************************************
 	
 	/**
 	 * Calculates the load of the job at its current location in schedule
 	 * @param j The job to evaluate
+	 * @param schedule The schedule
 	 * @param passengers Number of passengers in the vehicle
 	 * @return The load cost for this stop (the specified job)
 	 */
 	public double getLoad(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> schedule, int passengers) {
-		return loadDrivingTime(job, schedule) +
+		double cost = loadDrivingTime(job, schedule) +
 				loadWaitingTime(job) +
 				loadDesiredServiceTimeDeviation(job) +
-				loadCapacityUtilization(job, passengers);
+				loadCapacityUtilization(passengers);
+		if(Rebus.isSettingEnabled(Rebus.FAVOR_BUSY_VEHICLES))
+			cost += loadVehicleUtilization(schedule.size());
+		return cost;
 	}
 	
 	/**
@@ -296,7 +305,7 @@ public class RebusScheduleTask implements Runnable {
 	 */
 	private double loadDrivingTime(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> schedule) {
 		Trip t = job.getTrip();
-		int minDrivingTimeMins = (int)t.getRoute().getTime() / 60;
+		int minDrivingTime = (int)t.getRoute().getTime();
 		int waitingTime;
 		if(job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP)
 			waitingTime = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
@@ -306,7 +315,7 @@ public class RebusScheduleTask implements Runnable {
 		}
 		
 		// TODO: WHAT IS HANDLING TIME???? (0.0)
-		double cost = Rebus.DR_TIME_C1 * minDrivingTimeMins + Rebus.DR_TIME_C2 * (waitingTime + 0.0);
+		double cost = Rebus.DR_TIME_C1 * minDrivingTime + Rebus.DR_TIME_C2 * (waitingTime + 0.0);
 		
 		return cost;
 	}
@@ -347,13 +356,23 @@ public class RebusScheduleTask implements Runnable {
 	 * @param passengers Number of passengers in vehicle
 	 * @return The vehicle capacity utilization load cost for this stop (the specified job)
 	 */
-	private double loadCapacityUtilization(VehicleScheduleJob job, int passengers) {
+	private double loadCapacityUtilization(int passengers) {
 		// Number of seats free
 		int free = Vehicle.VEHICLE_CAPACITY - passengers;
 		
 		double cost = Rebus.CAPACITY_C * (free * free);
 		
 		return cost;
+	}
+	
+	/**
+	 * An addition the REBUS algorithm. Penalizes vehicles with less utilization across the day, encouraging
+	 * scheduling in more highly booked vehicles. 
+	 * @param numJobs Number of jobs in the vehicle's schedule
+	 * @return The vehicle utilization cost
+	 */
+	private double loadVehicleUtilization(int numJobs) {
+		return Math.pow(numJobs, -1) * Rebus.VEHICLE_UTIL_C;
 	}
 	
 	/**
@@ -368,12 +387,12 @@ public class RebusScheduleTask implements Runnable {
 		public static final int FAIL_EARLY_SERVICE = 4; // Pickup too early
 		public static final int SUCCESS = 3;
 		
-		public VehicleScheduleJob mFailsOn;
-		public int mResultCode;
+		public VehicleScheduleJob failsOn;
+		public int resultCode;
 		
 		public FeasibilityResult() {
-			mFailsOn = null;
-			mResultCode = SUCCESS;
+			failsOn = null;
+			resultCode = SUCCESS;
 		}
 	}
 }

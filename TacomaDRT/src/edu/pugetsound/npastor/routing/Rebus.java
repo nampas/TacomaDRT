@@ -42,6 +42,8 @@ public class Rebus {
 	public static final int SOFT_CONSTRAINTS = 0x1; 
 	/** Reschedule all future trips when a trip is rejected. This can dramatically increase execution time */
 	public static final int RESCHEDULE_ALL_ON_REJECTION = 0x2;
+	/** Favor scheduling trips in more heavily booked vehicles */
+	public static final int FAVOR_BUSY_VEHICLES = 0x4;
 	
 	
 	// Job cost constants (job difficulty)
@@ -59,6 +61,7 @@ public class Rebus {
 	public static final float WAIT_C2 = 1.0f;
 	public static final float DEV_C = 1.0f;
 	public static final float CAPACITY_C = 1.0f;
+	public static final float VEHICLE_UTIL_C = 1.0f;
 	
 	PriorityQueue<REBUSJob> mJobQueue;
 	private int mTotalJobsHandled;
@@ -124,70 +127,70 @@ public class Rebus {
 	 */
 	private boolean scheduleJob(REBUSJob job, Vehicle[] plan) {
 		boolean scheduleSuccessful = false;
-		if(job.getType() == REBUSJob.JOB_NEW_REQUEST) {
-			Trip t = job.getTrip();
+		if(job.getType() != REBUSJob.JOB_NEW_REQUEST)
+			return true;
+	
+		Trip t = job.getTrip();
+		Log.iln(TAG, "On trip " + mTotalJobsHandled + ". Scheduling " + t.toString().replace("\n", "") +
+				   "\n                     Cost: " + job.getCost(), (mTotalJobsHandled % 50 == 0));
+		
+		// Split the trip into pickup and dropoff jobs
+		int durationMins = (int)t.getRoute().getTime() / 60;
+		VehicleScheduleJob pickupJob = new VehicleScheduleJob(t, t.getFirstEndpoint(),
+				t.getPickupTime(), durationMins, VehicleScheduleJob.JOB_TYPE_PICKUP, plan.length);
+		VehicleScheduleJob dropoffJob = new VehicleScheduleJob(t, t.getSecondEndpoint(),
+				t.getPickupTime() + durationMins, 0, VehicleScheduleJob.JOB_TYPE_DROPOFF, plan.length);
+		
+		// A list of thread results. Each thread will insert a result into this list at the index
+		// corresponding to the index of the vehicle it's evaluating
+		ScheduleResult[] results = new ScheduleResult[plan.length];
+		CountDownLatch latch = new CountDownLatch(plan.length);
+		
+		// Job must be evaluated in every vehicle. Prepare and execute threads
+		for(int i = 0; i < plan.length; i++) {
+			Vehicle v = plan[i];
 			
-			Log.iln(TAG, "On trip " + mTotalJobsHandled + ". Scheduling " + t.toString().replace("\n", "") +
-					   "\n                     Cost: " + job.getCost(), (mTotalJobsHandled % 50 == 0));
-			
-			// Split the trip into pickup and dropoff jobs
-			int durationMins = (int)t.getRoute().getTime() / 60;
-			VehicleScheduleJob pickupJob = new VehicleScheduleJob(t, t.getFirstEndpoint(),
-					t.getPickupTime(), durationMins, VehicleScheduleJob.JOB_TYPE_PICKUP, plan.length);
-			VehicleScheduleJob dropoffJob = new VehicleScheduleJob(t, t.getSecondEndpoint(),
-					t.getPickupTime() + durationMins, 0, VehicleScheduleJob.JOB_TYPE_DROPOFF, plan.length);
-			
-			// A list of thread results. Each thread will insert into this lost at the index
-			// corresponding to the index of the vehicle it's evaluating
-			ScheduleResult[] results = new ScheduleResult[plan.length];
-			CountDownLatch latch = new CountDownLatch(plan.length);
-			
-			// Job must be evaluated in every vehicle.
-			// Prepare threads to execute in parallel
-			for(int i = 0; i < plan.length; i++) {
-				Vehicle v = plan[i];
-				
-				// Build new worker threads and copy schedules and jobs. We don't want to modify existing schedule
-				ArrayList<VehicleScheduleJob> existingSchedule = v.getSchedule();
-				ArrayList<VehicleScheduleJob> scheduleCopy  = new ArrayList<VehicleScheduleJob>();
-				for(int j = 0; j < existingSchedule.size(); j++) {
-					scheduleCopy.add(existingSchedule.get(j));
-				}
-				RebusScheduleTask task = new RebusScheduleTask(i, scheduleCopy, 
-						mCache, pickupJob, dropoffJob, results, latch);
-				mScheduleExecutor.execute(task);
+			// Build new worker threads and copy schedules and jobs. We don't want to modify existing schedule
+			ArrayList<VehicleScheduleJob> existingSchedule = v.getSchedule();
+			ArrayList<VehicleScheduleJob> scheduleCopy  = new ArrayList<VehicleScheduleJob>();
+			for(int j = 0; j < existingSchedule.size(); j++) {
+				scheduleCopy.add(existingSchedule.get(j));
 			}
-			
-			// Wait on the countdown latch for thread completion
-			try {
-				latch.await();
-			} catch (InterruptedException e) {
-				Log.e(TAG, "Main thread interrupted while waiting for worker thread to complete");
-				e.printStackTrace();
+			RebusScheduleTask task = new RebusScheduleTask(i, scheduleCopy, 
+					mCache, pickupJob, dropoffJob, results, latch);
+			mScheduleExecutor.execute(task);
+		}
+		
+		// Wait on the countdown latch for thread completion
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			Log.e(TAG, e.getMessage());
+			e.printStackTrace();
+		}
+		
+		// Keep track of the most optimal insertion of the job
+		ScheduleResult optimalScheduling = null;
+		
+		for(ScheduleResult curResult : results) {
+			if(curResult.mSolutionFound) {
+				if(optimalScheduling == null || curResult.mOptimalScore < optimalScheduling.mOptimalScore)
+					optimalScheduling = curResult;
 			}
+		}
+		
+		if(optimalScheduling != null) {
+			// Do the scheduling if a feasible result has been found
+			Vehicle optimalVehicle = plan[optimalScheduling.mVehicleIndex];
+			ArrayList<VehicleScheduleJob> optimalSchedule = optimalVehicle.getSchedule();
+			optimalSchedule.add(optimalScheduling.mOptimalPickupIndex, pickupJob);
+			optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
+			updateServiceTimes(optimalSchedule, mCache, -1);
 			
-			// Keep track of the most optimal insertion of the job
-			ScheduleResult optimalScheduling = null;
-			
-			for(ScheduleResult curResult : results) {
-				if(curResult.mSolutionFound) {
-					if(optimalScheduling == null || curResult.mOptimalScore < optimalScheduling.mOptimalScore)
-						optimalScheduling = curResult;
-				}
-			}
-			
-			if(optimalScheduling != null) {
-				// Do the scheduling if a feasible result has been found
-				Vehicle optimalVehicle = plan[optimalScheduling.mVehicleIndex];
-				ArrayList<VehicleScheduleJob> optimalSchedule = optimalVehicle.getSchedule();
-				optimalSchedule.add(optimalScheduling.mOptimalPickupIndex, pickupJob);
-				optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
-				updateServiceTimes(optimalSchedule, mCache, -1);
-				
 //				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
 //							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
 //							". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex);
-				
+			
 //				String str = "New schedule is:\n";
 //				for(int i = 0; i < optimalSchedule.size(); i++) {
 //					VehicleScheduleJob printJob = optimalSchedule.get(i);
@@ -195,9 +198,6 @@ public class Rebus {
 //					if(i != optimalSchedule.size()-1) str += "\n";
 //				}
 //				Log.d(TAG, str);
-				scheduleSuccessful = true;
-			}
-		} else {
 			scheduleSuccessful = true;
 		}
 		return scheduleSuccessful;
