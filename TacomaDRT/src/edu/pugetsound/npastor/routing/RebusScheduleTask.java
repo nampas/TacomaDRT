@@ -229,13 +229,15 @@ public class RebusScheduleTask implements Runnable {
 		
 		for(int i = 0; i < schedule.size(); i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
-			// Update passenger count
-			if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP)
+			int jobType = curJob.getType();
+			// Update passenger count and running total of the objective function
+			if(jobType == VehicleScheduleJob.JOB_TYPE_PICKUP) {
 				passengers++;
-			else if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_DROPOFF)
+				objectiveFunction += getLoad(curJob, schedule, passengers);
+			} else if(jobType == VehicleScheduleJob.JOB_TYPE_DROPOFF) {
 				passengers--;	
-			// Add load cost of current job running total
-			objectiveFunction += getLoad(curJob, schedule, passengers);
+				objectiveFunction += getLoad(curJob, schedule, passengers);
+			}
 		}
 		return objectiveFunction;
 	}

@@ -78,15 +78,15 @@ public class TractPointGenerator {
 			CoordinateReferenceSystem boundaryFileCRS = boundaryFeatureSource.getSchema().getCoordinateReferenceSystem();
 			mBoundaryProjectionTransform = CRS.findMathTransform(boundaryFileCRS, DefaultGeographicCRS.WGS84, true);
 		} catch(MalformedURLException ex) {
-			Log.e(TAG, "Error opening census tract file.");
+			Log.e(TAG, ex.getMessage());
 			ex.printStackTrace();
 			System.exit(1);
 		} catch(IOException ex) {
-			Log.e(TAG, "Error opening census tract file.");
+			Log.e(TAG, ex.getMessage());
 			ex.printStackTrace();
 			System.exit(1);
 		} catch(FactoryException ex) {
-			Log.e(TAG, "Error creating transformation from file CRS to WGS84 projection");
+			Log.e(TAG, "Error creating transformation from file CRS to WGS84 projection. " + ex.getMessage());
 			ex.printStackTrace();
 			System.exit(1);
 		}
