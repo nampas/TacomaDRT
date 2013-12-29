@@ -162,13 +162,14 @@ public class RebusScheduleTask implements Runnable {
 		int numPassengers = 0;
 		FeasibilityResult result = new FeasibilityResult();
 		
+		Rebus.updateServiceTimes(schedule, mCache, vehicleNum);
+		
 		// If soft constraints are enabled, all schedules pass the feasibility check
 		if(Rebus.isSettingEnabled(Rebus.SOFT_CONSTRAINTS)) {
 			result.resultCode = FeasibilityResult.SUCCESS;
 			return result;
 		}
 		
-		Rebus.updateServiceTimes(schedule, mCache, vehicleNum);
 //		String str = "Checking schedule feasibility: \n";
 //		for(int i = 0; i < schedule.size(); i++) {
 //			VehicleScheduleJob job = schedule.get(i);
@@ -177,7 +178,6 @@ public class RebusScheduleTask implements Runnable {
 //		}
 //		Log.d(TAG, str);
 		
-
 		for(int i = 0; i < schedule.size(); i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
 			int type = curJob.getType();

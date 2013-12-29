@@ -40,19 +40,19 @@ public class Rebus {
 	// *************************
 	/** Use soft constraints on job insertions. This effectively leaves out step 2aa of the algorithm outlined above */
 	public static final int SOFT_CONSTRAINTS = 0x1; 
-	/** Reschedule all future trips when a trip is rejected. This can dramatically increase execution time */
+	/** Reschedule all previously scheduled future trips when a trip is rejected. 
+	 *  This can dramatically increase execution time */
 	public static final int RESCHEDULE_ALL_ON_REJECTION = 0x2;
 	/** Favor scheduling trips in more heavily booked vehicles */
 	public static final int FAVOR_BUSY_VEHICLES = 0x4;
-	
-	
+		
 	// Job cost constants (job difficulty)
 	public static final float WINDOW_C1 = 1.0f;
 	public static final float WINDOW_C2 = 1.0f;
 	public static final float TR_TIME_C1 = 1.0f;
 	public static final float TR_TIME_C2 = 1.0f;
 	public static final float MAX_TRAVEL_COEFF = 2.0f; //Max travel time for a given trip is this coefficient
-														//multiplied by direct travel time
+													   //multiplied by direct travel time
 	
 	// Load constants (insertion feasibility)
 	public static final float DR_TIME_C1 = 1.0f; // Cvariable in Madsen's notation
@@ -63,7 +63,7 @@ public class Rebus {
 	public static final float CAPACITY_C = 1.0f;
 	public static final float VEHICLE_UTIL_C = 1.0f;
 	
-	PriorityQueue<REBUSJob> mJobQueue;
+	private PriorityQueue<REBUSJob> mJobQueue;
 	private int mTotalJobsHandled;
 	private ExecutorService mScheduleExecutor;
 	private RouteCache mCache;
@@ -74,7 +74,7 @@ public class Rebus {
 		mTotalJobsHandled = 0;
 		mScheduleExecutor = Executors.newFixedThreadPool(TacomaDRTMain.numThreads);
 		mCache = cache;
-		mHints= hints;
+		mHints = hints;
 	}
 	
 	public int getQueueSize() {
@@ -100,7 +100,7 @@ public class Rebus {
 	 * Schedules all enqueued jobs, given the existing plan.
 	 * This will modify the existing plan to include new jobs
 	 * @param plan The existing route scheduling
-	 * @result A list of trips which REBUS was not able to schedule
+	 * @result A list of rejected trips which REBUS was not able to schedule
 	 */
 	public ArrayList<Trip> scheduleQueuedJobs(Vehicle[] plan) {
 		Log.iln(TAG, "*************************************");
