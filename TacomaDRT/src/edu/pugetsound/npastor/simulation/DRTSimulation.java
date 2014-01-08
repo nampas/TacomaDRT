@@ -45,7 +45,7 @@ public class DRTSimulation {
 	
 	private static final String NUM_VEHICLES_FILE_LBL = "num_vehicles";
 	
-	private static final int ROUTE_UPDATE_INCREMENT = 10; // Update route progress at this increment
+	private static final int ROUTE_UPDATE_INCREMENT = 10; // Update route progress at this percentage increment
 	
 	private static final String COMMA_DELIM = ",";
 	
@@ -79,10 +79,11 @@ public class DRTSimulation {
 			throw new IllegalStateException("Cache has not been instantiated. Call buildCache() before runSimulation()");
 		}
 		mRebus = new Rebus(mCache, Rebus.SOFT_CONSTRAINTS);
+		mRebus.printEnabledHints();
 		
 		// If a file path is specified, parse out the number of vehicles to generate
 		// Otherwise, use the value defined in Constants
-		int vehicleQuantity = 0;
+		int vehicleQuantity = -1;
 		if(!mFromFile) {
 			vehicleQuantity = Constants.VEHCILE_QUANTITY;
 		} else {
@@ -99,7 +100,7 @@ public class DRTSimulation {
 					}						
 				}
 				scanner.close();
-				if(vehicleQuantity == 0)
+				if(vehicleQuantity == -1)
 					throw new IllegalArgumentException("Vehicle quantity not specified in file at " + file.getPath());				
 			} catch(FileNotFoundException ex) {
 				Log.e(TAG, "Unable to find trip file at: " + file.getPath());

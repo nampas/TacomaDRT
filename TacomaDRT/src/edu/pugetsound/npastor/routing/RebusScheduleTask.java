@@ -290,12 +290,16 @@ public class RebusScheduleTask implements Runnable {
 	 * @return The load cost for this stop (the specified job)
 	 */
 	public double getLoad(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> schedule, int passengers) {
+		// Calculate the REBUS load cost
+//		Log.iln(TAG, "Load cost for job type " + job.getType() + ", id " + job.getTrip().getIdentifier());
 		double cost = loadDrivingTime(job, schedule) +
 				loadWaitingTime(job) +
 				loadDesiredServiceTimeDeviation(job) +
 				loadCapacityUtilization(passengers);
+		// Add in the vehicle utilization cost if enabled
 		if(Rebus.isSettingEnabled(Rebus.FAVOR_BUSY_VEHICLES))
 			cost += loadVehicleUtilization(schedule.size());
+		
 		return cost;
 	}
 	
@@ -308,17 +312,17 @@ public class RebusScheduleTask implements Runnable {
 	private double loadDrivingTime(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> schedule) {
 		Trip t = job.getTrip();
 		int minDrivingTime = (int)t.getRoute().getTime();
-		int waitingTime;
-		if(job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP)
-			waitingTime = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
-		else {
-			VehicleScheduleJob corJob = findCorrespondingJob(job, schedule);
-			waitingTime = corJob.getWorkingServiceTime(mVehiclePlanIndex) - corJob.getStartTime();
-		}
+		
+		// Find the waiting time for the job. If this is not a dropoff job, we need to find
+		// its corresponding pickup job
+		VehicleScheduleJob startJob = job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP ?
+				job : findCorrespondingJob(job, schedule);
+		int waitingTime = startJob.getWorkingServiceTime(mVehiclePlanIndex) - startJob.getStartTime();
 		
 		// TODO: WHAT IS HANDLING TIME???? (0.0)
 		double cost = Rebus.DR_TIME_C1 * minDrivingTime + Rebus.DR_TIME_C2 * (waitingTime + 0.0);
 		
+//		Log.i(TAG, "     Driving time: " + cost, true, true);
 		return cost;
 	}
 	
@@ -335,6 +339,8 @@ public class RebusScheduleTask implements Runnable {
 			int waitingTime = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
 			cost = Rebus.WAIT_C2 * (waitingTime * waitingTime) + Rebus.WAIT_C1 * waitingTime;
 		}
+		
+//		Log.i(TAG, ". Waiting time: " + cost, true, true);
 		return cost;
 	}
 	
@@ -348,6 +354,8 @@ public class RebusScheduleTask implements Runnable {
 		//TODO: what is deviation?
 		int deviation = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
 		double cost = Rebus.DEV_C * (deviation * deviation);
+		
+//		Log.i(TAG, ". Service time dev: " + cost, true, true);
 		return cost;
 	}
 	
@@ -364,17 +372,20 @@ public class RebusScheduleTask implements Runnable {
 		
 		double cost = Rebus.CAPACITY_C * (free * free);
 		
+//		Log.i(TAG, ". Cap util: " + cost, true, true);
 		return cost;
 	}
 	
 	/**
-	 * An addition the REBUS algorithm. Penalizes vehicles with less utilization across the day, encouraging
-	 * scheduling in more highly booked vehicles. 
+	 * An addition to the REBUS algorithm. Penalizes vehicles with less utilization across the day, encouraging
+	 * scheduling in more highly booked vehicles.
 	 * @param numJobs Number of jobs in the vehicle's schedule
 	 * @return The vehicle utilization cost
 	 */
 	private double loadVehicleUtilization(int numJobs) {
-		return Math.pow(numJobs, -1) * Rebus.VEHICLE_UTIL_C;
+		double cost = Math.pow(numJobs / 2, -1) * Rebus.VEHICLE_UTIL_C;
+//		Log.i(TAG, ". Vehicle util: " + cost + "\n", true, true);
+		return cost;
 	}
 	
 	/**

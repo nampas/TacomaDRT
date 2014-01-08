@@ -295,7 +295,7 @@ public class TripGenerator {
 				//TODO: should this be weighted for total population level?
 				secondTract = mPCData.getWeightedTract(riderAgeGroup, false);
 		}
-		if(t.getDirection()) {
+		if(t.isOutbound()) {
 			t.setFirstTract(firstTract);
 			t.setSecondTract(secondTract);
 		} else {
@@ -406,7 +406,7 @@ public class TripGenerator {
 	private int generateDirections(Trip t) {
 
 		GHResponse routeResponse;
-		if(t.getDirection())
+		if(t.isOutbound())
 			routeResponse = mRouter.findRoute(t.getFirstEndpoint(), t.getSecondEndpoint());
 		else 
 			routeResponse = mRouter.findRoute(t.getSecondEndpoint(), t.getFirstEndpoint());
@@ -446,7 +446,7 @@ public class TripGenerator {
 				t.getIdentifier() + sp + 
 				t.getTripType() + sp +
 				t.getRiderAge() + sp + 
-				(t.getDirection() ? "1" : "0") + sp +
+				(t.isOutbound() ? "1" : "0") + sp +
 				t.getFirstTract() + sp +
 				t.getFirstEndpoint().getX() + sp +
 				t.getFirstEndpoint().getY() + sp +

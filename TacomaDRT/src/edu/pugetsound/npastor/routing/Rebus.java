@@ -61,7 +61,7 @@ public class Rebus {
 	public static final float WAIT_C2 = 1.0f;
 	public static final float DEV_C = 1.0f;
 	public static final float CAPACITY_C = 1.0f;
-	public static final float VEHICLE_UTIL_C = 1.0f;
+	public static final float VEHICLE_UTIL_C = 1500f;
 	
 	private PriorityQueue<REBUSJob> mJobQueue;
 	private int mTotalJobsHandled;
@@ -256,7 +256,7 @@ public class Rebus {
 	
 	/**
 	 * Checks if a setting is enabled. 
-	 * @param setting Setting to check, either USE_SOFT_CONSTRAINTS or RESCHEDULE_ALL_ON_REJECTION
+	 * @param setting Setting to check, e.g USE_SOFT_CONSTRAINTS or RESCHEDULE_ALL_ON_REJECTION
 	 * @return True if specified setting is enabled, false otherwise
 	 */
 	public static boolean isSettingEnabled(int setting) {
@@ -303,6 +303,23 @@ public class Rebus {
 		// Maximal travel time cost function
 		double costFunction = TR_TIME_C2 * Math.pow(deltaTransit, -1) + TR_TIME_C1;
 		return costFunction;
+	}
+	
+	public void printEnabledHints() {
+		StringBuilder hintString = new StringBuilder();
+		// Check for all hints
+		if(isSettingEnabled(Rebus.FAVOR_BUSY_VEHICLES))
+			hintString.append("Favor Busy Schedules, ");
+		if(isSettingEnabled(Rebus.RESCHEDULE_ALL_ON_REJECTION))
+			hintString.append("Reschedule All on Rejction, ");
+		if(isSettingEnabled(Rebus.SOFT_CONSTRAINTS))
+			hintString.append("Soft Constraints, ");
+		
+		// If no hints set, add appropriate message
+		if(hintString.length() == 0)
+			hintString.append("None");
+		
+		Log.iln(TAG, "Enabled hints: " + hintString.toString());
 	}
 
 	/**

@@ -12,7 +12,7 @@ import com.graphhopper.GHResponse;
  */
 public class Trip {
 
-	public final String TAG = "Trip";
+	public final static String TAG = "Trip";
 	public final static String TRACT_NOT_SET = "Not set";
 	
 	private int mTripType;
@@ -117,7 +117,7 @@ public class Trip {
 	 * Returns direction
 	 * @return True if outbound, false otherwise
 	 */
-	public boolean getDirection() {
+	public boolean isOutbound() {
 		return mIsOutbound;
 	}
 	
