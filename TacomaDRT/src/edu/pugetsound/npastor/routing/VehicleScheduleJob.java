@@ -39,16 +39,16 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	private int[] mWorkingServiceTimes;
 
 	
-	public VehicleScheduleJob(Trip trip, Point2D location, int startTime, int duration, int type, int vehicleNum) {
+	public VehicleScheduleJob(Trip trip, Point2D location, int startTime, int duration, int type, int numVehicles) {
 		mTrip = trip;
 		mStartTime = startTime;
 		mDuration = duration;
 		mType = type;
 		mPlannedServiceTime = startTime;
 		mLocation = location;
-		mWorkingTimesToNextJob = new int[vehicleNum];
-		mWorkingNextJobs = new VehicleScheduleJob[vehicleNum];
-		mWorkingServiceTimes = new int[vehicleNum];
+		mWorkingTimesToNextJob = new int[numVehicles];
+		mWorkingNextJobs = new VehicleScheduleJob[numVehicles];
+		mWorkingServiceTimes = new int[numVehicles];
 	}
 	
 	/**
@@ -166,8 +166,20 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	}
 	
 	public String toString() {
+		return toString(-1);
+	}
+	
+	public String toString(int workingServiceIndex) {
+		int time;
+		if(mType == JOB_TYPE_START || mType == JOB_TYPE_END)
+			time = mPlannedServiceTime;
+		else if(workingServiceIndex < 0)
+			time = mPlannedServiceTime;
+		else 
+			time = mWorkingServiceTimes[workingServiceIndex];  
+		
 		String str = "Job type: " + mType + ". Start time: " + DRTUtils.minsToHrMin(mStartTime)
-					+ ". Service time: " + DRTUtils.minsToHrMin(mPlannedServiceTime);
+					+ ". Service time: " + DRTUtils.minsToHrMin(time);
 		if(mTrip != null) 
 			str += ". Trip ID: " + mTrip.getIdentifier()
 			+ ". Location: " + mLocation.getY() + ", " + mLocation.getX();

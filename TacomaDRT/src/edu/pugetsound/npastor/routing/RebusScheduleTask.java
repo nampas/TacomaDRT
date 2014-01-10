@@ -108,7 +108,17 @@ public class RebusScheduleTask implements Runnable {
 				if(feasCode == FeasibilityResult.SUCCESS) {
 					// then calculate the change in the objective and compare to the previously found insertions
 					double objectiveFunc = calculateObjFunc(mSchedule);
-//					Log.info(TAG, "success, objective func is " + objectiveFunc);
+					
+					// PRINT STUFF
+					String str = "Trip " + mPickupJob.getTrip().getIdentifier() + " success, objective func is " + objectiveFunc + ". "  + pickupIndex + ", " +  dropoffIndex;// + "\n";
+//					for(int i = 0; i < mSchedule.size(); i++) {
+//						VehicleScheduleJob job = mSchedule.get(i);
+//						str += job.toString(mVehiclePlanIndex);
+//						if(i != mSchedule.size()-1) str += "\n";
+//					}
+					Log.iln(TAG, str);
+					// END PRINT STUFF
+					
 					if(objectiveFunc < schedResult.mOptimalScore || schedResult.mSolutionFound == false) {
 						schedResult.mOptimalPickupIndex = pickupIndex;
 						schedResult.mOptimalDropoffIndex = dropoffIndex;
@@ -176,7 +186,7 @@ public class RebusScheduleTask implements Runnable {
 //			str += job.toString();
 //			if(i != schedule.size()-1) str += "\n";
 //		}
-//		Log.d(TAG, str);
+//		Log.iln(TAG, str);
 		
 		for(int i = 0; i < schedule.size(); i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
@@ -227,18 +237,26 @@ public class RebusScheduleTask implements Runnable {
 		double objectiveFunction = 0;
 		int passengers = 0;
 		
+		String msg = "";
+		
 		for(int i = 0; i < schedule.size(); i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
 			int jobType = curJob.getType();
 			// Update passenger count and running total of the objective function
 			if(jobType == VehicleScheduleJob.JOB_TYPE_PICKUP) {
 				passengers++;
-				objectiveFunction += getLoad(curJob, schedule, passengers);
+				double objectiveFuncInc = getLoad(curJob, schedule, passengers);
+				msg += objectiveFuncInc + " ";
+				objectiveFunction += objectiveFuncInc;
 			} else if(jobType == VehicleScheduleJob.JOB_TYPE_DROPOFF) {
 				passengers--;	
-				objectiveFunction += getLoad(curJob, schedule, passengers);
+				double objectiveFuncInc = getLoad(curJob, schedule, passengers);
+				msg += objectiveFuncInc + " ";
+				objectiveFunction += objectiveFuncInc;
 			}
 		}
+		
+		Log.iln(TAG, msg);
 		return objectiveFunction;
 	}
 	
@@ -310,6 +328,20 @@ public class RebusScheduleTask implements Runnable {
 	 * @return The driving time laod cost for this stop (the specified job)
 	 */
 	private double loadDrivingTime(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> schedule) {
+//		Trip t = job.getTrip();
+//		int minDrivingTime = (int)t.getRoute().getTime();
+//		
+//		// Find the waiting time for the job. If this is not a dropoff job, we need to find
+//		// its corresponding pickup job
+//		VehicleScheduleJob startJob = job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP ?
+//				job : findCorrespondingJob(job, schedule);
+//		int waitingTime = startJob.getWorkingServiceTime(mVehiclePlanIndex) - startJob.getStartTime();
+//		
+//		double cost = Rebus.DR_TIME_C1 * minDrivingTime + Rebus.DR_TIME_C2 * (waitingTime + Rebus.HANDLE_TIME);
+//		
+////		Log.i(TAG, "     Driving time: " + cost, true, true);
+//		return cost;
+		
 		Trip t = job.getTrip();
 		int minDrivingTime = (int)t.getRoute().getTime();
 		
@@ -317,10 +349,12 @@ public class RebusScheduleTask implements Runnable {
 		// its corresponding pickup job
 		VehicleScheduleJob startJob = job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP ?
 				job : findCorrespondingJob(job, schedule);
+		VehicleScheduleJob endJob = job.getType() == VehicleScheduleJob.JOB_TYPE_DROPOFF ? 
+				job : findCorrespondingJob(job, schedule);
 		int waitingTime = startJob.getWorkingServiceTime(mVehiclePlanIndex) - startJob.getStartTime();
 		
-		// TODO: WHAT IS HANDLING TIME???? (0.0)
-		double cost = Rebus.DR_TIME_C1 * minDrivingTime + Rebus.DR_TIME_C2 * (waitingTime + 0.0);
+		double cost = Rebus.DR_TIME_C1 * (endJob.getWorkingServiceTime(mVehiclePlanIndex) - startJob.getWorkingServiceTime(mVehiclePlanIndex)) 
+				+ Rebus.DR_TIME_C2 * (waitingTime + Rebus.HANDLE_TIME);
 		
 //		Log.i(TAG, "     Driving time: " + cost, true, true);
 		return cost;
@@ -334,12 +368,10 @@ public class RebusScheduleTask implements Runnable {
 	 */
 	private double loadWaitingTime(VehicleScheduleJob job) {
 		double cost = 0;
-		//TODO: should this only apply to pickup jobs?
-		if(job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP) {
-			int waitingTime = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
-			cost = Rebus.WAIT_C2 * (waitingTime * waitingTime) + Rebus.WAIT_C1 * waitingTime;
-		}
-		
+
+		int waitingTime = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
+		cost = Rebus.WAIT_C2 * (waitingTime * waitingTime) + Rebus.WAIT_C1 * waitingTime;
+
 //		Log.i(TAG, ". Waiting time: " + cost, true, true);
 		return cost;
 	}

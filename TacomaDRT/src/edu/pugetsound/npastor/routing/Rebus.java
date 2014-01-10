@@ -55,13 +55,15 @@ public class Rebus {
 													   //multiplied by direct travel time
 	
 	// Load constants (insertion feasibility)
-	public static final float DR_TIME_C1 = 1.0f; // Cvariable in Madsen's notation
-	public static final float DR_TIME_C2 = 1.0f; // Cconst in Madsen's notation
-	public static final float WAIT_C1 = 1.0f;
-	public static final float WAIT_C2 = 1.0f;
-	public static final float DEV_C = 1.0f;
-	public static final float CAPACITY_C = 1.0f;
+	public static final float DR_TIME_C1 = 3.0f; // Cvariable in Madsen's notation
+	public static final float DR_TIME_C2 = 0.0f; // Cconst in Madsen's notation
+	public static final float WAIT_C1 = 0.0f;
+	public static final float WAIT_C2 = 0.0f;
+	public static final float DEV_C = 0.0f;
+	public static final float CAPACITY_C = 0.0f; // Ci in Madsen's notation
 	public static final float VEHICLE_UTIL_C = 1500f;
+	
+	public static final float HANDLE_TIME = 0.0f;
 	
 	private PriorityQueue<REBUSJob> mJobQueue;
 	private int mTotalJobsHandled;
