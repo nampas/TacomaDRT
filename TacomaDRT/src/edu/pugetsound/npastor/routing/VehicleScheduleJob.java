@@ -28,6 +28,7 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	private int mTimeToNextJob;
 	private VehicleScheduleJob mNextJob;
 	private Point2D mLocation;
+	private int mWaitTime;
 	
 	// These arrays allow for worker threads to set their own
 	// "working" values as they evaluate this job in their 
@@ -37,6 +38,7 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	private int[] mWorkingTimesToNextJob;
 	private VehicleScheduleJob[] mWorkingNextJobs;
 	private int[] mWorkingServiceTimes;
+	private int[] mWorkingWaitTimes;
 
 	
 	public VehicleScheduleJob(Trip trip, Point2D location, int startTime, int duration, int type, int numVehicles) {
@@ -46,6 +48,8 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		mType = type;
 		mPlannedServiceTime = startTime;
 		mLocation = location;
+		mWaitTime = 0;
+		mWorkingWaitTimes = new int[numVehicles];
 		mWorkingTimesToNextJob = new int[numVehicles];
 		mWorkingNextJobs = new VehicleScheduleJob[numVehicles];
 		mWorkingServiceTimes = new int[numVehicles];
@@ -79,6 +83,13 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 			mWorkingTimesToNextJob[vehicleIndex] = timeMins;
 	}
 	
+	public void setWaitTime(int vehicleIndex, int waitTime) {
+		if(vehicleIndex < 0)
+			mWaitTime = waitTime;
+		else 
+			mWorkingWaitTimes[vehicleIndex] = waitTime;
+	}
+	
 	/**
 	 * Checks if the specified job is the next job that this instance is aware of
 	 * @param toCheck Job to check 
@@ -96,6 +107,13 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 			return false;
 		else
 			return toCheck.equals(mWorkingNextJobs[vehicleIndex]);
+	}
+	
+	public int getWaitTime(int vehicleIndex) {
+		if(vehicleIndex < 0)
+			return mWaitTime;
+		else 
+			return mWorkingWaitTimes[vehicleIndex];
 	}
 	
 	public int getWorkingServiceTime(int vehicleNum) {

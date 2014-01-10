@@ -328,30 +328,15 @@ public class RebusScheduleTask implements Runnable {
 	 * @return The driving time laod cost for this stop (the specified job)
 	 */
 	private double loadDrivingTime(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> schedule) {
-//		Trip t = job.getTrip();
-//		int minDrivingTime = (int)t.getRoute().getTime();
-//		
-//		// Find the waiting time for the job. If this is not a dropoff job, we need to find
-//		// its corresponding pickup job
-//		VehicleScheduleJob startJob = job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP ?
-//				job : findCorrespondingJob(job, schedule);
-//		int waitingTime = startJob.getWorkingServiceTime(mVehiclePlanIndex) - startJob.getStartTime();
-//		
-//		double cost = Rebus.DR_TIME_C1 * minDrivingTime + Rebus.DR_TIME_C2 * (waitingTime + Rebus.HANDLE_TIME);
-//		
-////		Log.i(TAG, "     Driving time: " + cost, true, true);
-//		return cost;
-		
 		Trip t = job.getTrip();
 		int minDrivingTime = (int)t.getRoute().getTime();
 		
-		// Find the waiting time for the job. If this is not a dropoff job, we need to find
-		// its corresponding pickup job
+		// We need to construct the entire trip that this job is a member of.
 		VehicleScheduleJob startJob = job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP ?
 				job : findCorrespondingJob(job, schedule);
 		VehicleScheduleJob endJob = job.getType() == VehicleScheduleJob.JOB_TYPE_DROPOFF ? 
 				job : findCorrespondingJob(job, schedule);
-		int waitingTime = startJob.getWorkingServiceTime(mVehiclePlanIndex) - startJob.getStartTime();
+		int waitingTime = job.getWaitTime(mVehiclePlanIndex);
 		
 		double cost = Rebus.DR_TIME_C1 * (endJob.getWorkingServiceTime(mVehiclePlanIndex) - startJob.getWorkingServiceTime(mVehiclePlanIndex)) 
 				+ Rebus.DR_TIME_C2 * (waitingTime + Rebus.HANDLE_TIME);
@@ -369,9 +354,11 @@ public class RebusScheduleTask implements Runnable {
 	private double loadWaitingTime(VehicleScheduleJob job) {
 		double cost = 0;
 
-		int waitingTime = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
-		cost = Rebus.WAIT_C2 * (waitingTime * waitingTime) + Rebus.WAIT_C1 * waitingTime;
-
+		// Waiting time can only occur at a pickup job (impossible to arrive early to a dropoff)
+		if(job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP) {
+			int waitingTime = job.getWaitTime(mVehiclePlanIndex);
+			cost = Rebus.WAIT_C2 * (waitingTime * waitingTime) + Rebus.WAIT_C1 * waitingTime;
+		}
 //		Log.i(TAG, ". Waiting time: " + cost, true, true);
 		return cost;
 	}
@@ -383,7 +370,6 @@ public class RebusScheduleTask implements Runnable {
 	 * @return The deviation from desired service time load cost for this stop (the specified job)
 	 */
 	private double loadDesiredServiceTimeDeviation(VehicleScheduleJob job) {
-		//TODO: what is deviation?
 		int deviation = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
 		double cost = Rebus.DEV_C * (deviation * deviation);
 		
