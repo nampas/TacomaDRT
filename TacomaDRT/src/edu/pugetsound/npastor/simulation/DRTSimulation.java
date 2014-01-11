@@ -173,6 +173,7 @@ public class DRTSimulation {
 		writeScheduleTxtFile();
 		writeScheduleShpFile();
 		writeStatisticsTxtFile();
+		writeRebusSettingsFile();
 	}
 	
 	/**
@@ -382,6 +383,48 @@ public class DRTSimulation {
 		
 		return result;		
 	}
+	
+	/**
+	 * Writes REBUS settings to file
+	 */
+	private void writeRebusSettingsFile() {
+		ArrayList<String> text = new ArrayList<String>();
+		
+		StringBuilder stringBuilder = new StringBuilder();
+		// Add headers related to job difficulty
+		stringBuilder.append("job: window_c1" + COMMA_DELIM).append("job: window_c2" + COMMA_DELIM).
+			append("job: tr_time_c1" + COMMA_DELIM).append("job: tr_time_c2" + COMMA_DELIM)
+			.append("job: max_travel_coeff" + COMMA_DELIM);
+		text.add(stringBuilder.toString());
+
+		// Add job difficulty parameters
+		stringBuilder = new StringBuilder();
+		stringBuilder.append(Rebus.WINDOW_C1 + COMMA_DELIM)
+			.append(Rebus.WINDOW_C2 + COMMA_DELIM).append(Rebus.TR_TIME_C1 + COMMA_DELIM)
+			.append(Rebus.TR_TIME_C2 + COMMA_DELIM).append(Rebus.MAX_TRAVEL_COEFF + COMMA_DELIM);
+		text.add(stringBuilder.toString());
+		
+		// Add headers related to job insertion quality
+		stringBuilder = new StringBuilder();
+		stringBuilder.append("insert: dr_time_c1" + COMMA_DELIM)
+			.append("insert: dr_time_c2" + COMMA_DELIM).append("insert: wait_c1" + COMMA_DELIM)
+			.append("insert: wait_c2" + COMMA_DELIM).append("insert: dev_c" + COMMA_DELIM)
+			.append("insert: capacity_c" + COMMA_DELIM).append("insert: vehicle_util_c");
+		text.add(stringBuilder.toString());
+		
+		// Add job insertion quality parameters
+		stringBuilder = new StringBuilder();
+		stringBuilder.append(Rebus.DR_TIME_C1 + COMMA_DELIM).append(Rebus.DR_TIME_C2 + COMMA_DELIM)
+			.append(Rebus.WAIT_C1 + COMMA_DELIM).append(Rebus.WAIT_C2 + COMMA_DELIM).append(Rebus.DEV_C + COMMA_DELIM)
+			.append(Rebus.CAPACITY_C + COMMA_DELIM).append(Rebus.VEHICLE_UTIL_C + COMMA_DELIM);
+		text.add(stringBuilder.toString());
+		
+		DRTUtils.writeTxtFile(text, Constants.REBUS_SETTINGS_CSV);
+	}
+	
+	// **************************************
+	//            SHAPEFILE STUFF
+	// **************************************
 	
 	/**
 	 * Write vehicle schedules to a shapefile
