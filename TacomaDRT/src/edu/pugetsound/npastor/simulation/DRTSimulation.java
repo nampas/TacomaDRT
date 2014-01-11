@@ -78,7 +78,7 @@ public class DRTSimulation {
 		if(mCache == null) {
 			throw new IllegalStateException("Cache has not been instantiated. Call buildCache() before runSimulation()");
 		}
-		mRebus = new Rebus(mCache, 0);
+		mRebus = new Rebus(mCache, Rebus.FAVOR_BUSY_VEHICLES);
 		mRebus.printEnabledHints();
 		
 		// If a file path is specified, parse out the number of vehicles to generate
@@ -250,83 +250,135 @@ public class DRTSimulation {
 		DRTUtils.writeTxtFile(text, Constants.TRIPS_READABLE_TXT);
 	}
 	
+	/**
+	 * Compiles statistics for this simulation and writes to file
+	 */
 	private void writeStatisticsTxtFile() {
 		ArrayList<String> text = new ArrayList<String>();
 
 		String headers = "Vehicle" + COMMA_DELIM
-						+ "Trips serviced" + COMMA_DELIM
-						+ "Max travel time dev" + COMMA_DELIM
-						+ "Avg travel time dev" + COMMA_DELIM
-						+ "Max pickup dev" + COMMA_DELIM
-						+ "Avg pickup dev" + COMMA_DELIM;
-		
+						+ "trips serviced" + COMMA_DELIM
+						+ "max travel time dev (m)" + COMMA_DELIM
+						+ "avg travel time dev (m/j)" + COMMA_DELIM
+						+ "max pickup dev (m)" + COMMA_DELIM
+						+ "avg pickup dev (m/j)" + COMMA_DELIM
+						+ "avg veh wait time (m/j)" + COMMA_DELIM
+						+ "avg seats occupied w/ 1+ jobs" + COMMA_DELIM;
 		text.add(headers);
+		
+		int numTripsServiced = mTrips.size() - mRejectedTrips.size();
 				
 		// Global travel time deviation max and pickup deviation max
 		int globalMaxTrTimeDev = 0;
 		int globalMaxPickupDev = 0;
 		// Global travel time deviation and pickup deviation totals
-		double globalTotalTrTimeDev = 0;
-		double globalTotalPickupDev = 0;
+		double globalTravelTimeDev = 0;
+		double globalPickupDev = 0;
+		// Global wait time total
+		double globalAvgWaitTime = 0;
+		// Global capacity utilization at each stop
+		double globalCapUtil = 0;;
+		
 		for(Vehicle curVeh : mVehiclePlans) {
 			StatsWrapper result = calcVehicleStats(curVeh);
+
+			// Percent of total riders that the current vehicle services
+			double curVehiclePct = ((double) result.numTrips / numTripsServiced);
+			
 			// Build vehicle statistics string
 			String vehString = "" + curVeh.getIdentifier() + COMMA_DELIM
 							+ result.numTrips + COMMA_DELIM
 							+ result.maxTravelTimeDev + COMMA_DELIM
-							+ result.avgTravelTimeDev + "%" + COMMA_DELIM
+							+ result.avgTravelTimeDev + COMMA_DELIM
 							+ result.maxPickupDev + COMMA_DELIM		
-							+ result.avgPickupDev + "%" + COMMA_DELIM;
+							+ result.avgPickupDev + COMMA_DELIM
+							+ result.avgPickupWaitTime + COMMA_DELIM
+							+ result.avgCapUtil + COMMA_DELIM;
 			text.add(vehString);
-			
+						
 			// Update global statistics
-			globalTotalTrTimeDev += result.avgTravelTimeDev;
-			globalTotalPickupDev += result.avgPickupDev;
+			globalTravelTimeDev += result.avgTravelTimeDev * curVehiclePct;
+			globalPickupDev += result.avgPickupDev * curVehiclePct;
+			globalAvgWaitTime +=  result.avgPickupWaitTime * curVehiclePct;
+			globalCapUtil += result.avgCapUtil * curVehiclePct;
 			globalMaxTrTimeDev = (int) Math.max(globalMaxTrTimeDev, result.maxTravelTimeDev);
 			globalMaxPickupDev = (int) Math.max(globalMaxPickupDev, result.maxPickupDev);
 		}
 		
 		// Build global statistics string
-		globalTotalTrTimeDev = globalTotalTrTimeDev / mVehiclePlans.length;
-		globalTotalPickupDev = globalTotalPickupDev / mVehiclePlans.length;
-		String globalString = "Total" + COMMA_DELIM
-							+ mTrips.size() + COMMA_DELIM
+		String globalString = "Global" + COMMA_DELIM
+							+ numTripsServiced + COMMA_DELIM
 							+ globalMaxTrTimeDev + COMMA_DELIM
-							+ globalTotalTrTimeDev + "%" + COMMA_DELIM
+							+ globalTravelTimeDev + COMMA_DELIM
 							+ globalMaxPickupDev + COMMA_DELIM
-							+ globalTotalPickupDev + "%" + COMMA_DELIM;
+							+ globalPickupDev + COMMA_DELIM
+							+ globalAvgWaitTime + COMMA_DELIM
+							+ globalCapUtil + COMMA_DELIM;
 		text.add(globalString);
 		
 		DRTUtils.writeTxtFile(text, Constants.STATS_CSV);
 	}
 	
+	/**
+	 * Calculates vehicle statistics for the specified vehicle
+	 * @param v The vehicle
+	 * @return A StatsWrapper containing all pertinent statistics for the 
+	 *         specified vehicle
+	 */
 	private StatsWrapper calcVehicleStats(Vehicle v) {
 		StatsWrapper result = new StatsWrapper();
 		ArrayList<VehicleScheduleJob> schedule = v.getSchedule();
 		result.numTrips = schedule.size() / 2 - 1; // Ignore start/end jobs
 		int pickupDevTotal = 0;  // Running pickup deviation total
-		int travelTimeDevTotal = 0; // Running travel time total
-
-		for(VehicleScheduleJob job : schedule) {
+		int travelTimeDevTotal = 0; // Running excess travel time total
+		int pickupWaitTotal = 0; // Running pickup wait total (vehicle idle time)
+		int totalCapUtil = 0; // Sum of seats occupied at each stop when at least 1 is occupied
+		int capUtilStops = 0; // Number of stops where vehicle contains 1+ riders
+		
+		int numRiders = 0;
+		
+		for(int i = 0; i < schedule.size(); i++) {
+			VehicleScheduleJob job = schedule.get(i);
 			switch(job.getType()) {
 			case VehicleScheduleJob.JOB_TYPE_START:
 			case VehicleScheduleJob.JOB_TYPE_END:
 				break;
 			case VehicleScheduleJob.JOB_TYPE_PICKUP:
+				// Update riders
+				numRiders++;
+				capUtilStops++;
+				totalCapUtil += numRiders;
+				
+				// Pickup deviation time difference between service time and
+				// requested service time
 				int curPickupDev = job.getServiceTime() - job.getStartTime();
 				pickupDevTotal += curPickupDev;
 				result.maxPickupDev = Math.max(result.maxPickupDev, curPickupDev);
+				
+				// Add to wait total as long as this is not the first pickup
+				if(i != 1)
+					pickupWaitTotal += job.getWaitTime(-1);
 				break;
 			case VehicleScheduleJob.JOB_TYPE_DROPOFF:
-				int curTrTimeDev = job.getServiceTime() - job.getStartTime();
+				// Update riders
+				numRiders--;
+				if(numRiders > 0) {
+					totalCapUtil += numRiders;
+					capUtilStops++;
+				}
+				
+				// Travel time deviation is the excess travel time for a trip
+				double curTrTimeDev = job.getServiceTime() - job.getStartTime();
 				travelTimeDevTotal += curTrTimeDev;
 				result.maxTravelTimeDev = Math.max(result.maxTravelTimeDev, curTrTimeDev);
 				break;
 			}
 		}
 		
-		result.avgPickupDev = (double) pickupDevTotal / result.numTrips / 2;
-		result.avgTravelTimeDev = (double) travelTimeDevTotal / result.numTrips / 2;
+		result.avgPickupDev = (double) pickupDevTotal / result.numTrips;
+		result.avgTravelTimeDev = (double) travelTimeDevTotal / result.numTrips;
+		result.avgPickupWaitTime = (double) pickupWaitTotal / result.numTrips;
+		result.avgCapUtil = (double) totalCapUtil / capUtilStops;
 		
 		return result;		
 	}
@@ -525,6 +577,8 @@ public class DRTSimulation {
 		private double avgPickupDev;
 		private double maxTravelTimeDev;
 		private double avgTravelTimeDev;
+		private double avgPickupWaitTime;
+		private double avgCapUtil; // Average capacity utilization at each stop
 		private int numTrips;
 
 		public StatsWrapper() {
@@ -533,6 +587,8 @@ public class DRTSimulation {
 			avgPickupDev = -1;
 			maxTravelTimeDev = -1;
 			avgTravelTimeDev = -1;
+			avgPickupWaitTime = 0;
+			avgCapUtil = 0;
 		}
 	}
 }

@@ -22,10 +22,9 @@ import edu.pugetsound.npastor.utils.Trip;
  *          2aa) Determine insertion feasibility by assessing if any constraints have been violated
  *          2bb) If no constraints have been violated, calculate this schedule's objective function
  *               Lower objective function scores are more desirable.
- *      2b) If one or more feasible insertions have been found, chose the insertion with the smallest
+ *      2b) If one or more feasible insertions have been found, choose the insertion with the smallest
  *          objective function scores. Otherwise, reject the trip as unschedulable
  *     
- * Efficiency? 0.0347619x^2 - 0.730952x + 1.64286
  * @author Nathan Pastor
  */
 public class Rebus {
@@ -52,12 +51,12 @@ public class Rebus {
 													   //multiplied by direct travel time
 	
 	// Load constants (insertion feasibility)
-	public static final float DR_TIME_C1 = 1.0f; // Cvariable in Madsen's notation
-	public static final float DR_TIME_C2 = 1.0f; // Cconst in Madsen's notation
-	public static final float WAIT_C1 = 1.0f;
-	public static final float WAIT_C2 = 1.0f;
-	public static final float DEV_C = 1.0f;
-	public static final float CAPACITY_C = 1.0f; // Ci in Madsen's notation
+	public static final float DR_TIME_C1 = 2.0f; // Cvariable in Madsen's notation
+	public static final float DR_TIME_C2 = 0.0f; // Cconst in Madsen's notation
+	public static final float WAIT_C1 = 0.0f;
+	public static final float WAIT_C2 = 0.0f;
+	public static final float DEV_C = 0.0f;
+	public static final float CAPACITY_C = 0.0f; // Ci in Madsen's notation
 	public static final float VEHICLE_UTIL_C = 1500f;
 	
 	public static final float HANDLE_TIME = 0.0f;
@@ -78,8 +77,7 @@ public class Rebus {
 	
 	public int getQueueSize() {
 		return mJobQueue.size();
-	}
-	
+	}	
 	
 	public void onRebusFinished() {
 		mScheduleExecutor.shutdown();
@@ -250,6 +248,8 @@ public class Rebus {
 				
 				// Now fast-forward any vehicle idle time.
 				curTime = curJob.getStartTime();
+			} else {
+				curJob.setWaitTime(vehicleNum, 0);
 			}
 
 			// Finally, we can update the current job's service time.

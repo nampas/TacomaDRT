@@ -110,7 +110,7 @@ public class RebusScheduleTask implements Runnable {
 					double objectiveFunc = calculateObjFunc(mSchedule);
 					
 					// PRINT STUFF
-					String str = "Trip " + mPickupJob.getTrip().getIdentifier() + " success, objective func is " + objectiveFunc + ". "  + pickupIndex + ", " +  dropoffIndex;// + "\n";
+					String str = "Trip " + mPickupJob.getTrip().getIdentifier() + " success, veh " + mVehiclePlanIndex + ", objective func is " + objectiveFunc + ". "  + pickupIndex + ", " +  dropoffIndex;// + "\n";
 //					for(int i = 0; i < mSchedule.size(); i++) {
 //						VehicleScheduleJob job = mSchedule.get(i);
 //						str += job.toString(mVehiclePlanIndex);
@@ -316,7 +316,7 @@ public class RebusScheduleTask implements Runnable {
 				loadCapacityUtilization(passengers);
 		// Add in the vehicle utilization cost if enabled
 		if(Rebus.isSettingEnabled(Rebus.FAVOR_BUSY_VEHICLES))
-			cost += loadVehicleUtilization(schedule.size());
+			cost -= loadVehicleUtilization(schedule.size());
 		
 		return cost;
 	}
@@ -401,7 +401,7 @@ public class RebusScheduleTask implements Runnable {
 	 * @return The vehicle utilization cost
 	 */
 	private double loadVehicleUtilization(int numJobs) {
-		double cost = Math.pow(numJobs / 2, -1) * Rebus.VEHICLE_UTIL_C;
+		double cost = Math.pow(numJobs / 2, -1) * Rebus.VEHICLE_UTIL_C;// / mSchedule.size();
 //		Log.i(TAG, ". Vehicle util: " + cost + "\n", true, true);
 		return cost;
 	}
