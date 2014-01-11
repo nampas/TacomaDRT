@@ -39,8 +39,11 @@ public class Rebus {
 	/** Reschedule all previously scheduled future trips when a trip is rejected. 
 	 *  This can dramatically increase execution time */
 	public static final int RESCHEDULE_ALL_ON_REJECTION = 0x2;
+	/** Add a new vehicle when a trip is rejected */
+	public static final int NEW_VEHICLE_ON_REJECTION = 0x4;
 	/** Favor scheduling trips in more heavily booked vehicles */
-	public static final int FAVOR_BUSY_VEHICLES = 0x4;
+	public static final int FAVOR_BUSY_VEHICLES = 0x8;
+	
 		
 	// Job cost constants (job difficulty)
 	public static final float WINDOW_C1 = 1.0f;
@@ -97,9 +100,10 @@ public class Rebus {
 	 * Schedules all enqueued jobs, given the existing plan.
 	 * This will modify the existing plan to include new jobs
 	 * @param plan The existing route scheduling
-	 * @result A list of rejected trips which REBUS was not able to schedule
+	 * @result A RebusResults wrapper, containing a list of all rejected trips that
+	 *         Rebus was not able to schedule, and a list of the vehicle plans
 	 */
-	public ArrayList<Trip> scheduleQueuedJobs(Vehicle[] plan) {
+	public RebusResults scheduleQueuedJobs(Vehicle[] plan) {
 		Log.iln(TAG, "*************************************");
 		Log.iln(TAG, "       Scheduling " + mJobQueue.size() + " job(s)");
 		ArrayList<Trip> rejectedTrips = new ArrayList<Trip>();
@@ -107,13 +111,32 @@ public class Rebus {
 			REBUSJob job = mJobQueue.poll();
 			mTotalJobsHandled++;
 			if(!scheduleJob(job, plan)) {
-				// If job was not successfully scheduled, add to list of failed jobs
-				rejectedTrips.add(job.getTrip());
-				Log.iln(TAG, "   REJECTED. Trip " + job.getTrip().getIdentifier());
+				// Insertion has failed. If NEW_VEHICLE_ON_REJECTION is enabled,
+				// add a new vehicle vehicle to the plan and try again. Otherwise,
+				// add the trip to the list of failed jobs and continue to the next.
+				if(isSettingEnabled(Rebus.NEW_VEHICLE_ON_REJECTION)) {
+					Vehicle[] newPlan = new Vehicle[plan.length + 1];
+					// Add all existing vehicles to new plan, and append new vehicle
+					for(int i = 0; i < plan.length; i++)
+						newPlan[i] = plan[i];
+					newPlan[plan.length] = new Vehicle(plan.length);
+					plan = newPlan;
+					
+					Log.iln(TAG, "Adding new vehicle. Total now at: " + plan.length);
+					
+					// Put the rejected trip back into the event queue to try again
+					mJobQueue.add(job);
+				} else {
+					rejectedTrips.add(job.getTrip());
+					Log.iln(TAG, "   REJECTED. Trip " + job.getTrip().getIdentifier());
+				}
 			}
 		}
 		Log.iln(TAG, rejectedTrips.size() + " trip(s) rejected from scheduling.");
-		return rejectedTrips;
+		
+		// Wrap results and return
+		RebusResults result = new RebusResults(rejectedTrips, plan);		
+		return result;
 	}
 	
 	/**
@@ -317,7 +340,9 @@ public class Rebus {
 		if(isSettingEnabled(Rebus.FAVOR_BUSY_VEHICLES))
 			hintString.append("Favor Busy Schedules, ");
 		if(isSettingEnabled(Rebus.RESCHEDULE_ALL_ON_REJECTION))
-			hintString.append("Reschedule All on Rejction, ");
+			hintString.append("Reschedule All on Rejection, ");
+		if(isSettingEnabled(Rebus.NEW_VEHICLE_ON_REJECTION))
+			hintString.append("New Vehicle on Rejection, ");
 		if(isSettingEnabled(Rebus.SOFT_CONSTRAINTS))
 			hintString.append("Soft Constraints, ");
 		
@@ -370,6 +395,17 @@ public class Rebus {
 			else compareVal = 0;
 			
 			return compareVal;
+		}
+	}
+	
+	public class RebusResults {
+		
+		public final ArrayList<Trip> rejectedTrips;
+		public final Vehicle[] vehiclePlans;
+		
+		private RebusResults(ArrayList<Trip> rejectedTrips, Vehicle[] vehiclePlans) {
+			this.rejectedTrips = rejectedTrips;
+			this.vehiclePlans = vehiclePlans;
 		}
 	}
 }

@@ -33,6 +33,7 @@ import edu.pugetsound.npastor.routing.RouteCache;
 import edu.pugetsound.npastor.routing.RoutefinderTask;
 import edu.pugetsound.npastor.routing.Vehicle;
 import edu.pugetsound.npastor.routing.VehicleScheduleJob;
+import edu.pugetsound.npastor.routing.Rebus.RebusResults;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
@@ -78,7 +79,7 @@ public class DRTSimulation {
 		if(mCache == null) {
 			throw new IllegalStateException("Cache has not been instantiated. Call buildCache() before runSimulation()");
 		}
-		mRebus = new Rebus(mCache, Rebus.FAVOR_BUSY_VEHICLES);
+		mRebus = new Rebus(mCache, 0);
 		mRebus.printEnabledHints();
 		
 		// If a file path is specified, parse out the number of vehicles to generate
@@ -197,7 +198,9 @@ public class DRTSimulation {
 		}
 		Log.iln(TAG, mRebus.getQueueSize() + " static jobs queued");
 		// Now that all static trips are enqueued we can schedule them.
-		mRejectedTrips.addAll(mRebus.scheduleQueuedJobs(mVehiclePlans));
+		RebusResults results = mRebus.scheduleQueuedJobs(mVehiclePlans);
+		mRejectedTrips.addAll(results.rejectedTrips);
+		mVehiclePlans = results.vehiclePlans;
 	}
 	
 	/**
@@ -210,7 +213,9 @@ public class DRTSimulation {
 		// Enqueue the trip in the REBUS queue, and schedule if requested
 		mRebus.enqueueTripRequest(t);
 		if(schedule) {
-			mRejectedTrips.addAll(mRebus.scheduleQueuedJobs(mVehiclePlans));
+			RebusResults results = mRebus.scheduleQueuedJobs(mVehiclePlans);
+			mRejectedTrips.addAll(results.rejectedTrips);
+			mVehiclePlans = results.vehiclePlans;
 		}
 	}
 	

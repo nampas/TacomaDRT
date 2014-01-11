@@ -14,8 +14,7 @@ public class Vehicle {
 	
 	public Vehicle(int id) {
 		mVehicleId = id;
-		initSchedule();
-		
+		initSchedule();		
 	}
 	
 	private void initSchedule() {
