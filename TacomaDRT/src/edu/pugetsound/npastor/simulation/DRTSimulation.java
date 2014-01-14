@@ -113,10 +113,13 @@ public class DRTSimulation {
 			}
 		}
 	
+		// Generate vehicles and append quantity to file
 		generateVehicles(vehicleQuantity);
+		appendTripVehicleTxtFile();
+		
 		enqueueTripRequestEvents();
 		doAPrioriScheduling();
-		
+						
 		int lastTime = 0;
 		// Run simulation until event queue is empty
 		while(!mEventQueue.isEmpty()) {
@@ -137,7 +140,7 @@ public class DRTSimulation {
 		Log.iln(TAG, "Generating " + numVehicles + " vehicles");
 		mVehiclePlans = new Vehicle[numVehicles];
 		for(int i = 0; i < numVehicles; i++) {
-			mVehiclePlans[i] = new Vehicle(i+1);
+			mVehiclePlans[i] = new Vehicle(i);
 		}
 	}
 	
@@ -173,7 +176,6 @@ public class DRTSimulation {
 				". Rejection rate: " + rejectionRate + "%");
 		
 		// Write simulation files
-		appendTripVehicleTxtFile();
 		writeScheduleTxtFile();
 		writeScheduleShpFile();
 		writeStatisticsTxtFile();

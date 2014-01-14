@@ -120,7 +120,7 @@ public class Rebus {
 					// Add all existing vehicles to new plan, and append new vehicle
 					for(int i = 0; i < plan.length; i++)
 						newPlan[i] = plan[i];
-					newPlan[plan.length] = new Vehicle(plan.length + 1);
+					newPlan[plan.length] = new Vehicle(plan.length);
 					plan = newPlan;
 					
 					Log.iln(TAG, "Adding new vehicle. Total now at: " + plan.length);
