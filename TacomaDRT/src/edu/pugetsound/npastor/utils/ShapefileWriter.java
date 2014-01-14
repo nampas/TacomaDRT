@@ -4,33 +4,20 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.geotools.data.DataStore;
 import org.geotools.data.DefaultTransaction;
 import org.geotools.data.FeatureStore;
 import org.geotools.data.Transaction;
+import org.geotools.data.directory.DirectoryDataStore;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
-import org.geotools.feature.DefaultFeatureCollection;
-import org.geotools.feature.FeatureCollections;
-import org.geotools.feature.simple.SimpleFeatureBuilder;
-import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
-import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
-import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.Point;
-
-import edu.pugetsound.npastor.TacomaDRTMain;
 
 public class ShapefileWriter {
 	
@@ -56,6 +43,7 @@ public class ShapefileWriter {
 	        
 	        // Build the data store, which will hold our collection
 	        ShapefileDataStore dataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
+//	        DataStore dataStore = dataStoreFactory.createNewDataStore(params);
 	        dataStore.createSchema(featureType);
 	        
 	        // Finally, write the features to the shapefile

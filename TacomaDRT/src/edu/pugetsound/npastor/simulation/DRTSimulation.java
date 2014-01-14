@@ -51,7 +51,7 @@ public class DRTSimulation {
 	private static final String COMMA_DELIM = ",";
 	
 	// Rebus settings
-	private static final int REBUS_HINTS = Rebus.NEW_VEHICLE_ON_REJECTION;
+	private static final int REBUS_HINTS = 0;
 	
 	private ArrayList<Trip> mTrips;
 	private PriorityQueue<SimEvent> mEventQueue;
@@ -440,16 +440,22 @@ public class DRTSimulation {
 	 * Write vehicle schedules to a shapefile
 	 */
 	private void writeScheduleShpFile() {
-		// Build feature type and feature collection
-		SimpleFeatureType featureType = buildFeatureType();
-		SimpleFeatureCollection collection = createShpFeatureCollection(featureType);
-		
-		// Format time and create filename
-		String dateFormatted = DRTUtils.formatMillis(TacomaDRTMain.tripGenStartTime);
-		String filename = TacomaDRTMain.getRouteShpSimDirectory() + Constants.ROUTE_PREFIX_SHP + dateFormatted + ".shp";
-        File shpFile = new File(filename);
-        
-        ShapefileWriter.writeShapefile(featureType, collection, shpFile);
+		// Write a separate route shp for each vehicle
+		for(Vehicle veh : mVehiclePlans) {
+			// Build feature type and feature collection
+			SimpleFeatureType featureType = buildFeatureType();
+			SimpleFeatureCollection collection = createShpFeatureCollection(featureType, veh);
+			
+			// Create directory
+			String directory = TacomaDRTMain.getRouteShpSimDirectory() 
+					+ Constants.VEH_ROUTE_SHP_DIR + veh.getIdentifier();			
+	        File shpFileDir = new File(directory);
+	        shpFileDir.mkdirs();
+	        
+	        // Create file
+	        File shpFile = new File(directory + Constants.ROUTE_PREFIX_SHP + veh.getIdentifier() + ".shp");
+	        ShapefileWriter.writeShapefile(featureType, collection, shpFile);
+		}
 	}
 	
 	/**
@@ -463,40 +469,40 @@ public class DRTSimulation {
         builder.setCRS(DefaultGeographicCRS.WGS84); // long/lat projection system
         builder.add("Route", LineString.class); // Geo data
         builder.add("Vehicle", String.class); // Vehicle identifier
+        builder.add("Stop Num", String.class); // Stop's position in schedule 
         
         final SimpleFeatureType featureType = builder.buildFeatureType();
         return featureType;
 	}
 	
-	private SimpleFeatureCollection createShpFeatureCollection(SimpleFeatureType featureType) {
+	private SimpleFeatureCollection createShpFeatureCollection(SimpleFeatureType featureType, Vehicle v) {
 	   // New collection with feature type
 		SimpleFeatureCollection collection = FeatureCollections.newCollection();
 		GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory(null);
         SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
         
-        // Loop through vehicles
-        for(Vehicle v : mVehiclePlans) {
-        	ArrayList<VehicleScheduleJob> schedule = v.getSchedule();
-        	Coordinate[] coordinates = new Coordinate[schedule.size()-2];
-        	// Add all pickup/dropoff points to the line
-        	for(int i = 1; i < schedule.size()-1; i++) {
-        		VehicleScheduleJob curJob = schedule.get(i);
-        		Point2D loc = null;
-        		if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP)
-        			loc = curJob.getTrip().getFirstEndpoint();
-        		else if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_DROPOFF)
-        			loc = curJob.getTrip().getSecondEndpoint();
 
-        		coordinates[i-1] = new Coordinate(loc.getX(), loc.getY());	
-        	}	        	
-        	LineString line = geometryFactory.createLineString(coordinates);
-        	
-        	// Build the feature
-            featureBuilder.add(line); // Geo data
-            featureBuilder.add(String.valueOf(v.getIdentifier())); // Trip identifier
-            SimpleFeature feature = featureBuilder.buildFeature(null);
-            ((DefaultFeatureCollection)collection).add(feature);			
-        }
+    	ArrayList<VehicleScheduleJob> schedule = v.getSchedule();
+    	Coordinate[] coordinates = new Coordinate[schedule.size()-2];
+    	// Add all pickup/dropoff points to the line
+    	for(int i = 1; i < schedule.size()-1; i++) {
+    		VehicleScheduleJob curJob = schedule.get(i);
+    		Point2D loc = null;
+    		if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP)
+    			loc = curJob.getTrip().getFirstEndpoint();
+    		else if(curJob.getType() == VehicleScheduleJob.JOB_TYPE_DROPOFF)
+    			loc = curJob.getTrip().getSecondEndpoint();
+
+    		coordinates[i-1] = new Coordinate(loc.getX(), loc.getY());	
+    	}	      
+    	LineString line = geometryFactory.createLineString(coordinates);
+    	
+    	// Build the feature
+        featureBuilder.add(line); // Geo data
+        featureBuilder.add(String.valueOf(v.getIdentifier())); // Trip identifier
+        SimpleFeature feature = featureBuilder.buildFeature(null);
+        ((DefaultFeatureCollection)collection).add(feature);			
+
         return collection;
 	}
 	
