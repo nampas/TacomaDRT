@@ -20,7 +20,7 @@ public class Log {
 	
 	private static final int MSG_BUFFER_LENGTH = 200; // Need to balance costs of buffer size and write-to-disk operations
 	private static String[] mMessageBuffer = new String[MSG_BUFFER_LENGTH];
-	private static int mBufferPos = 0;
+	private static Integer mBufferPos = 0;
 	
 	/**
 	 * Prints info strings on a new line
@@ -80,11 +80,15 @@ public class Log {
 	}
 	
 	private static void addMsgToBuffer(String message) {
-		mMessageBuffer[mBufferPos] = message;
-		mBufferPos++;
-		if(mBufferPos == MSG_BUFFER_LENGTH) {
-			mBufferPos = 0;
-			writeBufferToLogFile();
+		// Synchronize on the buffer position to avoid concurrent access
+		// resulting in a buffer overflow
+		synchronized(mBufferPos) {
+			mMessageBuffer[mBufferPos] = message;
+			mBufferPos++;
+			if(mBufferPos == MSG_BUFFER_LENGTH) {
+				mBufferPos = 0;
+				writeBufferToLogFile();
+			}
 		}
 	}
 	

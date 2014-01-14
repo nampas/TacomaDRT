@@ -110,13 +110,13 @@ public class RebusScheduleTask implements Runnable {
 					double objectiveFunc = calculateObjFunc(mSchedule);
 					
 					// PRINT STUFF
-					String str = "Trip " + mPickupJob.getTrip().getIdentifier() + " success, veh " + mVehiclePlanIndex + ", objective func is " + objectiveFunc + ". "  + pickupIndex + ", " +  dropoffIndex;// + "\n";
+//					String str = "Trip " + mPickupJob.getTrip().getIdentifier() + " success, veh " + mVehiclePlanIndex + ", objective func is " + objectiveFunc + ". "  + pickupIndex + ", " +  dropoffIndex;// + "\n";
 //					for(int i = 0; i < mSchedule.size(); i++) {
 //						VehicleScheduleJob job = mSchedule.get(i);
 //						str += job.toString(mVehiclePlanIndex);
 //						if(i != mSchedule.size()-1) str += "\n";
 //					}
-					Log.iln(TAG, str);
+//					Log.iln(TAG, str);
 					// END PRINT STUFF
 					
 					if(objectiveFunc < schedResult.mOptimalScore || schedResult.mSolutionFound == false) {
@@ -256,7 +256,7 @@ public class RebusScheduleTask implements Runnable {
 			}
 		}
 		
-		Log.iln(TAG, msg);
+//		Log.iln(TAG, msg);
 		return objectiveFunction;
 	}
 	

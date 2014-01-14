@@ -50,6 +50,9 @@ public class DRTSimulation {
 	
 	private static final String COMMA_DELIM = ",";
 	
+	// Rebus settings
+	private static final int REBUS_HINTS = Rebus.NEW_VEHICLE_ON_REJECTION;
+	
 	private ArrayList<Trip> mTrips;
 	private PriorityQueue<SimEvent> mEventQueue;
 	private Vehicle[] mVehiclePlans;
@@ -79,14 +82,14 @@ public class DRTSimulation {
 		if(mCache == null) {
 			throw new IllegalStateException("Cache has not been instantiated. Call buildCache() before runSimulation()");
 		}
-		mRebus = new Rebus(mCache, 0);
+		mRebus = new Rebus(mCache, REBUS_HINTS);
 		mRebus.printEnabledHints();
 		
 		// If a file path is specified, parse out the number of vehicles to generate
 		// Otherwise, use the value defined in Constants
 		int vehicleQuantity = -1;
 		if(!mFromFile) {
-			vehicleQuantity = Constants.VEHCILE_QUANTITY;
+			vehicleQuantity = Constants.VEHICLE_QUANTITY;
 		} else {
 			File file = new File(TacomaDRTMain.getSourceTripVehDir());
 			Log.iln(TAG, "Loading number of vehicles from: " + file.getPath());
