@@ -1,6 +1,9 @@
 package edu.pugetsound.npastor;
 
 import java.io.File;
+import java.io.IOException;
+
+import org.apache.commons.io.FileUtils;
 
 import edu.pugetsound.npastor.riderGen.TripGenerator;
 import edu.pugetsound.npastor.simulation.DRTSimulation;
@@ -32,14 +35,29 @@ public class TacomaDRTMain {
 	}
 	
 	public void runModel(String sourceSimDir) {
-
+		
 		// Use all the processors!
 		numThreads = Runtime.getRuntime().availableProcessors();
 		tripGenStartTime = System.currentTimeMillis();
 		setSimulationDirectory();
 		
+		// Copy over the rider characteristics file
+		try {
+			String sourcePath = sourceSimDir == null ? Constants.FILE_BASE_DIR + Constants.RIDER_CHARS_FILE :
+				getSourceSimDirectory() + Constants.RIDER_CHARS_FILE;
+			String destPath = getSimulationDirectory() + Constants.RIDER_CHARS_FILE;
+			
+			Log.iln(TAG, "Copying rider characteristics file. \nSource: " + sourcePath 
+					+ "\nDesination: " + destPath);
+			
+			FileUtils.copyFile(new File(sourcePath), new File(destPath));
+		} catch (IOException ex) {
+			Log.e(TAG, ex.getMessage());
+			ex.printStackTrace();
+		}
+
 		// Run the trip generation
-		TripGenerator tripGen = new TripGenerator();
+		TripGenerator tripGen = new TripGenerator(sourceSimDir != null);
 		if(sourceSimDir == null)
 			tripGen.generateTrips(); 
 		else 
@@ -123,7 +141,7 @@ public class TacomaDRTMain {
 	//     FOR ACCESSING THE SOURCE SIMULATION'S DIRECTORY,
 	//   WHEN THIS INSTANCE IS RE-RUNNING A PREVIOUS INSTANCE
 	// ********************************************************
-	private static String getSourceSimDirectory() {
+	public static String getSourceSimDirectory() {
 		return mSourceSimDirectory;
 	}
 	

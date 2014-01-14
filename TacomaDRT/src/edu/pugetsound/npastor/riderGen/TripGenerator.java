@@ -57,9 +57,9 @@ public class TripGenerator {
 	private Routefinder mRouter;
 	private TractPointGenerator mPointGen;
 
-	public TripGenerator() {
+	public TripGenerator(boolean isRerun) {
 		mTrips = new ArrayList<Trip>();
-		mRiderChars = new RiderChars();
+		mRiderChars = new RiderChars(isRerun);
 		mPCData = new PCAgeEmployment();
 		mRandom = new Random();
 		mRouter = new Routefinder();

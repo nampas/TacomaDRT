@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import edu.pugetsound.npastor.TacomaDRTMain;
+
 /**
  * Reads custom APTA data txt files, which associate age groups with
  * trip percentages and trip types with percentages
@@ -24,11 +26,11 @@ public class RiderChars {
 	 * Creates new instance of RiderChars. This will read from the rider characteristics
 	 * data file whose address is hardcoded in Constants.java
 	 */
-	public RiderChars() {
+	public RiderChars(boolean isRerun) {
 		mRiderAgePcts = new HashMap<Integer, Double>();
 		mTripTypePcts = new HashMap<Integer, Double>();
 		mDayDistributions = new HashMap<Integer, DayDivision>();
-		readRiderCharsFile();
+		readRiderCharsFile(isRerun);
 		Log.iln(TAG, "Rider age mappings, group to percent: " + mRiderAgePcts.toString());
 		Log.iln(TAG, "Trip type mappings, group to percent: " + mTripTypePcts.toString());
 	}
@@ -77,17 +79,26 @@ public class RiderChars {
 		return mDynamicRequestPct;
 	}
 
-	//Parses APTA data file
-	private void readRiderCharsFile() {
+	/**
+	 * Parses the rider characteristics file
+	 * @param isRerun True if this simulation is a rerun of a previous simulation, false otherwise
+	 */
+	private void readRiderCharsFile(boolean isRerun) {
 		try {
-			Scanner fScan = new Scanner(new File(Constants.RIDER_CHARS_FILE)); //Uses hardcoded address
+			// If this is a re-run, use rider characteristics file from source simulations. Otherwise,
+			// use the default
+			String path = isRerun ? TacomaDRTMain.getSourceSimDirectory() + Constants.RIDER_CHARS_FILE :
+					Constants.FILE_BASE_DIR + Constants.RIDER_CHARS_FILE; 			
+			Log.iln(TAG, "Using rider characteristics file at: " + path);
+			
+			Scanner fScan = new Scanner(new File(path));
 			while(fScan.hasNextLine()) {
 				String curLine = fScan.nextLine();
 				parseFileLine(curLine);
 			}
 			fScan.close();
 		} catch (FileNotFoundException ex) {
-			//TODO: error handling
+			Log.e(TAG, ex.getMessage());
 			ex.printStackTrace();
 		}
 

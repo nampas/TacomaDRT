@@ -57,8 +57,8 @@ public class TractPointGenerator {
     Random mRand;
     
 	public TractPointGenerator() {
-		File censusFile = new File(Constants.PC_CENSUS_SHP);
-		File boundaryFile = new File(Constants.TACOMA_BOUNDARY_SHP);
+		File censusFile = new File(Constants.FILE_BASE_DIR + Constants.PC_CENSUS_SHP);
+		File boundaryFile = new File(Constants.FILE_BASE_DIR + Constants.TACOMA_BOUNDARY_SHP);
 		mGeoFactory = new GeometryFactory();
 		mRand = new Random();
 		

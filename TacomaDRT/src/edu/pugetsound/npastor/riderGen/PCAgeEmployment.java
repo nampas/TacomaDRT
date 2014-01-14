@@ -22,8 +22,8 @@ public class PCAgeEmployment {
 	
 	public PCAgeEmployment() {
 		mRand = new Random();
-		mAgeByTract = new TractCSVFile(Constants.PC_AGE_FILE);
-		mEmploymentByTract = new TractCSVFile(Constants.PC_EMPLOYMENT_FILE);
+		mAgeByTract = new TractCSVFile(Constants.FILE_BASE_DIR + Constants.PC_AGE_FILE);
+		mEmploymentByTract = new TractCSVFile(Constants.FILE_BASE_DIR + Constants.PC_EMPLOYMENT_FILE);
 		
 		// Associate column codes (defined in constants) with column indices
 		ArrayList<Integer> empColumnCodes = generateEmpColumnCodes(mEmploymentByTract.getColumnLabels());
