@@ -112,14 +112,15 @@ public class Rebus {
 			mTotalJobsHandled++;
 			if(!scheduleJob(job, plan)) {
 				// Insertion has failed. If NEW_VEHICLE_ON_REJECTION is enabled,
-				// add a new vehicle vehicle to the plan and try again. Otherwise,
+				// add a new vehicle to the plan and try again. Otherwise,
 				// add the trip to the list of failed jobs and continue to the next.
 				if(isSettingEnabled(Rebus.NEW_VEHICLE_ON_REJECTION)) {
 					Vehicle[] newPlan = new Vehicle[plan.length + 1];
+					
 					// Add all existing vehicles to new plan, and append new vehicle
 					for(int i = 0; i < plan.length; i++)
 						newPlan[i] = plan[i];
-					newPlan[plan.length] = new Vehicle(plan.length);
+					newPlan[plan.length] = new Vehicle(plan.length + 1);
 					plan = newPlan;
 					
 					Log.iln(TAG, "Adding new vehicle. Total now at: " + plan.length);

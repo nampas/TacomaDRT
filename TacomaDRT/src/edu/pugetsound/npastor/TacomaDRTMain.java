@@ -68,6 +68,8 @@ public class TacomaDRTMain {
 		String message = "Trip generation complete: " + tripGen.getTrips().size() + " trips in ";
 		printTime(message, tripGenEndTime, tripGenStartTime);
 		
+		// Instantiate the simulator and specify if this is a re-run of a previous simulation,
+		// in which case it will use that instance's route cache and trip/vehicle file
 		if(sourceSimDir == null)
 			mSimulation = new DRTSimulation(tripGen.getTrips(), false);
 		else
@@ -78,8 +80,7 @@ public class TacomaDRTMain {
 		// Build the cache! This might take a long time
 		mSimulation.buildCache();
 		
-		// Run the simulation! Inform the simulator if this is a re-run of a previous simulation,
-		// in which case it will use that instance's route cache and trip/vehicle file
+		// Run the simulation! 
 		simStartTime = System.currentTimeMillis();
 		mSimulation.runSimulation();
 		
