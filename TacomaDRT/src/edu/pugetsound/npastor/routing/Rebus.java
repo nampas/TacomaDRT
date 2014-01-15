@@ -221,9 +221,9 @@ public class Rebus {
 			optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
 			updateServiceTimes(optimalSchedule, mCache, -1);
 			
-//				Log.info(TAG, "   SCHEDULED. Trip " + t.getIdentifier() + ". Vehicle: " + optimalVehicle.getIdentifier() + 
-//							". Pickup index: " + optimalScheduling.mOptimalPickupIndex + 
-//							". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex);
+			Log.iln(TAG, "Trip " + t.getIdentifier() + " successfully scheduled. Vehicle: " + optimalVehicle.getIdentifier()
+					+ ". Pickup index: " + optimalScheduling.mOptimalPickupIndex 
+					+ ". Dropoff index: " + optimalScheduling.mOptimalDropoffIndex, false);
 			
 //				String str = "New schedule is:\n";
 //				for(int i = 0; i < optimalSchedule.size(); i++) {
