@@ -43,7 +43,6 @@ public class ShapefileWriter {
 	        
 	        // Build the data store, which will hold our collection
 	        ShapefileDataStore dataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
-//	        DataStore dataStore = dataStoreFactory.createNewDataStore(params);
 	        dataStore.createSchema(featureType);
 	        
 	        // Finally, write the features to the shapefile

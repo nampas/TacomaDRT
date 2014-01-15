@@ -83,6 +83,7 @@ public class Rebus {
 	}	
 	
 	public void onRebusFinished() {
+		mCache = null;
 		mScheduleExecutor.shutdown();
 	}
 	
@@ -327,7 +328,7 @@ public class Rebus {
 	 * @return A value representing maximal travel cost of trip
 	 */
 	private double costMaxTravelTime(Trip t) {
-		long minTime = t.getRoute().getTime();
+		long minTime = t.getRoute().getTime() / 60;
 		// Calculate difference between max allowable travel time and min possible travel time
 		double deltaTransit = (minTime * MAX_TRAVEL_COEFF) - minTime;
 		// Maximal travel time cost function

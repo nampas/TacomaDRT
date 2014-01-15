@@ -28,8 +28,9 @@ public class Constants {
 	public final static String TRIP_SHP_DIR = "/trips_shp";
 	public final static String TRIP_PREFIX_SHP = "/tripgeo_";
 	public final static String ROUTE_SHP_DIR = "/routes_shp";
-	public final static String VEH_ROUTE_SHP_DIR = "/vehicle_"; // Vehicle id must be appended
-	public final static String ROUTE_PREFIX_SHP = "/vehicle_";
+	public final static String VEH_ROUTE_SHP_DIR = "/vehicle_"; // append vehicle id 
+	public final static String ROUTE_PREFIX_SHP = "/route_veh_"; 
+	public final static String STOP_POINTS_PREFIX_SHP = "/stops_veh_";
 	
 	// Total trips per day
 	public final static int TOTAL_TRIPS = 100;

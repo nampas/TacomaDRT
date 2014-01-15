@@ -329,7 +329,7 @@ public class RebusScheduleTask implements Runnable {
 	 */
 	private double loadDrivingTime(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> schedule) {
 		Trip t = job.getTrip();
-		int minDrivingTime = (int)t.getRoute().getTime();
+		int minDrivingTime = (int)t.getRoute().getTime() / 60;
 		
 		// We need to construct the entire trip that this job is a member of.
 		VehicleScheduleJob startJob = job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP ?

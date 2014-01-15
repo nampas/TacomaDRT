@@ -470,6 +470,8 @@ public class TripGenerator {
         builder.add("Location", Point.class); // Geo data
         builder.add("Trip", String.class); // Trip identifier
         builder.add("Tract", String.class); // Tract number the point falls in
+        builder.add("Stop Type", String.class); // Pickup/dropoff
+        builder.add("Time", String.class); // Stop time
         
         final SimpleFeatureType featureType = builder.buildFeatureType();
         return featureType;
@@ -487,11 +489,15 @@ public class TripGenerator {
         	Point firstEndpoint = geometryFactory.createPoint(new Coordinate(t.getFirstEndpoint().getX(), t.getFirstEndpoint().getY(), 0.0));
         	Point secondEndpoint = geometryFactory.createPoint(new Coordinate(t.getSecondEndpoint().getX(), t.getSecondEndpoint().getY(), 0.0));
         	
+        	int startTime = t.getPickupTime();
+        	
         	// Add both feature to collection
         	if(t.getFirstTract() != Trip.TRACT_NOT_SET) {
 	            featureBuilder.add(firstEndpoint); // Geo data
 	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Trip identifier
 	            featureBuilder.add(String.valueOf(t.getFirstTract())); // Tract
+	            featureBuilder.add("pickup");
+	            featureBuilder.add(DRTUtils.minsToHrMin(startTime));
 	            SimpleFeature firstFeature = featureBuilder.buildFeature(null);
 	            ((DefaultFeatureCollection)collection).add(firstFeature);
         	}
@@ -500,6 +506,8 @@ public class TripGenerator {
 	            featureBuilder.add(secondEndpoint); // Location 
 	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Trip identifier
 	            featureBuilder.add(String.valueOf(t.getSecondTract())); // Tract
+	            featureBuilder.add("dropoff");
+	            featureBuilder.add(DRTUtils.minsToHrMin(startTime + (int)(t.getRoute().getTime() / 60)));
 	            SimpleFeature secondFeature = featureBuilder.buildFeature(null);
 	            ((DefaultFeatureCollection)collection).add(secondFeature);
         	}
