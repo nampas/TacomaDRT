@@ -42,7 +42,7 @@ public class RoutefinderTask implements Runnable {
 			Trip t1 = mTrips.get(i);
 			int t1Id = t1.getIdentifier();
 			mCache.putHash(t1Id, true, t1Id, false, 
-					router.getTravelTimeMins(t1.getFirstEndpoint(), t1.getSecondEndpoint()));
+					router.getTravelTimeMins(t1.getOriginPoint(), t1.getDestinationPoint()));
 
 			totalRouted++;
 			for(int j = 0; j < mTrips.size(); j++) {
@@ -54,19 +54,19 @@ public class RoutefinderTask implements Runnable {
 
 				// T1 origin to T2 origin
 				mCache.putHash(t1Id, true, t2Id, true, 
-						router.getTravelTimeMins(t1.getFirstEndpoint(), t2.getFirstEndpoint()));
+						router.getTravelTimeMins(t1.getOriginPoint(), t2.getOriginPoint()));
 
 				// T1 origin to T2 dest
 				mCache.putHash(t1Id, true, t2Id, false,
-						router.getTravelTimeMins(t1.getFirstEndpoint(), t2.getSecondEndpoint()));
+						router.getTravelTimeMins(t1.getOriginPoint(), t2.getDestinationPoint()));
 			
 				// T1 dest to T2 origin
 				mCache.putHash(t1Id, false, t2Id, true,
-						router.getTravelTimeMins(t1.getSecondEndpoint(), t2.getFirstEndpoint()));
+						router.getTravelTimeMins(t1.getDestinationPoint(), t2.getOriginPoint()));
 			
 				// T1 dest to T2 dest
 				mCache.putHash(t1Id, false, t2Id, false, 
-						router.getTravelTimeMins(t1.getSecondEndpoint(), t2.getSecondEndpoint()));
+						router.getTravelTimeMins(t1.getDestinationPoint(), t2.getDestinationPoint()));
 				
 				totalRouted = totalRouted + 4;
 			}

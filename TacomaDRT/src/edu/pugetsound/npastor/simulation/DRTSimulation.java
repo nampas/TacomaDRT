@@ -53,7 +53,7 @@ public class DRTSimulation {
 	private static final String COMMA_DELIM = ",";
 	
 	// Rebus settings
-	private static final int REBUS_HINTS = Rebus.NEW_VEHICLE_ON_REJECTION;
+	private static final int REBUS_HINTS = 0;
 	
 	private ArrayList<Trip> mTrips;
 	private PriorityQueue<SimEvent> mEventQueue;

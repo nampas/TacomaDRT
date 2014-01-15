@@ -19,10 +19,10 @@ public class Trip {
 	private int mRiderAge;
 	private boolean mIsOutbound;
 	private int mIdentifier; // Unique trip identifier
-	private String mEndpointTract1;
-	private String mEndpointTract2;
-	private Point2D mEndpoint1;
-	private Point2D mEndpoint2;
+	private String mOriginTract;
+	private String mDestTract;
+	private Point2D mOriginPoint;
+	private Point2D mDestPoint;
 	private GHResponse mRoute;
 	private int mPickupTime;
 	private int mCallTime; // Time request was called in
@@ -32,10 +32,10 @@ public class Trip {
 		mRiderAge = -1;
 		mIsOutbound = true;
 		mIdentifier = id;
-		mEndpointTract1 = TRACT_NOT_SET;
-		mEndpointTract2 = TRACT_NOT_SET;
-		mEndpoint1 = new Point2D.Double();
-		mEndpoint2 = new Point2D.Double();
+		mOriginTract = TRACT_NOT_SET;
+		mDestTract = TRACT_NOT_SET;
+		mOriginPoint = new Point2D.Double();
+		mDestPoint = new Point2D.Double();
 		mRoute = null;
 		mPickupTime = -1;
 		mCallTime = -1;
@@ -53,12 +53,12 @@ public class Trip {
 		mIsOutbound = isOutbound;
 	}
 	
-	public void setFirstTract(String tract) {
-		mEndpointTract1 = tract;
+	public void setOriginTract(String tract) {
+		mOriginTract = tract;
 	}
 	
-	public void setSecondTract(String tract) {
-		mEndpointTract2 = tract;
+	public void setDestinationTract(String tract) {
+		mDestTract = tract;
 	}
 	
 	public void setPickupTime(int minutes) {
@@ -69,12 +69,12 @@ public class Trip {
 		mCallTime = minutes;
 	}
 	
-	public void setFirstEndpoint(Point2D endpoint) {
-		mEndpoint1 = endpoint;
+	public void setOriginPoint(Point2D endpoint) {
+		mOriginPoint = endpoint;
 	}
 	
-	public void setSecondEndpoint(Point2D endpoint) {
-		mEndpoint2 = endpoint;
+	public void setDestinationPoint(Point2D endpoint) {
+		mDestPoint = endpoint;
 	}
 	
 	public void setRoute(GHResponse route) {
@@ -85,24 +85,24 @@ public class Trip {
 		return mRoute;
 	}
 	
-	public Point2D getFirstEndpoint() {
-		return mEndpoint1;
+	public Point2D getOriginPoint() {
+		return mOriginPoint;
 	}
 	
-	public Point2D getSecondEndpoint() {
-		return mEndpoint2;
+	public Point2D getDestinationPoint() {
+		return mDestPoint;
 	}
 	
 	public int getPickupTime() {
 		return mPickupTime;
 	}
 	
-	public String getFirstTract() {
-		return mEndpointTract1;
+	public String getOriginTract() {
+		return mOriginTract;
 	}
 	
-	public String getSecondTract() {
-		return mEndpointTract2;
+	public String getDestinationTract() {
+		return mDestTract;
 	}
 	
 	public int getRiderAge() {
@@ -134,8 +134,8 @@ public class Trip {
 				"\n  Type: " + DRTUtils.getTripTypeString(mTripType) + 
 				"\n  Age: " + mRiderAge +
 				"\n  Outbound? " + mIsOutbound +
-				"\n  First Tract: " + mEndpointTract1 + ". At " + mEndpoint1 +
-				"\n  Second Tract: " + mEndpointTract2 + ". At " + mEndpoint2 +
+				"\n  Origin Tract: " + mOriginTract + ". At " + mOriginPoint +
+				"\n  Destination Tract: " + mDestTract + ". At " + mDestPoint +
 				"\n  Pickup Time: " + DRTUtils.minsToHrMin(mPickupTime) +
 				"\n  Request Made at: " + DRTUtils.minsToHrMin(mCallTime) +
 				"\n  Travel time: " + mRoute.getTime();

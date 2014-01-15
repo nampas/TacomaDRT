@@ -104,10 +104,10 @@ public class TripGenerator {
 				newTrip.setTripType(Integer.valueOf(tokens[2]));
 				newTrip.setRiderAge(Integer.valueOf(tokens[3]));
 				newTrip.setDirection(tokens[4].equals("1") ? true : false);
-				newTrip.setFirstTract(tokens[5]);
-				newTrip.setFirstEndpoint(new Point2D.Double(Double.valueOf(tokens[6]), Double.valueOf(tokens[7])));
-				newTrip.setSecondTract(tokens[8]);
-				newTrip.setSecondEndpoint(new Point2D.Double(Double.valueOf(tokens[9]), Double.valueOf(tokens[10])));
+				newTrip.setOriginTract(tokens[5]);
+				newTrip.setOriginPoint(new Point2D.Double(Double.valueOf(tokens[6]), Double.valueOf(tokens[7])));
+				newTrip.setDestinationTract(tokens[8]);
+				newTrip.setDestinationPoint(new Point2D.Double(Double.valueOf(tokens[9]), Double.valueOf(tokens[10])));
 				newTrip.setPickupTime(Integer.valueOf(tokens[11]));
 				newTrip.setCalInTime(Integer.valueOf(tokens[12]));
 				
@@ -292,17 +292,17 @@ public class TripGenerator {
 				secondTract = mPCData.getWeightedTract(riderAgeGroup, false);
 		}
 		if(t.isOutbound()) {
-			t.setFirstTract(firstTract);
-			t.setSecondTract(secondTract);
+			t.setOriginTract(firstTract);
+			t.setDestinationTract(secondTract);
 		} else {
-			t.setFirstTract(secondTract);
-			t.setSecondTract(firstTract);
+			t.setOriginTract(secondTract);
+			t.setDestinationTract(firstTract);
 		}
 	}
 	
 	private void generateEndpoints(Trip t) {
-		t.setFirstEndpoint(mPointGen.randomPointInTract(t.getFirstTract()));
-		t.setSecondEndpoint(mPointGen.randomPointInTract(t.getSecondTract()));
+		t.setOriginPoint(mPointGen.randomPointInTract(t.getOriginTract()));
+		t.setDestinationPoint(mPointGen.randomPointInTract(t.getDestinationTract()));
 	}
 	
 	
@@ -401,12 +401,7 @@ public class TripGenerator {
 	 */
 	private int generateDirections(Trip t) {
 
-		GHResponse routeResponse;
-		if(t.isOutbound())
-			routeResponse = mRouter.findRoute(t.getFirstEndpoint(), t.getSecondEndpoint());
-		else 
-			routeResponse = mRouter.findRoute(t.getSecondEndpoint(), t.getFirstEndpoint());
-		
+		GHResponse routeResponse = mRouter.findRoute(t.getOriginPoint(), t.getDestinationPoint());
 		t.setRoute(routeResponse);
 		return (int) (routeResponse.getTime() / 60);
 	}
@@ -443,12 +438,12 @@ public class TripGenerator {
 				t.getTripType() + sp +
 				t.getRiderAge() + sp + 
 				(t.isOutbound() ? "1" : "0") + sp +
-				t.getFirstTract() + sp +
-				t.getFirstEndpoint().getX() + sp +
-				t.getFirstEndpoint().getY() + sp +
-				t.getSecondTract() + sp +
-				t.getSecondEndpoint().getX() + sp +
-				t.getSecondEndpoint().getY() + sp +
+				t.getOriginTract() + sp +
+				t.getOriginPoint().getX() + sp +
+				t.getOriginPoint().getY() + sp +
+				t.getDestinationTract() + sp +
+				t.getDestinationPoint().getX() + sp +
+				t.getDestinationPoint().getY() + sp +
 				t.getPickupTime() + sp +
 				t.getCallInTime();
 		return line;
@@ -482,26 +477,26 @@ public class TripGenerator {
         
         // Loop through trips, adding endpoints
         for(Trip t : mTrips) {
-        	Point firstEndpoint = geometryFactory.createPoint(new Coordinate(t.getFirstEndpoint().getX(), t.getFirstEndpoint().getY(), 0.0));
-        	Point secondEndpoint = geometryFactory.createPoint(new Coordinate(t.getSecondEndpoint().getX(), t.getSecondEndpoint().getY(), 0.0));
+        	Point originPoint = geometryFactory.createPoint(new Coordinate(t.getOriginPoint().getX(), t.getOriginPoint().getY(), 0.0));
+        	Point destPoint = geometryFactory.createPoint(new Coordinate(t.getDestinationPoint().getX(), t.getDestinationPoint().getY(), 0.0));
         	
         	int startTime = t.getPickupTime();
         	
         	// Add both feature to collection
-        	if(t.getFirstTract() != Trip.TRACT_NOT_SET) {
-	            featureBuilder.add(firstEndpoint); // Geo data
+        	if(t.getOriginTract() != Trip.TRACT_NOT_SET) {
+	            featureBuilder.add(originPoint); // Geo data
 	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Trip identifier
-	            featureBuilder.add(String.valueOf(t.getFirstTract())); // Tract
+	            featureBuilder.add(String.valueOf(t.getOriginTract())); // Tract
 	            featureBuilder.add("pickup");
 	            featureBuilder.add(DRTUtils.minsToHrMin(startTime));
 	            SimpleFeature firstFeature = featureBuilder.buildFeature(null);
 	            ((DefaultFeatureCollection)collection).add(firstFeature);
         	}
             
-        	if(t.getSecondTract() != Trip.TRACT_NOT_SET) {
-	            featureBuilder.add(secondEndpoint); // Location 
+        	if(t.getDestinationTract() != Trip.TRACT_NOT_SET) {
+	            featureBuilder.add(destPoint); // Location 
 	            featureBuilder.add(String.valueOf(t.getIdentifier())); // Trip identifier
-	            featureBuilder.add(String.valueOf(t.getSecondTract())); // Tract
+	            featureBuilder.add(String.valueOf(t.getDestinationTract())); // Tract
 	            featureBuilder.add("dropoff");
 	            featureBuilder.add(DRTUtils.minsToHrMin(startTime + (int)(t.getRoute().getTime() / 60)));
 	            SimpleFeature secondFeature = featureBuilder.buildFeature(null);

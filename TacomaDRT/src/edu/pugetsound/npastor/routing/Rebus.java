@@ -169,9 +169,9 @@ public class Rebus {
 		
 		// Split the trip into pickup and dropoff jobs
 		int durationMins = (int)t.getRoute().getTime() / 60;
-		VehicleScheduleJob pickupJob = new VehicleScheduleJob(t, t.getFirstEndpoint(),
+		VehicleScheduleJob pickupJob = new VehicleScheduleJob(t, t.getOriginPoint(),
 				t.getPickupTime(), durationMins, VehicleScheduleJob.JOB_TYPE_PICKUP, plan.length);
-		VehicleScheduleJob dropoffJob = new VehicleScheduleJob(t, t.getSecondEndpoint(),
+		VehicleScheduleJob dropoffJob = new VehicleScheduleJob(t, t.getDestinationPoint(),
 				t.getPickupTime() + durationMins, 0, VehicleScheduleJob.JOB_TYPE_DROPOFF, plan.length);
 		
 		// A list of thread results. Each thread will insert a result into this list at the index
@@ -207,7 +207,7 @@ public class Rebus {
 		
 		for(ScheduleResult curResult : results) {
 			if(curResult.mSolutionFound) {
-				Log.iln(TAG, "Insertion success in vehicle " + curResult.mVehicleIndex);
+//				Log.iln(TAG, "Insertion success in vehicle " + curResult.mVehicleIndex);
 				if(optimalScheduling == null || curResult.mOptimalScore < optimalScheduling.mOptimalScore)
 					optimalScheduling = curResult;
 			}
