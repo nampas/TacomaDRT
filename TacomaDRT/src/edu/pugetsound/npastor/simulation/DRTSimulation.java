@@ -27,7 +27,6 @@ import com.graphhopper.util.PointList;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.MultiPoint;
 import com.vividsolutions.jts.geom.Point;
 
 import edu.pugetsound.npastor.TacomaDRTMain;
@@ -41,7 +40,6 @@ import edu.pugetsound.npastor.routing.VehicleScheduleJob;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
-import edu.pugetsound.npastor.utils.ShapefileWriter;
 import edu.pugetsound.npastor.utils.Trip;
 
 public class DRTSimulation {
@@ -55,7 +53,7 @@ public class DRTSimulation {
 	private static final String COMMA_DELIM = ",";
 	
 	// Rebus settings
-	private static final int REBUS_HINTS = 0;
+	private static final int REBUS_HINTS = Rebus.NEW_VEHICLE_ON_REJECTION;
 	
 	private ArrayList<Trip> mTrips;
 	private PriorityQueue<SimEvent> mEventQueue;
@@ -460,14 +458,14 @@ public class DRTSimulation {
 			SimpleFeatureCollection collection = createLineShpFeatureCollection(featureType, veh);
 	        // Create the line file
 	        File lineShpFile = new File(directory + Constants.ROUTE_PREFIX_SHP + veh.getIdentifier() + ".shp");
-	        ShapefileWriter.writeShapefile(featureType, collection, lineShpFile);
+	        DRTUtils.writeShapefile(featureType, collection, lineShpFile);
 	        
 	        // Build feature typ and feature collection for the point file
 	        featureType = buildPointsFeatureType();
 	        collection = createPointsShpFeatureCollection(featureType, veh);
 	        // Create the points file
 	        File pointShpFile = new File(directory + Constants.STOP_POINTS_PREFIX_SHP + veh.getIdentifier() + ".shp");
-	        ShapefileWriter.writeShapefile(featureType, collection, pointShpFile);
+	        DRTUtils.writeShapefile(featureType, collection, pointShpFile);
 		}
 	}
 	

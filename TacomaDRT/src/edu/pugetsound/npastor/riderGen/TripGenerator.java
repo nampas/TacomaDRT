@@ -3,9 +3,6 @@ package edu.pugetsound.npastor.riderGen;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
@@ -33,7 +30,6 @@ import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.RiderChars;
 import edu.pugetsound.npastor.utils.RiderChars.DayDivision;
-import edu.pugetsound.npastor.utils.ShapefileWriter;
 import edu.pugetsound.npastor.utils.Trip;
 
 /**
@@ -541,6 +537,6 @@ public class TripGenerator {
 		String filename = TacomaDRTMain.getTripShpSimDirectory() + Constants.TRIP_PREFIX_SHP + dateFormatted + ".shp";
         File shpFile = new File(filename);
         
-        ShapefileWriter.writeShapefile(featureType, collection, shpFile);
+        DRTUtils.writeShapefile(featureType, collection, shpFile);
 	}
 }
