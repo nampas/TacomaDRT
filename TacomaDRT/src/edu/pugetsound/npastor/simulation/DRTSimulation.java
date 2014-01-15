@@ -194,7 +194,8 @@ public class DRTSimulation {
 		boolean moreStaticRequests = true;
 		while(moreStaticRequests) {
 			SimEvent event = mEventQueue.peek();
-			if(event == null) moreStaticRequests = false;
+			if(event == null) 
+				moreStaticRequests = false;
 			else if(event.getType() == SimEvent.EVENT_NEW_REQUEST) { // Ensure this is correct event type
 				if(event.getTimeMins() < Constants.BEGIN_OPERATION_HOUR * 60) { // Ensure request time is before operation begins
 					consumeNewRequestEvent(event, false); // Enqueue trip in the scheduler, don't immediately schedule
@@ -205,6 +206,7 @@ public class DRTSimulation {
 			}
 		}
 		Log.iln(TAG, mRebus.getQueueSize() + " static jobs queued");
+		
 		// Now that all static trips are enqueued we can schedule them.
 		RebusResults results = mRebus.scheduleQueuedJobs(mVehiclePlans);
 		mRejectedTrips.addAll(results.rejectedTrips);
@@ -214,7 +216,7 @@ public class DRTSimulation {
 	/**
 	 * Consumes a new trip request event
 	 * @param event Trip request event
-	 * @parm schedule Specifies if scheduling should be executed immediately.
+	 * @parm schedule True if scheduling should be executed, false otherwise.
 	 */
 	private void consumeNewRequestEvent(SimEvent event, boolean schedule) {
 		Trip t = event.getTrip();

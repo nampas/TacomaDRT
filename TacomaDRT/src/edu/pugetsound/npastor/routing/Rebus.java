@@ -11,8 +11,9 @@ import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 
 /**
- * A parallelized implementation of the REBUS algorithm. This is a heuristic solution to the dial-a-ride problem,
- * developed by Madsen et al. (1995). It uses a two-step insertion technique, outlined below.
+ * A parallelized implementation of the REBUS algorithm, with some modifications. This is a 
+ * heuristic solution to the dial-a-ride problem developed by Madsen et al. (1995).
+ * It uses a two-step insertion technique, outlined below.
  * 
  *   A brief REBUS outline:
  *   1) Queue all jobs according to a difficulty cost
@@ -109,8 +110,8 @@ public class Rebus {
 		Log.iln(TAG, "       Scheduling " + mJobQueue.size() + " job(s)");
 		ArrayList<Trip> rejectedTrips = new ArrayList<Trip>();
 		while(!mJobQueue.isEmpty()) {
-			REBUSJob job = mJobQueue.poll();
-			mTotalJobsHandled++;
+			REBUSJob job = mJobQueue.peek();
+			
 			if(!scheduleJob(job, plan)) {
 				// Insertion has failed. If NEW_VEHICLE_ON_REJECTION is enabled,
 				// add a new vehicle to the plan and try again. Otherwise,
@@ -124,14 +125,19 @@ public class Rebus {
 					newPlan[plan.length] = new Vehicle(plan.length);
 					plan = newPlan;
 					
-					Log.iln(TAG, "Adding new vehicle. Total now at: " + plan.length);
+					Log.iln(TAG, "Trip " + job.getTrip().getIdentifier() 
+							+ " rejected. Adding new vehicle. Total now at: " + plan.length);
 					
-					// Put the rejected trip back into the event queue to try again
-					mJobQueue.add(job);
 				} else {
 					rejectedTrips.add(job.getTrip());
-					Log.iln(TAG, "   REJECTED. Trip " + job.getTrip().getIdentifier());
+					Log.iln(TAG, "Trip " + job.getTrip().getIdentifier() + " rejected");
+					
+					// Consume the trip and move on
+					consumeNextJob();
 				}
+			} else {
+				// Scheduling has succeeded, consume the job
+				consumeNextJob();
 			}
 		}
 		Log.iln(TAG, rejectedTrips.size() + " trip(s) rejected from scheduling.");
@@ -139,6 +145,11 @@ public class Rebus {
 		// Wrap results and return
 		RebusResults result = new RebusResults(rejectedTrips, plan);		
 		return result;
+	}
+	
+	private void consumeNextJob() {
+		mTotalJobsHandled++;
+		mJobQueue.poll();
 	}
 	
 	/**
@@ -196,6 +207,7 @@ public class Rebus {
 		
 		for(ScheduleResult curResult : results) {
 			if(curResult.mSolutionFound) {
+				Log.iln(TAG, "Insertion success in vehicle " + curResult.mVehicleIndex);
 				if(optimalScheduling == null || curResult.mOptimalScore < optimalScheduling.mOptimalScore)
 					optimalScheduling = curResult;
 			}
