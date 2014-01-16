@@ -70,7 +70,8 @@ public class TractPointGenerator {
 			mCensusProjectionTransform = CRS.findMathTransform(censusFileCRS, DefaultGeographicCRS.WGS84, true);
 
 			// We need a Tacoma boundary file to ensure points are on land
-			mTacomaBoundary = new CityBoundaryShp();
+//			mTacomaBoundary = new CityBoundaryShp();
+			mTacomaBoundary = CityBoundaryShp.getInstance();
 			
 		} catch(MalformedURLException ex) {
 			Log.e(TAG, ex.getMessage());
@@ -163,7 +164,7 @@ public class TractPointGenerator {
 		double minY = 0;
 		for(int i = 0; i < boundingCoords.length; i++) {
 			Coordinate c = boundingCoords[i];
-			if(i == 0) { // Iniitalize values
+			if(i == 0) { // Initialize values
 				maxX = c.x;
 				minX = c.x;
 				maxY = c.y;
@@ -181,14 +182,21 @@ public class TractPointGenerator {
 		double xRange = Math.abs(maxX - minX);
 		double yRange = Math.abs(maxY - minY);
 		// Loop until we have a random point inside the polygon
-		while(true) {
+		boolean pointFound = false;
+		while(!pointFound) {
 			double randX = mRand.nextDouble() * xRange + minX;
 			double randY = mRand.nextDouble() * yRange + minY;
 			point = mGeoFactory.createPoint(new Coordinate(randX, randY));
-			if(polygon.contains(point)) break;
+			if(polygon.contains(point)) 
+				pointFound = true;
 		}
 		
 		return new Point2D.Double(point.getX(), point.getY());
+	}
+	
+	public void onGenerationComplete() {
+		mTacomaBoundary.close();
+		mCensusFile.dispose();
 	}
 }
 

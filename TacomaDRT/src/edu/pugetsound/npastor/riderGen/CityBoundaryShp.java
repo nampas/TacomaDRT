@@ -31,6 +31,8 @@ import edu.pugetsound.npastor.utils.Log;
 public class CityBoundaryShp {
 
     private static final String TAG = "CityBoundaryShp";
+    
+    private static CityBoundaryShp cityBoundary = null;
 	
 	private ShapefileDataStore mTacomaBoundaryFile;
 	private FeatureCollection mBoundaryFeatureCollection;
@@ -39,7 +41,13 @@ public class CityBoundaryShp {
 	GeometryFactory mGeoFactory;
     Random mRand;
 	
-	public CityBoundaryShp() {
+    public static CityBoundaryShp getInstance() {
+    	if(cityBoundary == null)
+    		cityBoundary = new CityBoundaryShp();
+    	return cityBoundary;
+    }
+    
+	private CityBoundaryShp() {
 		File boundaryFile = new File(Constants.FILE_BASE_DIR + Constants.TACOMA_BOUNDARY_SHP);
 		mGeoFactory = new GeometryFactory();
 		mRand = new Random();
@@ -53,6 +61,7 @@ public class CityBoundaryShp {
 			// Make the transformation from file CRS to long/lat CRS
 			CoordinateReferenceSystem boundaryFileCRS = boundaryFeatureSource.getSchema().getCoordinateReferenceSystem();
 			mBoundaryProjectionTransform = CRS.findMathTransform(boundaryFileCRS, DefaultGeographicCRS.WGS84, true);
+
 		} catch (MalformedURLException e) {
 			Log.e(TAG, e.getMessage());
 			e.printStackTrace();
@@ -62,9 +71,7 @@ public class CityBoundaryShp {
 		} catch (FactoryException e) {
 			Log.e(TAG, e.getMessage());
 			e.printStackTrace();
-		}
-		
-	
+		}	
 	}
 	
 	/**
@@ -110,5 +117,9 @@ public class CityBoundaryShp {
 		
 		// Re-wrap point in the Java class
 		return new Point2D.Double(point.getX(), point.getY());
+	}
+	
+	public void close() {
+//		mTacomaBoundaryFile.dispose();
 	}
 }

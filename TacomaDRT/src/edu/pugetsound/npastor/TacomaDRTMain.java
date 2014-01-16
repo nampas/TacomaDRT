@@ -13,8 +13,6 @@ import edu.pugetsound.npastor.utils.Log;
 
 public class TacomaDRTMain {
 
-	//Note to self: Run from .\TacomaDRT\bin
-	//execute: java edu/pugetsound/npastor/TacomaDRT
 	private DRTSimulation mSimulation;
 	private static String mSimulationDirectory;
 	private static String mSourceSimDirectory; //Points to the directory of the source sim, when we're re-running a simulation
@@ -34,6 +32,11 @@ public class TacomaDRTMain {
 		drt.runModel(mSourceSimDirectory);
 	}
 	
+	/**
+	 * Runs the simulation
+	 * @param sourceSimDir Directory of source simulation if re-running old instance, 
+	 *                     null otherwise
+	 */
 	public void runModel(String sourceSimDir) {
 		
 		// Use all the processors!

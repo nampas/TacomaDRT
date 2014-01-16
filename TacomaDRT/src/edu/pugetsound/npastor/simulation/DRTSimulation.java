@@ -53,7 +53,9 @@ public class DRTSimulation {
 	private static final String COMMA_DELIM = ",";
 	
 	// Rebus settings
-	private static final int REBUS_HINTS = 0;
+	private static final int REBUS_HINTS = Rebus.FAVOR_BUSY_VEHICLES;
+											//| Rebus.NEW_VEHICLE_ON_REJECTION;
+										   //| Rebus.CENTROID_DEVIATION_JOB_COST;
 	
 	private ArrayList<Trip> mTrips;
 	private PriorityQueue<SimEvent> mEventQueue;
@@ -253,7 +255,7 @@ public class DRTSimulation {
 		}
 
 		// Write file
-		DRTUtils.writeTxtFile(text, Constants.SCHED_TXT);
+		DRTUtils.writeTxtFile(text, Constants.SCHED_TXT, true);
 	}
 	
 	/**
@@ -262,8 +264,8 @@ public class DRTSimulation {
 	private void appendTripVehicleTxtFile() {
 		ArrayList<String> text = new ArrayList<String>(1);
 		text.add(NUM_VEHICLES_FILE_LBL + " " + mVehiclePlans.length);
-		DRTUtils.writeTxtFile(text, Constants.TRIPS_VEHICLES_TXT);
-		DRTUtils.writeTxtFile(text, Constants.TRIPS_READABLE_TXT);
+		DRTUtils.writeTxtFile(text, Constants.TRIPS_VEHICLES_TXT, true);
+		DRTUtils.writeTxtFile(text, Constants.TRIPS_READABLE_TXT, true);
 	}
 	
 	/**
@@ -279,7 +281,8 @@ public class DRTSimulation {
 						+ "max pickup dev (m)" + COMMA_DELIM
 						+ "avg pickup dev (m/j)" + COMMA_DELIM
 						+ "avg veh wait time (m/j)" + COMMA_DELIM
-						+ "avg seats occupied w/ 1+ jobs" + COMMA_DELIM;
+						+ "avg seats occupied w/ 1+ jobs" + COMMA_DELIM
+						+ "total distance (miles)" + COMMA_DELIM;
 		text.add(headers);
 		
 		int numTripsServiced = mTrips.size() - mRejectedTrips.size();
@@ -294,6 +297,8 @@ public class DRTSimulation {
 		double globalAvgWaitTime = 0;
 		// Global capacity utilization at each stop
 		double globalCapUtil = 0;;
+		// Total distance traveled systemwide
+		double globalDistance = 0;
 		
 		for(Vehicle curVeh : mVehiclePlans) {
 			StatsWrapper result = calcVehicleStats(curVeh);
@@ -309,7 +314,8 @@ public class DRTSimulation {
 							+ result.maxPickupDev + COMMA_DELIM		
 							+ result.avgPickupDev + COMMA_DELIM
 							+ result.avgPickupWaitTime + COMMA_DELIM
-							+ result.avgCapUtil + COMMA_DELIM;
+							+ result.avgCapUtil + COMMA_DELIM
+							+ result.totalMiles + COMMA_DELIM;
 			text.add(vehString);
 						
 			// Update global statistics
@@ -319,6 +325,7 @@ public class DRTSimulation {
 			globalCapUtil += result.avgCapUtil * curVehiclePct;
 			globalMaxTrTimeDev = (int) Math.max(globalMaxTrTimeDev, result.maxTravelTimeDev);
 			globalMaxPickupDev = (int) Math.max(globalMaxPickupDev, result.maxPickupDev);
+			globalDistance += result.totalMiles;
 		}
 		
 		// Build global statistics string
@@ -329,10 +336,11 @@ public class DRTSimulation {
 							+ globalMaxPickupDev + COMMA_DELIM
 							+ globalPickupDev + COMMA_DELIM
 							+ globalAvgWaitTime + COMMA_DELIM
-							+ globalCapUtil + COMMA_DELIM;
+							+ globalCapUtil + COMMA_DELIM
+							+ globalDistance + COMMA_DELIM;
 		text.add(globalString);
 		
-		DRTUtils.writeTxtFile(text, Constants.STATS_CSV);
+		DRTUtils.writeTxtFile(text, Constants.STATS_CSV, true);
 	}
 	
 	/**
@@ -342,19 +350,25 @@ public class DRTSimulation {
 	 *         specified vehicle
 	 */
 	private StatsWrapper calcVehicleStats(Vehicle v) {
-		StatsWrapper result = new StatsWrapper();
+		
 		ArrayList<VehicleScheduleJob> schedule = v.getSchedule();
+		Routefinder router = new Routefinder();
+		
+		StatsWrapper result = new StatsWrapper();
 		result.numTrips = schedule.size() / 2 - 1; // Ignore start/end jobs
 		int pickupDevTotal = 0;  // Running pickup deviation total
 		int travelTimeDevTotal = 0; // Running excess travel time total
 		int pickupWaitTotal = 0; // Running pickup wait total (vehicle idle time)
 		int totalCapUtil = 0; // Sum of seats occupied at each stop when at least 1 is occupied
 		int capUtilStops = 0; // Number of stops where vehicle contains 1+ riders
+		double totalMeters = 0;
 		
 		int numRiders = 0;
 		
-		for(int i = 0; i < schedule.size(); i++) {
+		for(int i = 1; i < schedule.size() - 1; i++) {
 			VehicleScheduleJob job = schedule.get(i);
+			VehicleScheduleJob lastJob = schedule.get(i-1);
+			
 			switch(job.getType()) {
 			case VehicleScheduleJob.JOB_TYPE_START:
 			case VehicleScheduleJob.JOB_TYPE_END:
@@ -389,12 +403,19 @@ public class DRTSimulation {
 				result.maxTravelTimeDev = Math.max(result.maxTravelTimeDev, curTrTimeDev);
 				break;
 			}
+			
+			// Add mileage to current job
+			if(lastJob.getLocation() != null) {
+				totalMeters += router.findRoute(lastJob.getLocation(), job.getLocation()).getDistance();
+				
+			}
 		}
 		
 		result.avgPickupDev = (double) pickupDevTotal / result.numTrips;
 		result.avgTravelTimeDev = (double) travelTimeDevTotal / result.numTrips;
 		result.avgPickupWaitTime = (double) pickupWaitTotal / result.numTrips;
 		result.avgCapUtil = (double) totalCapUtil / capUtilStops;
+		result.totalMiles = DRTUtils.metersToMiles(totalMeters);
 		
 		return result;		
 	}
@@ -434,7 +455,7 @@ public class DRTSimulation {
 			.append(Rebus.CAPACITY_C + COMMA_DELIM).append(Rebus.VEHICLE_UTIL_C + COMMA_DELIM);
 		text.add(stringBuilder.toString());
 		
-		DRTUtils.writeTxtFile(text, Constants.REBUS_SETTINGS_CSV);
+		DRTUtils.writeTxtFile(text, Constants.REBUS_SETTINGS_CSV, true);
 	}
 	
 	// **************************************
@@ -721,6 +742,7 @@ public class DRTSimulation {
 		private double avgTravelTimeDev;
 		private double avgPickupWaitTime;
 		private double avgCapUtil; // Average capacity utilization at each stop
+		private double totalMiles;
 		private int numTrips;
 
 		public StatsWrapper() {
@@ -731,6 +753,7 @@ public class DRTSimulation {
 			avgTravelTimeDev = -1;
 			avgPickupWaitTime = 0;
 			avgCapUtil = 0;
+			totalMiles = 0;
 		}
 	}
 }

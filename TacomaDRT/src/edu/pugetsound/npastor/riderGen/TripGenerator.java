@@ -80,6 +80,7 @@ public class TripGenerator {
 	}
 	
 	private void onTripsGenerated() {
+		mPointGen.onGenerationComplete();
 		writeTripsToFile();
 		writeTripGeoToShp();
 	}
@@ -336,7 +337,8 @@ public class TripGenerator {
 					break;
 				}
 			} 
-			requestTime = requestTime * 60 + mRandom.nextInt(60);
+			int mins = mRandom.nextInt(60);
+			requestTime = requestTime * 60 + (mins);// - (mins % Constants.PICKUP_INTERVAL));
 	
 			// Then set time at which trip was requested
 			double requestVal = mRandom.nextDouble() * 100;
@@ -422,8 +424,8 @@ public class TripGenerator {
 		}
 		
 		// Write to file
-		DRTUtils.writeTxtFile(parsableText, Constants.TRIPS_VEHICLES_TXT);
-		DRTUtils.writeTxtFile(readableText, Constants.TRIPS_READABLE_TXT);
+		DRTUtils.writeTxtFile(parsableText, Constants.TRIPS_VEHICLES_TXT, false);
+		DRTUtils.writeTxtFile(readableText, Constants.TRIPS_READABLE_TXT, false);
 	}
 	
 	/**

@@ -102,7 +102,7 @@ public class DRTUtils {
 		return dateFormatted;
 	}
 	
-	public static void writeTxtFile(ArrayList<String> text, String filename) {
+	public static void writeTxtFile(ArrayList<String> text, String filename, boolean readOnly) {
 		
 		// Get filename
 		String path = TacomaDRTMain.getSimulationDirectory() + filename;
@@ -118,6 +118,12 @@ public class DRTUtils {
 			}
 			lineWriter.close();
 			writer.close();
+			
+			if(readOnly) {
+				boolean result = new File(path).setReadOnly();
+				if(!result)
+					Log.e(TAG, "Unable to make file read only at: " + path);
+			}
 			Log.iln(TAG, "Text file succesfully writen at: " + path);
 		} catch (IOException ex) {
 			Log.e(TAG, "Unable to write to file at: " + path);
@@ -167,5 +173,9 @@ public class DRTUtils {
         			+ "\n  " + ex.getMessage());
         	ex.printStackTrace();
         }
+	}
+	
+	public static double metersToMiles(double meters) {
+		return meters * 0.000621371;
 	}
 }

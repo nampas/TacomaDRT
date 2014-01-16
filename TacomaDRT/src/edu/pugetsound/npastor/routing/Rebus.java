@@ -1,12 +1,16 @@
 package edu.pugetsound.npastor.routing;
 
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import edu.pugetsound.npastor.TacomaDRTMain;
+import edu.pugetsound.npastor.riderGen.CityBoundaryShp;
 import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 
@@ -18,7 +22,7 @@ import edu.pugetsound.npastor.utils.Trip;
  *   A brief REBUS outline:
  *   1) Queue all jobs according to a difficulty cost
  *   2) Consume the job queue. For each job in each vehicle schedule, do:
- *      2a) Insert job into schedule in every legitimate permutation (e.g, no dropffs before pickups)
+ *      2a) Insert job into schedule in every legitimate permutation (e.g, no dropoffs before pickups)
  *          For each permutation, do:
  *          2aa) Determine insertion feasibility by assessing if any constraints have been violated
  *          2bb) If no constraints have been violated, calculate this schedule's objective function
@@ -44,6 +48,8 @@ public class Rebus {
 	public static final int NEW_VEHICLE_ON_REJECTION = 0x4;
 	/** Favor scheduling trips in more heavily booked vehicles */
 	public static final int FAVOR_BUSY_VEHICLES = 0x8;
+	/** Penalizes jobs based on their deviation from the service area centroid */
+	public static final int CENTROID_DEVIATION_JOB_COST = 0x10;
 	
 		
 	// Job cost constants (job difficulty)
@@ -51,25 +57,28 @@ public class Rebus {
 	public static final float WINDOW_C2 = 1.0f;
 	public static final float TR_TIME_C1 = 1.0f;
 	public static final float TR_TIME_C2 = 1.0f;
-	public static final float MAX_TRAVEL_COEFF = 2.0f; //Max travel time for a given trip is this coefficient
+	public static final float MAX_TRAVEL_COEFF = 3.5f; //Max travel time for a given trip is this coefficient
 													   //multiplied by direct travel time
+	public static final float CENTROID_DEV_SCALAR = 0.5f;
 	
 	// Load constants (insertion feasibility)
-	public static final float DR_TIME_C1 = 1.0f; // Cvariable in Madsen's notation
-	public static final float DR_TIME_C2 = 0.0f; // Cconst in Madsen's notation
+	public static final float DR_TIME_C1 = 0.5f; // Cvariable in Madsen's notation
+	public static final float DR_TIME_C2 = 1.0f; // Cconst in Madsen's notation
 	public static final float WAIT_C1 = 0.0f;
 	public static final float WAIT_C2 = 0.0f;
 	public static final float DEV_C = 1.5f;
-	public static final float CAPACITY_C = 0.0f; // Ci in Madsen's notation
-	public static final float VEHICLE_UTIL_C = 1500f;
+	public static final float CAPACITY_C = 3.0f; // Ci in Madsen's notation
+	public static final float VEHICLE_UTIL_C = 5000f;
 	
 	public static final float HANDLE_TIME = 0.0f;
 	
-	private PriorityQueue<REBUSJob> mJobQueue;
+	private Queue<REBUSJob> mJobQueue;
 	private int mTotalJobsHandled;
 	private ExecutorService mScheduleExecutor;
 	private RouteCache mCache;
 	private static int mHints;
+	
+	private Point2D mServiceAreaCentroid;
 	
 	public Rebus(RouteCache cache, int hints) {
 		mJobQueue = new PriorityQueue<REBUSJob>();
@@ -77,6 +86,12 @@ public class Rebus {
 		mScheduleExecutor = Executors.newFixedThreadPool(TacomaDRTMain.numThreads);
 		mCache = cache;
 		mHints = hints;
+		
+		// Set the service area centroid
+//		CityBoundaryShp city = new CityBoundaryShp();
+//		mServiceAreaCentroid = city.getCityCentroid();
+//		city.close();
+		mServiceAreaCentroid = CityBoundaryShp.getInstance().getCityCentroid();
 	}
 	
 	public int getQueueSize() {
@@ -319,7 +334,17 @@ public class Rebus {
 	 * @return The trip cost
 	 */
 	public double getCost(Trip t) {
-		return costTimeWindow(t) + costMaxTravelTime(t);
+		String str = "Trip " + t.getIdentifier() + " cost. Base: ";
+		double cost = costTimeWindow(t) + costMaxTravelTime(t);
+		str += cost;
+		if(isSettingEnabled(CENTROID_DEVIATION_JOB_COST)) {
+			double centroidCost = costCentroidDeviation(t);
+			str += ". Centroid: " + centroidCost;
+			cost += centroidCost;
+		}
+		str += ". Total: " + cost;
+		Log.iln(TAG, str);
+		return cost;
 	}
 	
 	/**
@@ -334,7 +359,7 @@ public class Rebus {
 	}
 	
 	/**
-	 * Calculates the maximal travel time component of the trip's cost. Essentially, longer trips
+	 * Calculates the maximal travel time component of the trip's cost. Essentially, shorter trips
 	 * will be weighed as more difficult
 	 * @param t The trip to calculate max travel cost for
 	 * @return A value representing maximal travel cost of trip
@@ -348,17 +373,36 @@ public class Rebus {
 		return costFunction;
 	}
 	
+	private double costCentroidDeviation(Trip t) {
+		double deviation = 0;
+		
+		// Add origin to centroid distance
+		Point2D origin = t.getOriginPoint();
+		deviation += Math.abs(origin.getY() - mServiceAreaCentroid.getY());
+		deviation += Math.abs(origin.getX() - mServiceAreaCentroid.getX());
+		
+		// Add destination to centroid distance
+		Point2D dest = t.getDestinationPoint();
+		deviation += Math.abs(dest.getY() - mServiceAreaCentroid.getY());
+		deviation += Math.abs(dest.getX() - mServiceAreaCentroid.getX());
+		
+//		return deviation * CENTROID_DEV_SCALAR;
+		return Math.pow(deviation, -1) * CENTROID_DEV_SCALAR;
+	}
+	
 	public void printEnabledHints() {
 		StringBuilder hintString = new StringBuilder();
 		// Check for all hints
-		if(isSettingEnabled(Rebus.FAVOR_BUSY_VEHICLES))
+		if(isSettingEnabled(FAVOR_BUSY_VEHICLES))
 			hintString.append("Favor Busy Schedules, ");
-		if(isSettingEnabled(Rebus.RESCHEDULE_ALL_ON_REJECTION))
+		if(isSettingEnabled(RESCHEDULE_ALL_ON_REJECTION))
 			hintString.append("Reschedule All on Rejection, ");
-		if(isSettingEnabled(Rebus.NEW_VEHICLE_ON_REJECTION))
+		if(isSettingEnabled(NEW_VEHICLE_ON_REJECTION))
 			hintString.append("New Vehicle on Rejection, ");
-		if(isSettingEnabled(Rebus.SOFT_CONSTRAINTS))
+		if(isSettingEnabled(SOFT_CONSTRAINTS))
 			hintString.append("Soft Constraints, ");
+		if(isSettingEnabled(CENTROID_DEVIATION_JOB_COST))
+			hintString.append("Centroid Deviation Job Cost, ");
 		
 		// If no hints set, add appropriate message
 		if(hintString.length() == 0)
