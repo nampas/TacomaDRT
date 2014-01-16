@@ -334,16 +334,16 @@ public class Rebus {
 	 * @return The trip cost
 	 */
 	public double getCost(Trip t) {
-		String str = "Trip " + t.getIdentifier() + " cost. Base: ";
+//		String str = "Trip " + t.getIdentifier() + " cost. Base: ";
 		double cost = costTimeWindow(t) + costMaxTravelTime(t);
 		str += cost;
 		if(isSettingEnabled(CENTROID_DEVIATION_JOB_COST)) {
 			double centroidCost = costCentroidDeviation(t);
-			str += ". Centroid: " + centroidCost;
+//			str += ". Centroid: " + centroidCost;
 			cost += centroidCost;
 		}
-		str += ". Total: " + cost;
-		Log.iln(TAG, str);
+//		str += ". Total: " + cost;
+//		Log.iln(TAG, str);
 		return cost;
 	}
 	
