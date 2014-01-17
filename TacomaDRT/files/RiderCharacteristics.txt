@@ -36,7 +36,7 @@ six 12.7
 seven 17.3
 
 DynamicRequests/Percentage
-dynamic_requests 10
+dynamic_requests 100
 
 
 

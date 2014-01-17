@@ -51,7 +51,7 @@ public class TacomaDRTMain {
 			String destPath = getSimulationDirectory() + Constants.RIDER_CHARS_FILE;
 			
 			Log.iln(TAG, "Copying rider characteristics file. \nSource: " + sourcePath 
-					+ "\nDesination: " + destPath);
+					+ "\nDestination: " + destPath);
 			
 			FileUtils.copyFile(new File(sourcePath), new File(destPath));
 		} catch (IOException ex) {

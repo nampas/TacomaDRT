@@ -124,7 +124,7 @@ public class DRTUtils {
 				if(!result)
 					Log.e(TAG, "Unable to make file read only at: " + path);
 			}
-			Log.iln(TAG, "Text file succesfully writen at: " + path);
+			Log.iln(TAG, "Text file successfully written at: " + path);
 		} catch (IOException ex) {
 			Log.e(TAG, "Unable to write to file at: " + path);
 			ex.printStackTrace();

@@ -169,7 +169,7 @@ public class TripGenerator {
 					ages.addAll(generateAgesInRange(groupTotal, 65, 80)); //TODO: DETERMINE MAX AGE HERE
 			}
 		}
-		Log.iln(TAG, "Total ages genererated: " + ages.size());
+		Log.iln(TAG, "Total ages generated: " + ages.size());
 		// Finally add ages to trips, but do it randomly
 		for(Trip t : mTrips) {
 			int randomIndex = mRandom.nextInt(ages.size());
@@ -321,6 +321,8 @@ public class TripGenerator {
 		
 		Double[] percentByHour = buildDayDistribution();
 		double percentDynamicRequests = mRiderChars.getDynamicRequestPct();
+		Log.iln(TAG, "Static rides: " + (100 - percentDynamicRequests) 
+				+ "%. Dynamic rides: " + percentDynamicRequests + "%");
 		
 		int unsatisfiableConditions = 0;
 		for(Trip t : mTrips) {
