@@ -125,7 +125,7 @@ public class Rebus {
 	public RebusResults scheduleQueuedJobs(Vehicle[] plan) {
 		Log.iln(TAG, "*************************************");
 		Log.iln(TAG, "       Scheduling " + mJobQueue.size() + " job(s)");
-		ArrayList<Trip> rejectedTrips = new ArrayList<Trip>();
+		ArrayList<RejectedTrip> rejectedTrips = new ArrayList<RejectedTrip>();
 		while(!mJobQueue.isEmpty()) {
 			REBUSJob job = mJobQueue.peek();
 			
@@ -148,7 +148,7 @@ public class Rebus {
 					Log.iln(TAG, "Trip " + job.getTrip().getIdentifier() 
 							+ " rejected. Adding new vehicle. Total now at: " + plan.length);
 				} else {
-					rejectedTrips.add(job.getTrip());
+					rejectedTrips.add(new RejectedTrip(mTotalJobsHandled, job.getTrip()));
 					Log.iln(TAG, "Trip " + job.getTrip().getIdentifier() + " rejected");
 					
 					// Consume the trip and move on
@@ -462,12 +462,23 @@ public class Rebus {
 	
 	public class RebusResults {
 		
-		public final ArrayList<Trip> rejectedTrips;
+		public final ArrayList<RejectedTrip> rejectedTrips;
 		public final Vehicle[] vehiclePlans;
 		
-		private RebusResults(ArrayList<Trip> rejectedTrips, Vehicle[] vehiclePlans) {
+		private RebusResults(ArrayList<RejectedTrip> rejectedTrips, Vehicle[] vehiclePlans) {
 			this.rejectedTrips = rejectedTrips;
 			this.vehiclePlans = vehiclePlans;
+		}
+	}
+	
+	public class RejectedTrip {
+		
+		public final Trip trip;
+		public final int tripNum; 
+		
+		private RejectedTrip(int tripNum, Trip trip) {
+			this.trip = trip;
+			this.tripNum = tripNum;
 		}
 	}
 }

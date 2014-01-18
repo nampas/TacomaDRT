@@ -32,6 +32,7 @@ import com.vividsolutions.jts.geom.Point;
 import edu.pugetsound.npastor.TacomaDRTMain;
 import edu.pugetsound.npastor.routing.Rebus;
 import edu.pugetsound.npastor.routing.Rebus.RebusResults;
+import edu.pugetsound.npastor.routing.Rebus.RejectedTrip;
 import edu.pugetsound.npastor.routing.RouteCache;
 import edu.pugetsound.npastor.routing.Routefinder;
 import edu.pugetsound.npastor.routing.RoutefinderTask;
@@ -66,7 +67,7 @@ public class DRTSimulation {
 	private Rebus mRebus;
 	private boolean mFromFile;
 	private RouteCache mCache;
-	private ArrayList<Trip> mRejectedTrips;
+	private ArrayList<RejectedTrip> mRejectedTrips;
 	private int mTotalTrips;
 
 	public DRTSimulation(ArrayList<Trip> trips, boolean fromFile) {
@@ -75,7 +76,7 @@ public class DRTSimulation {
 		mTotalTrips = trips.size();
 		mEventQueue = new PriorityQueue<SimEvent>();
 		mVehiclePlans = new Vehicle[0];
-		mRejectedTrips = new ArrayList<Trip>();
+		mRejectedTrips = new ArrayList<RejectedTrip>();
 	}
 	
 	/**
@@ -272,8 +273,8 @@ public class DRTSimulation {
 		
 		// Add all rejected trips
 		text.add("\r\n REJECTED TRIPS \r\n");
-		for(Trip t : mRejectedTrips) {
-			text.add(t.toString());
+		for(RejectedTrip t : mRejectedTrips) {
+			text.add(t.trip.toString());
 		}
 
 		// Write file
@@ -561,9 +562,10 @@ public class DRTSimulation {
 		
 		// Write the text file
 		ArrayList<String> text = new ArrayList<String>();
-		text.add(Trip.getSpaceSeparatedHeaders());
-		for(Trip t : mRejectedTrips) {
-			text.add(t.toStringSpaceSeparated());
+		text.add("TripNum RejNum " + Trip.getSpaceSeparatedHeaders());
+		for(int i = 0; i < mRejectedTrips.size(); i++) {
+			RejectedTrip t = mRejectedTrips.get(i);
+			text.add(t.tripNum + " " + i + " " + t.trip.toStringSpaceSeparated());
 		}
 		DRTUtils.writeTxtFile(text, Constants.TRIPS_REJECTED_TXT, true);
 		
