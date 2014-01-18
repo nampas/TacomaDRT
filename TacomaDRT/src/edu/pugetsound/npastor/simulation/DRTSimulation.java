@@ -110,7 +110,7 @@ public class DRTSimulation {
 					if(tokens[0].equals(NUM_VEHICLES_FILE_LBL))
 						allDayFleetSize = Integer.valueOf(tokens[1]);
 					else if(tokens[0].equals(PEAK_VEHICLE_FILE_LBL))
-						peakFleetSizeAdd = Integer.valueOf(tokens[2]);
+						peakFleetSizeAdd = Integer.valueOf(tokens[1]);
 				}
 				scanner.close();
 				if(allDayFleetSize == -1)
