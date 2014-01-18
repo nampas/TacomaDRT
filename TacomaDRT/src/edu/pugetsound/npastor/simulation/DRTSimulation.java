@@ -283,7 +283,8 @@ public class DRTSimulation {
 						+ "avg pickup dev (m/j)" + COMMA_DELIM
 						+ "avg veh wait time (m/j)" + COMMA_DELIM
 						+ "avg seats occupied w/ 1+ jobs" + COMMA_DELIM
-						+ "total distance (miles)" + COMMA_DELIM;
+						+ "total distance (miles)" + COMMA_DELIM
+						+ "service time (hr)" + COMMA_DELIM;
 		text.add(headers);
 		
 		int numTripsServiced = mTrips.size() - mRejectedTrips.size();
@@ -300,6 +301,8 @@ public class DRTSimulation {
 		double globalCapUtil = 0;;
 		// Total distance traveled systemwide
 		double globalDistance = 0;
+		// Total service hours
+		double globalServiceHours = 0;
 		
 		for(Vehicle curVeh : mVehiclePlans) {
 			StatsWrapper result = calcVehicleStats(curVeh);
@@ -316,7 +319,8 @@ public class DRTSimulation {
 							+ result.avgPickupDev + COMMA_DELIM
 							+ result.avgPickupWaitTime + COMMA_DELIM
 							+ result.avgCapUtil + COMMA_DELIM
-							+ result.totalMiles + COMMA_DELIM;
+							+ result.totalMiles + COMMA_DELIM
+							+ result.serviceHours + COMMA_DELIM;
 			text.add(vehString);
 						
 			// Update global statistics
@@ -327,6 +331,7 @@ public class DRTSimulation {
 			globalMaxTrTimeDev = (int) Math.max(globalMaxTrTimeDev, result.maxTravelTimeDev);
 			globalMaxPickupDev = (int) Math.max(globalMaxPickupDev, result.maxPickupDev);
 			globalDistance += result.totalMiles;
+			globalServiceHours += result.serviceHours;
 		}
 		
 		// Build global statistics string
@@ -338,7 +343,8 @@ public class DRTSimulation {
 							+ globalPickupDev + COMMA_DELIM
 							+ globalAvgWaitTime + COMMA_DELIM
 							+ globalCapUtil + COMMA_DELIM
-							+ globalDistance + COMMA_DELIM;
+							+ globalDistance + COMMA_DELIM
+							+ globalServiceHours + COMMA_DELIM;
 		text.add(globalString);
 		
 		DRTUtils.writeTxtFile(text, Constants.STATS_CSV, true);
@@ -402,13 +408,13 @@ public class DRTSimulation {
 				double curTrTimeDev = job.getServiceTime() - job.getStartTime();
 				travelTimeDevTotal += curTrTimeDev;
 				result.maxTravelTimeDev = Math.max(result.maxTravelTimeDev, curTrTimeDev);
+
 				break;
 			}
 			
 			// Add mileage to current job
 			if(lastJob.getLocation() != null) {
 				totalMeters += router.findRoute(lastJob.getLocation(), job.getLocation()).getDistance();
-				
 			}
 		}
 		
@@ -417,6 +423,9 @@ public class DRTSimulation {
 		result.avgPickupWaitTime = (double) pickupWaitTotal / result.numTrips;
 		result.avgCapUtil = (double) totalCapUtil / capUtilStops;
 		result.totalMiles = DRTUtils.metersToMiles(totalMeters);
+		// Service hours run from the service start (set by agency) to last dropoff
+		double lastDropoffHr = (double)schedule.get(schedule.size() - 2).getServiceTime() / 60;
+		result.serviceHours = lastDropoffHr - Constants.BEGIN_OPERATION_HOUR;
 		
 		return result;		
 	}
@@ -764,6 +773,7 @@ public class DRTSimulation {
 		private double avgPickupWaitTime;
 		private double avgCapUtil; // Average capacity utilization at each stop
 		private double totalMiles;
+		private double serviceHours;
 		private int numTrips;
 
 		public StatsWrapper() {
@@ -775,6 +785,7 @@ public class DRTSimulation {
 			avgPickupWaitTime = 0;
 			avgCapUtil = 0;
 			totalMiles = 0;
+			serviceHours = 0;
 		}
 	}
 }
