@@ -20,6 +20,7 @@ public class Constants {
 	public final static String SIM_BASE_DIRECTORY = "files/Simulations";
 	public final static String TRIPS_VEHICLES_TXT = "/trips_vehicles.txt";
 	public final static String TRIPS_READABLE_TXT = "/trips_readable.txt";
+	public final static String TRIPS_REJECTED_TXT = "/rejected_trips.txt";
 	public final static String ROUTE_CACHE_CSV = "/route_cache.csv";
 	public final static String LOG_TXT = "/log.txt";
 	public final static String SCHED_TXT = "/schedules.txt";

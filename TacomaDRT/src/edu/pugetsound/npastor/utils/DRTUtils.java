@@ -161,7 +161,7 @@ public class DRTUtils {
 	            featureStore.setTransaction(transaction);
                 featureStore.addFeatures(collection);
                 transaction.commit();
-                Log.iln(TAG, "Shp file succesfully writen at: " + shpFile.getPath());
+                Log.iln(TAG, "Shp file successfully written at: " + shpFile.getPath());
 	        }
 	        transaction.close();
         } catch (MalformedURLException ex) {

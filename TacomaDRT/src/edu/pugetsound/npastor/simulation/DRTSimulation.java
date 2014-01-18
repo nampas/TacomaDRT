@@ -185,6 +185,7 @@ public class DRTSimulation {
 		writeScheduleShpFile();
 		writeStatisticsTxtFile();
 		writeRebusSettingsFile();
+		writeRejectedTripFiles();
 	}
 	
 	/**
@@ -456,6 +457,26 @@ public class DRTSimulation {
 		text.add(stringBuilder.toString());
 		
 		DRTUtils.writeTxtFile(text, Constants.REBUS_SETTINGS_CSV, true);
+	}
+	
+	/**
+	 * Writes a text file and a shapefile containing information regarding the rejected trips
+	 */
+	private void writeRejectedTripFiles() {
+		// Don't bother writing anything if there are no rejected trips
+		if(mRejectedTrips.isEmpty())
+			return;
+		
+		// Write the text file
+		ArrayList<String> text = new ArrayList<String>();
+		text.add(Trip.getSpaceSeparatedHeaders());
+		for(Trip t : mRejectedTrips) {
+			text.add(t.toStringSpaceSeparated());
+		}
+		DRTUtils.writeTxtFile(text, Constants.TRIPS_REJECTED_TXT, true);
+		
+		//TODO: Write the shapefile
+		
 	}
 	
 	// **************************************

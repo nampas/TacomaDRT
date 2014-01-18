@@ -15,6 +15,8 @@ public class Trip {
 	public final static String TAG = "Trip";
 	public final static String TRACT_NOT_SET = "Not set";
 	
+	private static final String SPACE_DELIM = " ";
+	
 	private int mTripType;
 	private int mRiderAge;
 	private boolean mIsOutbound;
@@ -129,6 +131,51 @@ public class Trip {
 		return mCallTime;
 	}
 	
+	/**
+	 * Returns the headers for values returned in toStringSpaceSeparated()
+	 * in the same order
+	 * @return
+	 */
+	public static String getSpaceSeparatedHeaders() {
+		return "Trip" + SPACE_DELIM +
+				"Type" + SPACE_DELIM + 
+				"Age" + SPACE_DELIM +
+				"Outbound?" + SPACE_DELIM +
+				"OriginTract" + SPACE_DELIM +
+				"OriginX" + SPACE_DELIM +
+				"OriginY" + SPACE_DELIM +
+				"DestTract" + SPACE_DELIM +
+				"DestX" + SPACE_DELIM +
+				"DestY" + SPACE_DELIM +
+				"PickupTime" + SPACE_DELIM +
+				"RequestTime" + SPACE_DELIM +
+				"RouteTime";
+	}
+	
+	/**
+	 * Helper method for writing trip txt files. Builds a line of the file, which contains all trip data
+	 * separated by spaces
+	 * @param t The trip
+	 * @return All trip data in a space separated string
+	 */
+	public String toStringSpaceSeparated() {
+		String line = getIdentifier() + SPACE_DELIM + 
+				getTripType() + SPACE_DELIM +
+				getRiderAge() + SPACE_DELIM + 
+				(isOutbound() ? "1" : "0") + SPACE_DELIM +
+				getOriginTract() + SPACE_DELIM +
+				getOriginPoint().getX() + SPACE_DELIM +
+				getOriginPoint().getY() + SPACE_DELIM +
+				getDestinationTract() + SPACE_DELIM +
+				getDestinationPoint().getX() + SPACE_DELIM +
+				getDestinationPoint().getY() + SPACE_DELIM +
+				getPickupTime() + SPACE_DELIM +
+				getCallInTime() + SPACE_DELIM +
+				mRoute.getTime();
+		return line;
+	}
+	
+	@Override
 	public String toString() {
 		return "Trip: " + mIdentifier + 
 				"\n  Type: " + DRTUtils.getTripTypeString(mTripType) + 

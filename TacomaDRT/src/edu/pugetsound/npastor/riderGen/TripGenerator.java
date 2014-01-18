@@ -421,36 +421,13 @@ public class TripGenerator {
 		ArrayList<String> parsableText = new ArrayList<String>();
 		ArrayList<String> readableText = new ArrayList<String>();
 		for(Trip t : mTrips) {
-			parsableText.add(buildParsableTripFileLine(t));
+			parsableText.add(TRIP_FILE_LBL + " " + t.toStringSpaceSeparated());
 			readableText.add(t.toString().replace("\n", "")); // Get rid of all line breaks
 		}
 		
 		// Write to file
 		DRTUtils.writeTxtFile(parsableText, Constants.TRIPS_VEHICLES_TXT, false);
 		DRTUtils.writeTxtFile(readableText, Constants.TRIPS_READABLE_TXT, false);
-	}
-	
-	/**
-	 * Helper method for writing trip txt files. Builds a line of the file, which contains all trip data
-	 * @param t The trip
-	 * @return All trip data in a string
-	 */
-	private String buildParsableTripFileLine(Trip t) {
-		String sp = " ";
-		String line = TRIP_FILE_LBL + sp +
-				t.getIdentifier() + sp + 
-				t.getTripType() + sp +
-				t.getRiderAge() + sp + 
-				(t.isOutbound() ? "1" : "0") + sp +
-				t.getOriginTract() + sp +
-				t.getOriginPoint().getX() + sp +
-				t.getOriginPoint().getY() + sp +
-				t.getDestinationTract() + sp +
-				t.getDestinationPoint().getX() + sp +
-				t.getDestinationPoint().getY() + sp +
-				t.getPickupTime() + sp +
-				t.getCallInTime();
-		return line;
 	}
 	
 	/**
