@@ -19,6 +19,10 @@ public class Vehicle {
 		initSchedule();		
 	}
 	
+	public TimeSegment[] getServiceSegments() {
+		return mInServiceSegments;
+	}
+	
 	/**
 	 * Checks if the vehicle can service a job beginning at the
 	 * specified time

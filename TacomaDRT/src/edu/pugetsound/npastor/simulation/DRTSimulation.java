@@ -458,11 +458,59 @@ public class DRTSimulation {
 		result.avgPickupWaitTime = (double) pickupWaitTotal / result.numTrips;
 		result.avgCapUtil = (double) totalCapUtil / capUtilStops;
 		result.totalMiles = DRTUtils.metersToMiles(totalMeters);
-		// Service hours run from the service start (set by agency) to last dropoff
-		double lastDropoffHr = (double)schedule.get(schedule.size() - 2).getServiceTime() / 60;
-		result.serviceHours = lastDropoffHr - Constants.BEGIN_OPERATION_HOUR;
+		result.serviceHours = calcServiceHours(v);
 		
 		return result;		
+	}
+	
+	/**
+	 * Returns service hours for specified hours
+	 * @param v
+	 * @return
+	 */
+	private double calcServiceHours(Vehicle v) {
+		int serviceMins;
+		ArrayList<VehicleScheduleJob> schedule = v.getSchedule();
+		if(v.servesAllDay()) {
+			// If vehicle serves all day, service hours run from begin service time
+			// to service time of the last job
+			int endMins = schedule.get(schedule.size() - 2).getServiceTime();
+			serviceMins = endMins - (Constants.BEGIN_OPERATION_HOUR * 60);
+		} else {
+			// Get service segments
+			TimeSegment[] segs = v.getServiceSegments();			
+			TimeSegment morningSeg;
+			TimeSegment afternoonSeg;
+			if(segs[0].getStartMins() < segs[1].getStartMins()) {
+				morningSeg = segs[0];
+				afternoonSeg = segs[1];
+			} else {
+				morningSeg = segs[1];
+				afternoonSeg = segs[0];
+			}
+			
+			// Find the last morning job
+			int lastMorningJob = 0;
+			for(VehicleScheduleJob job : schedule) {
+				// Dropoffs will always be the last job for a time segment
+				if(job.getType() != VehicleScheduleJob.JOB_TYPE_DROPOFF)
+					continue;
+				
+				int curServiceTime = job.getServiceTime();
+				if(curServiceTime > lastMorningJob 
+						&& curServiceTime < afternoonSeg.getStartMins())
+					lastMorningJob = curServiceTime;
+			}										
+			
+			// Service time for each period stretches from the beginning of the period
+			// to the service time of the last job arising from that period
+			int morningMins = lastMorningJob - morningSeg.getStartMins();
+			int afternoonMins = schedule.get(schedule.size() - 2).getServiceTime()
+					- afternoonSeg.getStartMins();
+			serviceMins = morningMins + afternoonMins;
+		}
+			
+		return (double) serviceMins / 60;
 	}
 	
 	/**
