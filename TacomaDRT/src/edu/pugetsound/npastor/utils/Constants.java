@@ -35,7 +35,8 @@ public class Constants {
 	
 	// The biggies!
 	public final static int TOTAL_TRIPS = 200;
-	public final static int VEHICLE_QUANTITY = 2; // DRT fleet size
+	public final static int ALL_DAY_FLEET_SIZE = 2; // Minimum DRT fleet size across day
+	public final static int PEAK_FLEET_SIZE_ADDITION = 1; // Additional vehicles to be added during peak hours
 	
 	// Agency constants
 	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour

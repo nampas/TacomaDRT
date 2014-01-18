@@ -40,6 +40,8 @@ import edu.pugetsound.npastor.routing.VehicleScheduleJob;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
+import edu.pugetsound.npastor.utils.RiderChars;
+import edu.pugetsound.npastor.utils.TimeSegment;
 import edu.pugetsound.npastor.utils.Trip;
 
 public class DRTSimulation {
@@ -47,6 +49,7 @@ public class DRTSimulation {
 	public static final String TAG = "DRTSimulation";
 	
 	private static final String NUM_VEHICLES_FILE_LBL = "num_vehicles";
+	private static final String PEAK_VEHICLE_FILE_LBL = "peak_vehicles";
 	
 	private static final int ROUTE_UPDATE_INCREMENT = 10; // Update route progress at this percentage increment
 	
@@ -91,9 +94,11 @@ public class DRTSimulation {
 		
 		// If a file path is specified, parse out the number of vehicles to generate
 		// Otherwise, use the value defined in Constants
-		int vehicleQuantity = -1;
+		int allDayFleetSize = -1;
+		int peakFleetSizeAdd = -1;
 		if(!mFromFile) {
-			vehicleQuantity = Constants.VEHICLE_QUANTITY;
+			allDayFleetSize = Constants.ALL_DAY_FLEET_SIZE;
+			peakFleetSizeAdd = Constants.PEAK_FLEET_SIZE_ADDITION;
 		} else {
 			File file = new File(TacomaDRTMain.getSourceTripVehDir());
 			Log.iln(TAG, "Loading number of vehicles from: " + file.getPath());
@@ -102,13 +107,13 @@ public class DRTSimulation {
 				Scanner scanner = new Scanner(file);
 				while (scanner.hasNextLine()) {
 					String[] tokens = scanner.nextLine().split(" ");
-					if(tokens[0].equals(NUM_VEHICLES_FILE_LBL)) {
-						vehicleQuantity = Integer.valueOf(tokens[1]);
-						break;
-					}						
+					if(tokens[0].equals(NUM_VEHICLES_FILE_LBL))
+						allDayFleetSize = Integer.valueOf(tokens[1]);
+					else if(tokens[0].equals(PEAK_VEHICLE_FILE_LBL))
+						peakFleetSizeAdd = Integer.valueOf(tokens[2]);
 				}
 				scanner.close();
-				if(vehicleQuantity == -1)
+				if(allDayFleetSize == -1)
 					throw new IllegalArgumentException("Vehicle quantity not specified in file at " + file.getPath());				
 			} catch(FileNotFoundException ex) {
 				Log.e(TAG, "Unable to find trip file at: " + file.getPath());
@@ -118,7 +123,7 @@ public class DRTSimulation {
 		}
 	
 		// Generate vehicles and append quantity to file
-		generateVehicles(vehicleQuantity);
+		generateVehicles(allDayFleetSize, peakFleetSizeAdd);
 		appendTripVehicleTxtFile();
 		
 		enqueueTripRequestEvents();
@@ -140,11 +145,27 @@ public class DRTSimulation {
 		onSimulationFinished();
 	}
 	
-	private void generateVehicles(int numVehicles) {
-		Log.iln(TAG, "Generating " + numVehicles + " vehicles");
-		mVehiclePlans = new Vehicle[numVehicles];
-		for(int i = 0; i < numVehicles; i++) {
-			mVehiclePlans[i] = new Vehicle(i);
+	private void generateVehicles(int allDayVehicles, int peakVehiclesAdd) {
+		int totalVehicles = allDayVehicles + peakVehiclesAdd;
+		Log.iln(TAG, "Generating " + totalVehicles + " vehicles. All day: " 
+				+ allDayVehicles + ". Peak addition: " + peakVehiclesAdd);
+		mVehiclePlans = new Vehicle[totalVehicles];
+		
+		// Generate all day vehicles
+		TimeSegment allDaySeg = 
+				new TimeSegment(Constants.BEGIN_OPERATION_HOUR * 60, Constants.END_OPERATION_HOUR * 60);
+		TimeSegment[] allDayArray = new TimeSegment[] {allDaySeg};
+		for(int i = 0; i < allDayVehicles; i++) {
+			mVehiclePlans[i] = new Vehicle(i, allDayArray);
+		}
+		
+		// Get peak times from the rider characteristics file
+		TimeSegment[] peakSegs = new RiderChars(mFromFile).getPeakPeriods();
+		
+		// Generate peak vehicles
+		for(int i = 0; i < peakVehiclesAdd; i++) {
+			int indexId = i + allDayVehicles;
+			mVehiclePlans[indexId] = new Vehicle(indexId, peakSegs);
 		}
 	}
 	
@@ -263,8 +284,22 @@ public class DRTSimulation {
 	 * Append the vehicle quantity to the trip/vehicle file
 	 */
 	private void appendTripVehicleTxtFile() {
+		// Sum all-day and peak vehicle counts
+		int allDayCount = 0;
+		int peakCount = 0;
+		for(Vehicle v : mVehiclePlans) {
+			if(v.servesAllDay())
+				allDayCount++;
+			else
+				peakCount++;					
+		}
+		
+		// Build vehicle quantity text
 		ArrayList<String> text = new ArrayList<String>(1);
-		text.add(NUM_VEHICLES_FILE_LBL + " " + mVehiclePlans.length);
+		text.add(NUM_VEHICLES_FILE_LBL + " " + allDayCount);
+		text.add(PEAK_VEHICLE_FILE_LBL + " " + peakCount);
+		
+		// Write to the readable and paresable files
 		DRTUtils.writeTxtFile(text, Constants.TRIPS_VEHICLES_TXT, true);
 		DRTUtils.writeTxtFile(text, Constants.TRIPS_READABLE_TXT, true);
 	}

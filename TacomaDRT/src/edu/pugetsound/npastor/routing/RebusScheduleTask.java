@@ -19,6 +19,7 @@ public class RebusScheduleTask implements Runnable {
 	
 	private static final String TAG = "RebusScheduleTask";
 	
+	private Vehicle mVehicle;
 	private int mVehiclePlanIndex;
 	private VehicleScheduleJob mPickupJob;
 	private VehicleScheduleJob mDropoffJob;
@@ -27,12 +28,14 @@ public class RebusScheduleTask implements Runnable {
 	private CountDownLatch mLatch;
 	private RouteCache mCache;
 	
-	public RebusScheduleTask (int vehicleIndex, ArrayList<VehicleScheduleJob> schedule, RouteCache cache,
-			VehicleScheduleJob pickupJob, VehicleScheduleJob dropoffJob, ScheduleResult[] results, CountDownLatch latch) {
+	public RebusScheduleTask (int vehicleIndex, Vehicle vehicle, ArrayList<VehicleScheduleJob> schedule,
+							RouteCache cache, VehicleScheduleJob pickupJob, 
+							VehicleScheduleJob dropoffJob, ScheduleResult[] results, CountDownLatch latch) {
 		mVehiclePlanIndex = vehicleIndex;
 		mPickupJob = pickupJob;
 		mDropoffJob = dropoffJob;
 		mSchedule = schedule;
+		mVehicle = vehicle;
 		mResults = results;
 		mLatch = latch;		
 		mCache = cache;
@@ -58,6 +61,10 @@ public class RebusScheduleTask implements Runnable {
 		
 		// Initialize the result
 		ScheduleResult schedResult = new ScheduleResult(mVehiclePlanIndex);
+		
+		// Fail immediately if vehicle is not in service at time of pickup job
+		if(!mVehicle.isServiceableTime(mPickupJob.getStartTime()))
+			return schedResult;
 		
 		int pickupIndex = 1; //s1 in Madsen's notation
 		int dropoffIndex = 2; //s2 in Madsen's notation
@@ -424,6 +431,25 @@ public class RebusScheduleTask implements Runnable {
 		public FeasibilityResult() {
 			failsOn = null;
 			resultCode = SUCCESS;
+		}
+	}
+	
+	/**
+	 * Wrapper class which contains the result of a RebusScheduleTask
+	 * @author Nathan P
+	 *
+	 */
+	public class ScheduleResult {
+		public int mVehicleIndex;
+		public boolean mSolutionFound;
+		public double mOptimalScore;
+		public int mOptimalPickupIndex;
+		public int mOptimalDropoffIndex;
+		
+		public ScheduleResult(int vehiclePlanIndex) {
+			mVehicleIndex = vehiclePlanIndex;
+			mSolutionFound = false;
+			mOptimalScore = 0;
 		}
 	}
 }

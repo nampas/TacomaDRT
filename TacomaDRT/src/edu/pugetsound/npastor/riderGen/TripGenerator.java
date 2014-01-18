@@ -365,7 +365,7 @@ public class TripGenerator {
 	// Using trip distribution data from RiderChars file, makes a list of trip distribution by hour
 	private Double[] buildDayDistribution() {
 		Double[] percentByHour = new Double[24];
-		HashMap<Integer, DayDivision> tripsByPeriod = mRiderChars.getTripDistributiions();
+		HashMap<Integer, DayDivision> tripsByPeriod = mRiderChars.getTripDistributions();
 		
 		// First do peak periods
 		DayDivision morningPeak = tripsByPeriod.get(Constants.MORN_PEAK_PERIOD);

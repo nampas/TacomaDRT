@@ -20,6 +20,7 @@ public class RiderChars {
 	private HashMap<Integer, Double> mRiderAgePcts; // Associates age groups with their percentages
 	private HashMap<Integer, Double> mTripTypePcts; // Associates trip types with their percentages 
 	private HashMap<Integer, DayDivision> mDayDistributions; // Associates day time perios with their percentages
+	private TimeSegment[] mPeakPeriods;
 	private double mDynamicRequestPct;
 
 	/**
@@ -30,6 +31,7 @@ public class RiderChars {
 		mRiderAgePcts = new HashMap<Integer, Double>();
 		mTripTypePcts = new HashMap<Integer, Double>();
 		mDayDistributions = new HashMap<Integer, DayDivision>();
+		mPeakPeriods = new TimeSegment[2];
 		readRiderCharsFile(isRerun);
 		Log.iln(TAG, "Rider age mappings, group to percent: " + mRiderAgePcts.toString());
 		Log.iln(TAG, "Trip type mappings, group to percent: " + mTripTypePcts.toString());
@@ -51,7 +53,7 @@ public class RiderChars {
 		return mTripTypePcts;
 	}
 	
-	public HashMap<Integer, DayDivision> getTripDistributiions() {
+	public HashMap<Integer, DayDivision> getTripDistributions() {
 		return mDayDistributions;
 	}
 
@@ -77,6 +79,10 @@ public class RiderChars {
 	
 	public Double getDynamicRequestPct() {
 		return mDynamicRequestPct;
+	}
+	
+	public TimeSegment[] getPeakPeriods() {
+		return mPeakPeriods;
 	}
 
 	/**
@@ -161,10 +167,19 @@ public class RiderChars {
 	private DayDivision parseDayDivision(String[] tokens) {
 		DayDivision div;
 		if(tokens.length == 4) {
-			div = new DayDivision(Double.valueOf(tokens[1]),
-								Integer.valueOf(tokens[2]),
-								Integer.valueOf(tokens[3]));
+			// This is peak period
+			int startHr = Integer.valueOf(tokens[2]);
+			int duration = Integer.valueOf(tokens[3]);
+			div = new DayDivision(Double.valueOf(tokens[1]), startHr, duration);
+			
+			// Add to the peak period list
+			TimeSegment peak = new TimeSegment(startHr * 60, (startHr * 60 + duration * 60));
+			if(mPeakPeriods[0] == null)
+				mPeakPeriods[0] = peak;
+			else
+				mPeakPeriods[1] = peak;				
 		} else {
+			// This is a non-peak period
 			div = new DayDivision(Double.valueOf(tokens[1]));
 		}
 		return div;
@@ -194,18 +209,24 @@ public class RiderChars {
 			mLength = -1;
 		}
 		
+		/**
+		 * Returns start hour
+		 * @return
+		 */
 		public int getStart() {
 			return mStartTime;
 		}
 		
+		/**
+		 * Returns duration in hours
+		 * @return
+		 */
 		public int getLength() {
 			return mLength;
 		}
 		
 		public double getPercentage() {
 			return mPercentage;
-		}
-		
+		}		
 	}
-	
 }
