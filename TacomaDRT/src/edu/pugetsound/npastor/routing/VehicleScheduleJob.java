@@ -39,9 +39,10 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	private VehicleScheduleJob[] mWorkingNextJobs;
 	private int[] mWorkingServiceTimes;
 	private int[] mWorkingWaitTimes;
-
 	
-	public VehicleScheduleJob(Trip trip, Point2D location, int startTime, int duration, int type, int numVehicles) {
+	public VehicleScheduleJob(Trip trip, Point2D location, int startTime, 
+									int duration, int type, int numVehicles) 
+	{
 		mTrip = trip;
 		mStartTime = startTime;
 		mDuration = duration;
@@ -167,6 +168,9 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	
 	@Override
 	public boolean equals(Object obj) {
+		if(!(obj instanceof VehicleScheduleJob))
+			return false;
+		
 		VehicleScheduleJob compareJob = (VehicleScheduleJob) obj;
 		int compareType = compareJob.getType();
 		

@@ -306,8 +306,6 @@ public class TripGenerator {
 		t.setDestinationPoint(mPointGen.randomPointInTract(t.getDestinationTract()));
 	}
 	
-	
-	//TODO: determine time distribution across day
 	//TODO: determine when requests are made known to agency
 	/**
 	 * Generates a trip pickup time and the time when the trip was made known to the agency.
@@ -328,8 +326,8 @@ public class TripGenerator {
 		for(Trip t : mTrips) {
 			int requestTime = 0;
 			int callInTime = 0;
-			// First calculate request time
 			
+			// First calculate request time			
 			double random = mRandom.nextDouble() * 100;
 			double runningTotal = 0;
 			for(int i = Constants.BEGIN_OPERATION_HOUR; i < Constants.END_OPERATION_HOUR; i++) {

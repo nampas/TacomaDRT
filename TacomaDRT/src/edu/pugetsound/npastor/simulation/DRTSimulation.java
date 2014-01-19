@@ -93,7 +93,7 @@ public class DRTSimulation {
 		// Otherwise, use the value defined in Constants
 		int vehicleQuantity = -1;
 		if(!mFromFile) {
-			vehicleQuantity = Constants.VEHICLE_QUANTITY;
+			vehicleQuantity = Constants.ALL_DAY_FLEET_SIZE;
 		} else {
 			File file = new File(TacomaDRTMain.getSourceTripVehDir());
 			Log.iln(TAG, "Loading number of vehicles from: " + file.getPath());

@@ -73,15 +73,15 @@ public class RebusScheduleTask implements Runnable {
 		while(pickupIndex < mSchedule.size() - 2) {
 			if(isFirstEval) {
 				isFirstEval = false;
-			//  a) if s2 is before the last stop T1 in the mSchedule...
+			//  a) if s2 is before the last stop T1 in the schedule...
 			} else if(mSchedule.get(dropoffIndex+1).getType() == VehicleScheduleJob.JOB_TYPE_END) {
 //				Log.info(TAG, " --- FIRST");
 				// then move s1 one step to the right...
-				mSchedule.remove(dropoffIndex); // Remove so we don't swap pickup/dropoff order
-				mSchedule.set(pickupIndex, mSchedule.get(pickupIndex+1)); // (swap elements, save time!)
+				mSchedule.remove(dropoffIndex); // (remove so we don't swap pickup/dropoff order)
+				mSchedule.set(pickupIndex, mSchedule.get(pickupIndex+1));
 				pickupIndex++;
 				mSchedule.set(pickupIndex, mPickupJob);
-				// and place s2 just after s1 and update the mSchedule. Go to 2(b).
+				// and place s2 just after s1 and update the schedule. Go to 2(b).
 				dropoffIndex = pickupIndex + 1;
 				mSchedule.add(dropoffIndex, mDropoffJob);
 			//     else, move s2 one step to the right
@@ -135,8 +135,8 @@ public class RebusScheduleTask implements Runnable {
 							failsOn.getTrip().getIdentifier() == mPickupJob.getTrip().getIdentifier()) {
 //						Log.info(TAG, " --- THIRD");
 						// then move s1 one step to the right...
-						mSchedule.remove(dropoffIndex); // Remove so we don't swap pickup/dropoff order
-						mSchedule.set(pickupIndex, mSchedule.get(pickupIndex+1)); // (swap elements, save time!)
+						mSchedule.remove(dropoffIndex); // (remove so we don't swap pickup/dropoff order)
+						mSchedule.set(pickupIndex, mSchedule.get(pickupIndex+1));
 						pickupIndex++;
 						mSchedule.set(pickupIndex, mPickupJob);
 						// and place s2 just after s1 and update the schedule. Go to 2(b).
@@ -212,7 +212,8 @@ public class RebusScheduleTask implements Runnable {
 				numPassengers--;
 
 				// Get the travel time between last location and here
-				int totalTripTravelTime = curJob.getWorkingServiceTime(mVehiclePlanIndex) - findCorrespondingJob(curJob, schedule).getWorkingServiceTime(mVehiclePlanIndex);
+				int totalTripTravelTime = curJob.getWorkingServiceTime(mVehiclePlanIndex) 
+						- findCorrespondingJob(curJob, schedule).getWorkingServiceTime(mVehiclePlanIndex);
 				
 				// If the total trip travel time exceeds the max allowable trip travel time,
 				// fail the feasibility test.
@@ -239,21 +240,22 @@ public class RebusScheduleTask implements Runnable {
 		
 		String msg = "";
 		
-		for(int i = 0; i < schedule.size(); i++) {
+		for(int i = 1; i < schedule.size() - 1; i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
+			VehicleScheduleJob lastJob = schedule.get(i-1);
 			int jobType = curJob.getType();
-			// Update passenger count and running total of the objective function
+			
+			// Update passenger count 
 			if(jobType == VehicleScheduleJob.JOB_TYPE_PICKUP) {
-				passengers++;
-				double objectiveFuncInc = getLoad(curJob, schedule, passengers);
-				msg += objectiveFuncInc + " ";
-				objectiveFunction += objectiveFuncInc;
+				passengers++;			
 			} else if(jobType == VehicleScheduleJob.JOB_TYPE_DROPOFF) {
 				passengers--;	
-				double objectiveFuncInc = getLoad(curJob, schedule, passengers);
-				msg += objectiveFuncInc + " ";
-				objectiveFunction += objectiveFuncInc;
 			}
+			
+			// Update running total of the objective function
+			double objectiveFuncInc = getLoad(curJob, schedule, passengers, lastJob);
+			msg += objectiveFuncInc + " ";
+			objectiveFunction += objectiveFuncInc;
 		}
 		
 //		Log.iln(TAG, msg);
@@ -307,7 +309,8 @@ public class RebusScheduleTask implements Runnable {
 	 * @param passengers Number of passengers in the vehicle
 	 * @return The load cost for this stop (the specified job)
 	 */
-	public double getLoad(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> schedule, int passengers) {
+	public double getLoad(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> schedule, 
+							int passengers, VehicleScheduleJob lastJob) {
 		// Calculate the REBUS load cost
 //		Log.iln(TAG, "Load cost for job type " + job.getType() + ", id " + job.getTrip().getIdentifier());
 		double cost = loadDrivingTime(job, schedule) +
@@ -317,6 +320,8 @@ public class RebusScheduleTask implements Runnable {
 		// Add in the vehicle utilization cost if enabled
 		if(Rebus.isSettingEnabled(Rebus.FAVOR_BUSY_VEHICLES))
 			cost -= loadVehicleUtilization(schedule.size());
+		if(Rebus.isSettingEnabled(Rebus.MINIMIZE_MILEAGE))
+			cost += loadMileage(lastJob, job, schedule.size());
 		
 		return cost;
 	}
@@ -341,7 +346,7 @@ public class RebusScheduleTask implements Runnable {
 		double cost = Rebus.DR_TIME_C1 * (endJob.getWorkingServiceTime(mVehiclePlanIndex) - startJob.getWorkingServiceTime(mVehiclePlanIndex)) 
 				+ Rebus.DR_TIME_C2 * (waitingTime + Rebus.HANDLE_TIME);
 		
-//		Log.i(TAG, "     Driving time: " + cost, true, true);
+		Log.i(TAG, "     Driving time: " + cost, true, true);
 		return cost;
 	}
 	
@@ -359,7 +364,7 @@ public class RebusScheduleTask implements Runnable {
 			int waitingTime = job.getWaitTime(mVehiclePlanIndex);
 			cost = Rebus.WAIT_C2 * (waitingTime * waitingTime) + Rebus.WAIT_C1 * waitingTime;
 		}
-//		Log.i(TAG, ". Waiting time: " + cost, true, true);
+		Log.i(TAG, ". Waiting time: " + cost, true, true);
 		return cost;
 	}
 	
@@ -373,7 +378,7 @@ public class RebusScheduleTask implements Runnable {
 		int deviation = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
 		double cost = Rebus.DEV_C * (deviation * deviation);
 		
-//		Log.i(TAG, ". Service time dev: " + cost, true, true);
+		Log.i(TAG, ". Service time dev: " + cost, true, true);
 		return cost;
 	}
 	
@@ -390,7 +395,7 @@ public class RebusScheduleTask implements Runnable {
 		
 		double cost = Rebus.CAPACITY_C * (free * free);
 		
-//		Log.i(TAG, ". Cap util: " + cost, true, true);
+		Log.i(TAG, ". Cap util: " + cost, true, true);
 		return cost;
 	}
 	
@@ -402,7 +407,24 @@ public class RebusScheduleTask implements Runnable {
 	 */
 	private double loadVehicleUtilization(int numJobs) {
 		double cost = Math.pow(numJobs / 2, -1) * Rebus.VEHICLE_UTIL_C;// / mSchedule.size();
-//		Log.i(TAG, ". Vehicle util: " + cost + "\n", true, true);
+		Log.i(TAG, ". Vehicle util: " + cost + "\n", true, true);
+		return cost;
+	}
+	
+	private double loadMileage(VehicleScheduleJob lastJob, VehicleScheduleJob curJob, int numJobs) {
+		double cost;
+		
+		if(lastJob.getTrip() == null)
+			cost = 0;
+		else if(lastJob.nextJobIs(mVehiclePlanIndex, curJob))
+			cost = lastJob.getTimeToNextJob(mVehiclePlanIndex);
+		else 
+			cost = mCache.getHash(lastJob.getTrip().getIdentifier(), 
+										lastJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP, 
+										curJob.getTrip().getIdentifier(), 
+										curJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP);
+		cost = cost * Rebus.MILEAGE_C / numJobs;
+		Log.i(TAG, ". Mileage: " + cost + "\n", true, true);
 		return cost;
 	}
 	

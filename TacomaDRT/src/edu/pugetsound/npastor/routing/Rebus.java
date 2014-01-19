@@ -50,6 +50,8 @@ public class Rebus {
 	public static final int FAVOR_BUSY_VEHICLES = 0x8;
 	/** Penalizes jobs based on their deviation from the service area centroid */
 	public static final int CENTROID_DEVIATION_JOB_COST = 0x10;
+	/** Use a mileage heuristic in the load function */
+	public static final int MINIMIZE_MILEAGE = 0x20;
 	
 		
 	// Job cost constants (job difficulty)
@@ -62,13 +64,14 @@ public class Rebus {
 	public static final float CENTROID_DEV_SCALAR = 0.5f;
 	
 	// Load constants (insertion feasibility)
-	public static final float DR_TIME_C1 = 0.5f; // Cvariable in Madsen's notation
-	public static final float DR_TIME_C2 = 1.0f; // Cconst in Madsen's notation
+	public static final float DR_TIME_C1 = 0.0f; // Cvariable in Madsen's notation
+	public static final float DR_TIME_C2 = 0.0f; // Cconst in Madsen's notation
 	public static final float WAIT_C1 = 0.0f;
 	public static final float WAIT_C2 = 0.0f;
-	public static final float DEV_C = 1.5f;
-	public static final float CAPACITY_C = 3.0f; // Ci in Madsen's notation
+	public static final float DEV_C = 0.0f;
+	public static final float CAPACITY_C = 0.5f; // Ci in Madsen's notation
 	public static final float VEHICLE_UTIL_C = 5000f;
+	public static final float MILEAGE_C = 600.0f;
 	
 	public static final float HANDLE_TIME = 0.0f;
 	
@@ -198,7 +201,9 @@ public class Rebus {
 		for(int i = 0; i < plan.length; i++) {
 			Vehicle v = plan[i];
 			
-			// Build new worker threads and copy schedules and jobs. We don't want to modify existing schedule
+			// Build new worker threads and copy schedules and jobs. 
+			// We don't want to modify existing schedule
+			// TODO do we still need to do this?
 			ArrayList<VehicleScheduleJob> existingSchedule = v.getSchedule();
 			ArrayList<VehicleScheduleJob> scheduleCopy  = new ArrayList<VehicleScheduleJob>();
 			for(int j = 0; j < existingSchedule.size(); j++) {
@@ -403,6 +408,8 @@ public class Rebus {
 			hintString.append("Soft Constraints, ");
 		if(isSettingEnabled(CENTROID_DEVIATION_JOB_COST))
 			hintString.append("Centroid Deviation Job Cost, ");
+		if(isSettingEnabled(MINIMIZE_MILEAGE))
+			hintString.append("Minimize Mileage Load Cost, ");
 		
 		// If no hints set, add appropriate message
 		if(hintString.length() == 0)
