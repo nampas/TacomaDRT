@@ -353,7 +353,7 @@ public class RebusScheduleTask implements Runnable {
 		double cost = Rebus.DR_TIME_C1 * (endJob.getWorkingServiceTime(mVehiclePlanIndex) - startJob.getWorkingServiceTime(mVehiclePlanIndex)) 
 				+ Rebus.DR_TIME_C2 * (waitingTime + Rebus.HANDLE_TIME);
 		
-		Log.i(TAG, "     Driving time: " + cost, true, true);
+//		Log.i(TAG, "     Driving time: " + cost, true, true);
 		return cost;
 	}
 	
@@ -371,7 +371,7 @@ public class RebusScheduleTask implements Runnable {
 			int waitingTime = job.getWaitTime(mVehiclePlanIndex);
 			cost = Rebus.WAIT_C2 * (waitingTime * waitingTime) + Rebus.WAIT_C1 * waitingTime;
 		}
-		Log.i(TAG, ". Waiting time: " + cost, true, true);
+//		Log.i(TAG, ". Waiting time: " + cost, true, true);
 		return cost;
 	}
 	
@@ -385,7 +385,7 @@ public class RebusScheduleTask implements Runnable {
 		int deviation = job.getWorkingServiceTime(mVehiclePlanIndex) - job.getStartTime();
 		double cost = Rebus.DEV_C * (deviation * deviation);
 		
-		Log.i(TAG, ". Service time dev: " + cost, true, true);
+//		Log.i(TAG, ". Service time dev: " + cost, true, true);
 		return cost;
 	}
 	
@@ -402,7 +402,7 @@ public class RebusScheduleTask implements Runnable {
 		
 		double cost = Rebus.CAPACITY_C * (free * free);
 		
-		Log.i(TAG, ". Cap util: " + cost, true, true);
+//		Log.i(TAG, ". Cap util: " + cost, true, true);
 		return cost;
 	}
 	
@@ -414,7 +414,7 @@ public class RebusScheduleTask implements Runnable {
 	 */
 	private double loadVehicleUtilization(int numJobs) {
 		double cost = Math.pow(numJobs / 2, -1) * Rebus.VEHICLE_UTIL_C;// / mSchedule.size();
-		Log.i(TAG, ". Vehicle util: " + cost + "\n", true, true);
+//		Log.i(TAG, ". Vehicle util: " + cost + "\n", true, true);
 		return cost;
 	}
 	
@@ -431,7 +431,7 @@ public class RebusScheduleTask implements Runnable {
 										curJob.getTrip().getIdentifier(), 
 										curJob.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP);
 		cost = cost * Rebus.MILEAGE_C / numJobs;
-		Log.i(TAG, ". Mileage: " + cost + "\n", true, true);
+//		Log.i(TAG, ". Mileage: " + cost + "\n", true, true);
 		return cost;
 	}
 	

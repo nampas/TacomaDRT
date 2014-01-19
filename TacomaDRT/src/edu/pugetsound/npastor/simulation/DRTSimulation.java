@@ -58,6 +58,7 @@ public class DRTSimulation {
 	
 	// Rebus settings
 	private static final int REBUS_HINTS = Rebus.FAVOR_BUSY_VEHICLES;
+											//| Rebus.MINIMIZE_MILEAGE;
 											//| Rebus.NEW_VEHICLE_ON_REJECTION;
 										   //| Rebus.CENTROID_DEVIATION_JOB_COST;
 	
@@ -539,14 +540,14 @@ public class DRTSimulation {
 		stringBuilder.append("insert: dr_time_c1" + COMMA_DELIM)
 			.append("insert: dr_time_c2" + COMMA_DELIM).append("insert: wait_c1" + COMMA_DELIM)
 			.append("insert: wait_c2" + COMMA_DELIM).append("insert: dev_c" + COMMA_DELIM)
-			.append("insert: capacity_c" + COMMA_DELIM).append("insert: vehicle_util_c");
+			.append("insert: capacity_c" + COMMA_DELIM).append("insert: vehicle_util_c").append("insert: mileage_c");
 		text.add(stringBuilder.toString());
 		
 		// Add job insertion quality parameters
 		stringBuilder = new StringBuilder();
 		stringBuilder.append(Rebus.DR_TIME_C1 + COMMA_DELIM).append(Rebus.DR_TIME_C2 + COMMA_DELIM)
 			.append(Rebus.WAIT_C1 + COMMA_DELIM).append(Rebus.WAIT_C2 + COMMA_DELIM).append(Rebus.DEV_C + COMMA_DELIM)
-			.append(Rebus.CAPACITY_C + COMMA_DELIM).append(Rebus.VEHICLE_UTIL_C + COMMA_DELIM);
+			.append(Rebus.CAPACITY_C + COMMA_DELIM).append(Rebus.VEHICLE_UTIL_C + COMMA_DELIM).append(Rebus.MILEAGE_C + COMMA_DELIM);
 		text.add(stringBuilder.toString());
 		
 		DRTUtils.writeTxtFile(text, Constants.REBUS_SETTINGS_CSV, true);
