@@ -2,7 +2,6 @@ package edu.pugetsound.npastor.routing;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
@@ -11,7 +10,10 @@ import java.util.concurrent.Executors;
 
 import edu.pugetsound.npastor.TacomaDRTMain;
 import edu.pugetsound.npastor.riderGen.CityBoundaryShp;
+import edu.pugetsound.npastor.routing.RebusScheduleTask.ScheduleResult;
+import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.Log;
+import edu.pugetsound.npastor.utils.TimeSegment;
 import edu.pugetsound.npastor.utils.Trip;
 
 /**
@@ -126,7 +128,7 @@ public class Rebus {
 	public RebusResults scheduleQueuedJobs(Vehicle[] plan) {
 		Log.iln(TAG, "*************************************");
 		Log.iln(TAG, "       Scheduling " + mJobQueue.size() + " job(s)");
-		ArrayList<Trip> rejectedTrips = new ArrayList<Trip>();
+		ArrayList<RejectedTrip> rejectedTrips = new ArrayList<RejectedTrip>();
 		while(!mJobQueue.isEmpty()) {
 			REBUSJob job = mJobQueue.peek();
 			
@@ -137,17 +139,19 @@ public class Rebus {
 				if(isSettingEnabled(Rebus.NEW_VEHICLE_ON_REJECTION)) {
 					Vehicle[] newPlan = new Vehicle[plan.length + 1];
 					
-					// Add all existing vehicles to new plan, and append new vehicle
+					// Add all existing vehicles to new plan, and append a new all-day vehicle
 					for(int i = 0; i < plan.length; i++)
 						newPlan[i] = plan[i];
-					newPlan[plan.length] = new Vehicle(plan.length);
+					
+					// The new all-day vehicle
+					TimeSegment allDaySeg = new TimeSegment(Constants.BEGIN_OPERATION_HOUR * 60, Constants.END_OPERATION_HOUR * 60);
+					newPlan[plan.length] = new Vehicle(plan.length, new TimeSegment[] {allDaySeg});
 					plan = newPlan;
 					
 					Log.iln(TAG, "Trip " + job.getTrip().getIdentifier() 
 							+ " rejected. Adding new vehicle. Total now at: " + plan.length);
-					
 				} else {
-					rejectedTrips.add(job.getTrip());
+					rejectedTrips.add(new RejectedTrip(mTotalJobsHandled, job.getTrip()));
 					Log.iln(TAG, "Trip " + job.getTrip().getIdentifier() + " rejected");
 					
 					// Consume the trip and move on
@@ -209,7 +213,7 @@ public class Rebus {
 			for(int j = 0; j < existingSchedule.size(); j++) {
 				scheduleCopy.add(existingSchedule.get(j));
 			}
-			RebusScheduleTask task = new RebusScheduleTask(i, scheduleCopy, 
+			RebusScheduleTask task = new RebusScheduleTask(i, v, scheduleCopy, 
 					mCache, pickupJob, dropoffJob, results, latch);
 			mScheduleExecutor.execute(task);
 		}
@@ -465,12 +469,23 @@ public class Rebus {
 	
 	public class RebusResults {
 		
-		public final ArrayList<Trip> rejectedTrips;
+		public final ArrayList<RejectedTrip> rejectedTrips;
 		public final Vehicle[] vehiclePlans;
 		
-		private RebusResults(ArrayList<Trip> rejectedTrips, Vehicle[] vehiclePlans) {
+		private RebusResults(ArrayList<RejectedTrip> rejectedTrips, Vehicle[] vehiclePlans) {
 			this.rejectedTrips = rejectedTrips;
 			this.vehiclePlans = vehiclePlans;
+		}
+	}
+	
+	public class RejectedTrip {
+		
+		public final Trip trip;
+		public final int tripNum; 
+		
+		private RejectedTrip(int tripNum, Trip trip) {
+			this.trip = trip;
+			this.tripNum = tripNum;
 		}
 	}
 }

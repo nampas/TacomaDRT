@@ -137,7 +137,7 @@ public class Trip {
 	 * @return
 	 */
 	public static String getSpaceSeparatedHeaders() {
-		return "Trip" + SPACE_DELIM +
+		return "TripId" + SPACE_DELIM +
 				"Type" + SPACE_DELIM + 
 				"Age" + SPACE_DELIM +
 				"Outbound?" + SPACE_DELIM +
@@ -177,7 +177,7 @@ public class Trip {
 	
 	@Override
 	public String toString() {
-		return "Trip: " + mIdentifier + 
+		return "TripId: " + mIdentifier + 
 				"\n  Type: " + DRTUtils.getTripTypeString(mTripType) + 
 				"\n  Age: " + mRiderAge +
 				"\n  Outbound? " + mIsOutbound +

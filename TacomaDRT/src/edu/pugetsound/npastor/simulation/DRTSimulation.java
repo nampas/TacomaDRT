@@ -32,6 +32,7 @@ import com.vividsolutions.jts.geom.Point;
 import edu.pugetsound.npastor.TacomaDRTMain;
 import edu.pugetsound.npastor.routing.Rebus;
 import edu.pugetsound.npastor.routing.Rebus.RebusResults;
+import edu.pugetsound.npastor.routing.Rebus.RejectedTrip;
 import edu.pugetsound.npastor.routing.RouteCache;
 import edu.pugetsound.npastor.routing.Routefinder;
 import edu.pugetsound.npastor.routing.RoutefinderTask;
@@ -40,6 +41,8 @@ import edu.pugetsound.npastor.routing.VehicleScheduleJob;
 import edu.pugetsound.npastor.utils.Constants;
 import edu.pugetsound.npastor.utils.DRTUtils;
 import edu.pugetsound.npastor.utils.Log;
+import edu.pugetsound.npastor.utils.RiderChars;
+import edu.pugetsound.npastor.utils.TimeSegment;
 import edu.pugetsound.npastor.utils.Trip;
 
 public class DRTSimulation {
@@ -47,6 +50,7 @@ public class DRTSimulation {
 	public static final String TAG = "DRTSimulation";
 	
 	private static final String NUM_VEHICLES_FILE_LBL = "num_vehicles";
+	private static final String PEAK_VEHICLE_FILE_LBL = "peak_vehicles";
 	
 	private static final int ROUTE_UPDATE_INCREMENT = 10; // Update route progress at this percentage increment
 	
@@ -63,7 +67,7 @@ public class DRTSimulation {
 	private Rebus mRebus;
 	private boolean mFromFile;
 	private RouteCache mCache;
-	private ArrayList<Trip> mRejectedTrips;
+	private ArrayList<RejectedTrip> mRejectedTrips;
 	private int mTotalTrips;
 
 	public DRTSimulation(ArrayList<Trip> trips, boolean fromFile) {
@@ -72,7 +76,7 @@ public class DRTSimulation {
 		mTotalTrips = trips.size();
 		mEventQueue = new PriorityQueue<SimEvent>();
 		mVehiclePlans = new Vehicle[0];
-		mRejectedTrips = new ArrayList<Trip>();
+		mRejectedTrips = new ArrayList<RejectedTrip>();
 	}
 	
 	/**
@@ -91,9 +95,11 @@ public class DRTSimulation {
 		
 		// If a file path is specified, parse out the number of vehicles to generate
 		// Otherwise, use the value defined in Constants
-		int vehicleQuantity = -1;
+		int allDayFleetSize = -1;
+		int peakFleetSizeAdd = -1;
 		if(!mFromFile) {
-			vehicleQuantity = Constants.ALL_DAY_FLEET_SIZE;
+			allDayFleetSize = Constants.ALL_DAY_FLEET_SIZE;
+			peakFleetSizeAdd = Constants.PEAK_FLEET_SIZE_ADDITION;
 		} else {
 			File file = new File(TacomaDRTMain.getSourceTripVehDir());
 			Log.iln(TAG, "Loading number of vehicles from: " + file.getPath());
@@ -102,13 +108,13 @@ public class DRTSimulation {
 				Scanner scanner = new Scanner(file);
 				while (scanner.hasNextLine()) {
 					String[] tokens = scanner.nextLine().split(" ");
-					if(tokens[0].equals(NUM_VEHICLES_FILE_LBL)) {
-						vehicleQuantity = Integer.valueOf(tokens[1]);
-						break;
-					}						
+					if(tokens[0].equals(NUM_VEHICLES_FILE_LBL))
+						allDayFleetSize = Integer.valueOf(tokens[1]);
+					else if(tokens[0].equals(PEAK_VEHICLE_FILE_LBL))
+						peakFleetSizeAdd = Integer.valueOf(tokens[1]);
 				}
 				scanner.close();
-				if(vehicleQuantity == -1)
+				if(allDayFleetSize == -1)
 					throw new IllegalArgumentException("Vehicle quantity not specified in file at " + file.getPath());				
 			} catch(FileNotFoundException ex) {
 				Log.e(TAG, "Unable to find trip file at: " + file.getPath());
@@ -118,7 +124,7 @@ public class DRTSimulation {
 		}
 	
 		// Generate vehicles and append quantity to file
-		generateVehicles(vehicleQuantity);
+		generateVehicles(allDayFleetSize, peakFleetSizeAdd);
 		appendTripVehicleTxtFile();
 		
 		enqueueTripRequestEvents();
@@ -140,11 +146,27 @@ public class DRTSimulation {
 		onSimulationFinished();
 	}
 	
-	private void generateVehicles(int numVehicles) {
-		Log.iln(TAG, "Generating " + numVehicles + " vehicles");
-		mVehiclePlans = new Vehicle[numVehicles];
-		for(int i = 0; i < numVehicles; i++) {
-			mVehiclePlans[i] = new Vehicle(i);
+	private void generateVehicles(int allDayVehicles, int peakVehiclesAdd) {
+		int totalVehicles = allDayVehicles + peakVehiclesAdd;
+		Log.iln(TAG, "Generating " + totalVehicles + " vehicles. All day: " 
+				+ allDayVehicles + ". Peak addition: " + peakVehiclesAdd);
+		mVehiclePlans = new Vehicle[totalVehicles];
+		
+		// Generate all day vehicles
+		TimeSegment allDaySeg = 
+				new TimeSegment(Constants.BEGIN_OPERATION_HOUR * 60, Constants.END_OPERATION_HOUR * 60);
+		TimeSegment[] allDayArray = new TimeSegment[] {allDaySeg};
+		for(int i = 0; i < allDayVehicles; i++) {
+			mVehiclePlans[i] = new Vehicle(i, allDayArray);
+		}
+		
+		// Get peak times from the rider characteristics file
+		TimeSegment[] peakSegs = new RiderChars(mFromFile).getPeakPeriods();
+		
+		// Generate peak vehicles
+		for(int i = 0; i < peakVehiclesAdd; i++) {
+			int indexId = i + allDayVehicles;
+			mVehiclePlans[indexId] = new Vehicle(indexId, peakSegs);
 		}
 	}
 	
@@ -251,8 +273,8 @@ public class DRTSimulation {
 		
 		// Add all rejected trips
 		text.add("\r\n REJECTED TRIPS \r\n");
-		for(Trip t : mRejectedTrips) {
-			text.add(t.toString());
+		for(RejectedTrip t : mRejectedTrips) {
+			text.add(t.trip.toString());
 		}
 
 		// Write file
@@ -263,8 +285,22 @@ public class DRTSimulation {
 	 * Append the vehicle quantity to the trip/vehicle file
 	 */
 	private void appendTripVehicleTxtFile() {
+		// Sum all-day and peak vehicle counts
+		int allDayCount = 0;
+		int peakCount = 0;
+		for(Vehicle v : mVehiclePlans) {
+			if(v.servesAllDay())
+				allDayCount++;
+			else
+				peakCount++;					
+		}
+		
+		// Build vehicle quantity text
 		ArrayList<String> text = new ArrayList<String>(1);
-		text.add(NUM_VEHICLES_FILE_LBL + " " + mVehiclePlans.length);
+		text.add(NUM_VEHICLES_FILE_LBL + " " + allDayCount);
+		text.add(PEAK_VEHICLE_FILE_LBL + " " + peakCount);
+		
+		// Write to the readable and paresable files
 		DRTUtils.writeTxtFile(text, Constants.TRIPS_VEHICLES_TXT, true);
 		DRTUtils.writeTxtFile(text, Constants.TRIPS_READABLE_TXT, true);
 	}
@@ -283,7 +319,8 @@ public class DRTSimulation {
 						+ "avg pickup dev (m/j)" + COMMA_DELIM
 						+ "avg veh wait time (m/j)" + COMMA_DELIM
 						+ "avg seats occupied w/ 1+ jobs" + COMMA_DELIM
-						+ "total distance (miles)" + COMMA_DELIM;
+						+ "total distance (miles)" + COMMA_DELIM
+						+ "service time (hr)" + COMMA_DELIM;
 		text.add(headers);
 		
 		int numTripsServiced = mTrips.size() - mRejectedTrips.size();
@@ -300,6 +337,8 @@ public class DRTSimulation {
 		double globalCapUtil = 0;;
 		// Total distance traveled systemwide
 		double globalDistance = 0;
+		// Total service hours
+		double globalServiceHours = 0;
 		
 		for(Vehicle curVeh : mVehiclePlans) {
 			StatsWrapper result = calcVehicleStats(curVeh);
@@ -316,7 +355,8 @@ public class DRTSimulation {
 							+ result.avgPickupDev + COMMA_DELIM
 							+ result.avgPickupWaitTime + COMMA_DELIM
 							+ result.avgCapUtil + COMMA_DELIM
-							+ result.totalMiles + COMMA_DELIM;
+							+ result.totalMiles + COMMA_DELIM
+							+ result.serviceHours + COMMA_DELIM;
 			text.add(vehString);
 						
 			// Update global statistics
@@ -327,6 +367,7 @@ public class DRTSimulation {
 			globalMaxTrTimeDev = (int) Math.max(globalMaxTrTimeDev, result.maxTravelTimeDev);
 			globalMaxPickupDev = (int) Math.max(globalMaxPickupDev, result.maxPickupDev);
 			globalDistance += result.totalMiles;
+			globalServiceHours += result.serviceHours;
 		}
 		
 		// Build global statistics string
@@ -338,7 +379,8 @@ public class DRTSimulation {
 							+ globalPickupDev + COMMA_DELIM
 							+ globalAvgWaitTime + COMMA_DELIM
 							+ globalCapUtil + COMMA_DELIM
-							+ globalDistance + COMMA_DELIM;
+							+ globalDistance + COMMA_DELIM
+							+ globalServiceHours + COMMA_DELIM;
 		text.add(globalString);
 		
 		DRTUtils.writeTxtFile(text, Constants.STATS_CSV, true);
@@ -402,13 +444,13 @@ public class DRTSimulation {
 				double curTrTimeDev = job.getServiceTime() - job.getStartTime();
 				travelTimeDevTotal += curTrTimeDev;
 				result.maxTravelTimeDev = Math.max(result.maxTravelTimeDev, curTrTimeDev);
+
 				break;
 			}
 			
 			// Add mileage to current job
 			if(lastJob.getLocation() != null) {
 				totalMeters += router.findRoute(lastJob.getLocation(), job.getLocation()).getDistance();
-				
 			}
 		}
 		
@@ -417,8 +459,59 @@ public class DRTSimulation {
 		result.avgPickupWaitTime = (double) pickupWaitTotal / result.numTrips;
 		result.avgCapUtil = (double) totalCapUtil / capUtilStops;
 		result.totalMiles = DRTUtils.metersToMiles(totalMeters);
+		result.serviceHours = calcServiceHours(v);
 		
 		return result;		
+	}
+	
+	/**
+	 * Returns service hours for specified hours
+	 * @param v
+	 * @return
+	 */
+	private double calcServiceHours(Vehicle v) {
+		int serviceMins;
+		ArrayList<VehicleScheduleJob> schedule = v.getSchedule();
+		if(v.servesAllDay()) {
+			// If vehicle serves all day, service hours run from begin service time
+			// to service time of the last job
+			int endMins = schedule.get(schedule.size() - 2).getServiceTime();
+			serviceMins = endMins - (Constants.BEGIN_OPERATION_HOUR * 60);
+		} else {
+			// Get service segments
+			TimeSegment[] segs = v.getServiceSegments();			
+			TimeSegment morningSeg;
+			TimeSegment afternoonSeg;
+			if(segs[0].getStartMins() < segs[1].getStartMins()) {
+				morningSeg = segs[0];
+				afternoonSeg = segs[1];
+			} else {
+				morningSeg = segs[1];
+				afternoonSeg = segs[0];
+			}
+			
+			// Find the last morning job
+			int lastMorningJob = 0;
+			for(VehicleScheduleJob job : schedule) {
+				// Dropoffs will always be the last job for a time segment
+				if(job.getType() != VehicleScheduleJob.JOB_TYPE_DROPOFF)
+					continue;
+				
+				int curServiceTime = job.getServiceTime();
+				if(curServiceTime > lastMorningJob 
+						&& curServiceTime < afternoonSeg.getStartMins())
+					lastMorningJob = curServiceTime;
+			}										
+			
+			// Service time for each period stretches from the beginning of the period
+			// to the service time of the last job arising from that period
+			int morningMins = lastMorningJob - morningSeg.getStartMins();
+			int afternoonMins = schedule.get(schedule.size() - 2).getServiceTime()
+					- afternoonSeg.getStartMins();
+			serviceMins = morningMins + afternoonMins;
+		}
+			
+		return (double) serviceMins / 60;
 	}
 	
 	/**
@@ -469,9 +562,10 @@ public class DRTSimulation {
 		
 		// Write the text file
 		ArrayList<String> text = new ArrayList<String>();
-		text.add(Trip.getSpaceSeparatedHeaders());
-		for(Trip t : mRejectedTrips) {
-			text.add(t.toStringSpaceSeparated());
+		text.add("TripNum RejNum " + Trip.getSpaceSeparatedHeaders());
+		for(int i = 0; i < mRejectedTrips.size(); i++) {
+			RejectedTrip t = mRejectedTrips.get(i);
+			text.add(t.tripNum + " " + i + " " + t.trip.toStringSpaceSeparated());
 		}
 		DRTUtils.writeTxtFile(text, Constants.TRIPS_REJECTED_TXT, true);
 		
@@ -764,6 +858,7 @@ public class DRTSimulation {
 		private double avgPickupWaitTime;
 		private double avgCapUtil; // Average capacity utilization at each stop
 		private double totalMiles;
+		private double serviceHours;
 		private int numTrips;
 
 		public StatsWrapper() {
@@ -775,6 +870,7 @@ public class DRTSimulation {
 			avgPickupWaitTime = 0;
 			avgCapUtil = 0;
 			totalMiles = 0;
+			serviceHours = 0;
 		}
 	}
 }

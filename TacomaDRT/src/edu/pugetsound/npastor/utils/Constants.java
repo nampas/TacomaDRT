@@ -34,15 +34,15 @@ public class Constants {
 	public final static String STOP_POINTS_PREFIX_SHP = "/stops_veh_";
 	
 	// The biggies!
-	public final static int TOTAL_TRIPS = 100;
+	public final static int TOTAL_TRIPS = 50;
 	public final static int ALL_DAY_FLEET_SIZE = 1; // Minimum DRT fleet size across day
 	public final static int PEAK_FLEET_SIZE_ADDITION = 1; // Additional vehicles to be added during peak hours
 	
 	// Agency constants
 	public final static int BEGIN_OPERATION_HOUR = 6; // Service begins at this hour
-	public final static int END_OPERATION_HOUR = 21; // (7:00 PM) Service ends at this hour
+	public final static int END_OPERATION_HOUR = 19; // (7:00 PM) Service ends at this hour
 	public final static int BEGIN_REQUEST_WINDOW = 0; // Time when riders can begin to make requests
-	public final static int END_REQUEST_WINDOW = 20; // Cutoff time for making request known to agency for the day
+	public final static int END_REQUEST_WINDOW = 18; // Cutoff time for making request known to agency for the day
 	public final static int CALL_REQUEST_BUFFER_MINS = 60; // Minimum buffer between call in time and request time
 	public final static int PICKUP_SERVICE_WINDOW = 45; //Max difference between actual pickup time and requested pickup time
 	public final static int PICKUP_INTERVAL = 5; // Requested pickup times are rounded by this minute value
