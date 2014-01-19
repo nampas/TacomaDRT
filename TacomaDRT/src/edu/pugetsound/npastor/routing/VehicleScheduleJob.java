@@ -1,9 +1,11 @@
 package edu.pugetsound.npastor.routing;
 
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import edu.pugetsound.npastor.utils.DRTUtils;
+import edu.pugetsound.npastor.utils.Log;
 import edu.pugetsound.npastor.utils.Trip;
 
 /**
@@ -164,6 +166,30 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		else if(compareVal > 0) returnVal = 1;
 		
 		return returnVal;
+	}
+	
+	/**
+	 * Finds the corresponding job. Pickup and dropoff jobs for the same trip are considered corresponding.
+	 * @param job Job to find corresponding pair for
+	 * @return The corresponding job
+	 */
+	public static VehicleScheduleJob findCorrespondingJob(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> jobs) {
+		//For now, assume this is a pickup/dropoff
+		int keyId = job.getTrip().getIdentifier();
+		VehicleScheduleJob correspondingJob = null;
+		for(VehicleScheduleJob j : jobs) {
+			Trip t = j.getTrip();
+			if(t != null) {
+				if(t.getIdentifier() == keyId && j.getType() != job.getType()) {
+					correspondingJob = j;
+					break;
+				}
+			}
+		}
+		if(correspondingJob == null) 
+			Log.e(TAG, "No corresponding job found for job type " +
+					job.getType() + ", trip " + job.getTrip().getIdentifier());
+		return correspondingJob;
 	}
 	
 	@Override
