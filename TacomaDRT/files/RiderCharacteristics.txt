@@ -18,12 +18,12 @@ AgeGroup Percentage
 65+ 6.7
 
 DayPeriod/dailyPercentage/ (startTimeHrs/lengthHrs) <- for peak periods
-From PSRC Model Documentation p128
-morning 0
-morning_peak 32.0 6 3
-day 26.0
-afternoon_peak 24.0 15 2
-evening 18
+Modified from PSRC Model Documentation p128
+morning 0.7
+morning_peak 32.7 6 3
+day 27.9
+afternoon_peak 24.8 15 3
+evening 13.9
 
 TransitFrequncy/Rider/Week Percentage
 one- 6.2

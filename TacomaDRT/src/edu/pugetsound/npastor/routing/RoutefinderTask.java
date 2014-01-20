@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import edu.pugetsound.npastor.utils.Log;
+import edu.pugetsound.npastor.routing.RouteCache.RouteCacheBuilder;
 import edu.pugetsound.npastor.utils.Trip;
 
 public class RoutefinderTask implements Runnable {
@@ -13,7 +13,7 @@ public class RoutefinderTask implements Runnable {
 
 	private static final int UPDATE_INTERVAL = 1000; // Update progress at this interval
 	
-	private RouteCache mCache;
+	private RouteCacheBuilder mCache;
 	private ArrayList<Trip> mTrips;
 	private int mStartIndex;
 	private int mEndIndex;
@@ -21,7 +21,7 @@ public class RoutefinderTask implements Runnable {
 	private AtomicInteger mProgress;
 
 
-	public RoutefinderTask (RouteCache cache, ArrayList<Trip> trips, 
+	public RoutefinderTask (RouteCacheBuilder cache, ArrayList<Trip> trips, 
 			int startI, int endI, CountDownLatch latch, AtomicInteger progress) {
 		mCache = cache;
 		mTrips = trips;

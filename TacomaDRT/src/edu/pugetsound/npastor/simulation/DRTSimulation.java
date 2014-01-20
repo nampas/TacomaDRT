@@ -34,6 +34,7 @@ import edu.pugetsound.npastor.routing.Rebus;
 import edu.pugetsound.npastor.routing.Rebus.RebusResults;
 import edu.pugetsound.npastor.routing.Rebus.RejectedTrip;
 import edu.pugetsound.npastor.routing.RouteCache;
+import edu.pugetsound.npastor.routing.RouteCache.RouteCacheBuilder;
 import edu.pugetsound.npastor.routing.Routefinder;
 import edu.pugetsound.npastor.routing.RoutefinderTask;
 import edu.pugetsound.npastor.routing.Vehicle;
@@ -736,20 +737,21 @@ public class DRTSimulation {
 	 * the previously generated cache. Otherwise, we compute every route...
 	 */
 	public void buildCache() {
-		mCache = new RouteCache(mTrips.size());
+		RouteCacheBuilder routeBuilder = new RouteCacheBuilder(mTrips.size());
 		// If we're re-running a simulation, we can re-use the previous routes
 		if(mFromFile) {
-			buildCacheFromFile();
+			buildCacheFromFile(routeBuilder);
 		} else {
-			doAllRoutefinding();
+			doAllRoutefinding(routeBuilder);
 		}
+		mCache = routeBuilder.build();
 		writeCacheToFile();
 	}
 	
 	/**
 	 * Delegates routefinding to worker threads
 	 */
-	private void doAllRoutefinding() {
+	private void doAllRoutefinding(RouteCacheBuilder cacheBuilder) {
 		int numThreads = TacomaDRTMain.numThreads;
 		
 		long routeStartTime = System.currentTimeMillis();
@@ -764,7 +766,7 @@ public class DRTSimulation {
 		for(int i = 0; i < numThreads; i++) {
 			int startIndex = threadTaskSize * i;
 			int endIndex = (i+1 == numThreads) ? mTrips.size() : startIndex + threadTaskSize;
-			RoutefinderTask routeTask = new RoutefinderTask(mCache, mTrips, startIndex, endIndex, latch, progress);
+			RoutefinderTask routeTask = new RoutefinderTask(cacheBuilder, mTrips, startIndex, endIndex, latch, progress);
 			new Thread(routeTask).start();
 		}
 		
@@ -793,7 +795,7 @@ public class DRTSimulation {
 	/**
 	 * Moves a source cache into memory
 	 */
-	private void buildCacheFromFile() {
+	private void buildCacheFromFile(RouteCacheBuilder routeBuilder) {
 		File file = new File(TacomaDRTMain.getSourceCacheDir());
 		Log.iln(TAG, "Loading cache from file at " + file.getPath());
 		
@@ -804,7 +806,7 @@ public class DRTSimulation {
 			for(int i = 0; i < size; i++) {
 				String[] tokens = scanner.nextLine().split(COMMA_DELIM);
 				for(int j = 0; j < size; j++) {
-					mCache.putDirect(i, j, Byte.valueOf(tokens[j]));
+					routeBuilder.putDirect(i, j, Byte.valueOf(tokens[j]));
 				}				
 			}
 			scanner.close();	
