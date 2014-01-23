@@ -70,6 +70,7 @@ public class RebusScheduleTask implements Runnable {
 		
 		int pickupIndex = 1; //s1 in Madsen's notation
 		int dropoffIndex = 2; //s2 in Madsen's notation
+		int lastMove = 0;
 
 		// FOLLOWING COMMENTS (except those in parenthesis) ARE MADSEN'S REBUS PSEUDO-CODE
 		// Step 1: Place s1, s2 just after this first stop T0 in the mSchedule, and update the mSchedule
@@ -82,6 +83,7 @@ public class RebusScheduleTask implements Runnable {
 		while(pickupIndex < mSchedule.size() - 2) {
 			if(isFirstEval) {
 				isFirstEval = false;
+				lastMove = pickupIndex;
 			//  a) if s2 is before the last stop T1 in the schedule...
 			} else if(mSchedule.get(dropoffIndex+1).getType() == VehicleScheduleJob.JOB_TYPE_END) {
 //				Log.info(TAG, " --- FIRST");
@@ -93,12 +95,14 @@ public class RebusScheduleTask implements Runnable {
 				// and place s2 just after s1 and update the schedule. Go to 2(b).
 				dropoffIndex = pickupIndex + 1;
 				mSchedule.add(dropoffIndex, mDropoffJob);
+				lastMove = pickupIndex;
 			//     else, move s2 one step to the right
 			} else {
 //				Log.info(TAG, " --- SECOND");
 				mSchedule.set(dropoffIndex, mSchedule.get(dropoffIndex+1)); // (swap elements)
 				dropoffIndex++;
 				mSchedule.set(dropoffIndex, mDropoffJob);
+				lastMove = dropoffIndex;
 			}
 			
 			// b) Check for feasibility.
@@ -109,7 +113,7 @@ public class RebusScheduleTask implements Runnable {
 //					Log.info(TAG, "-------BREAKING ON INDEX TOO HIGH");
 					break;
 				}
-				FeasibilityResult feasResult = checkScheduleFeasibility(mSchedule, mVehiclePlanIndex);
+				FeasibilityResult feasResult = checkScheduleFeasibility(mSchedule, mVehiclePlanIndex, lastMove);
 				int feasCode = feasResult.resultCode;
 				VehicleScheduleJob failsOn = feasResult.failsOn; // The job the test failed on
 				
@@ -151,6 +155,7 @@ public class RebusScheduleTask implements Runnable {
 						// and place s2 just after s1 and update the schedule. Go to 2(b).
 						dropoffIndex = pickupIndex + 1;
 						mSchedule.add(dropoffIndex, mDropoffJob);
+						lastMove = pickupIndex;
 					// B. if the time window related to s1 is violated then stop
 					} else if(feasCode == FeasibilityResult.FAIL_WINDOW && 
 							failsOn.getTrip().getIdentifier() == mPickupJob.getTrip().getIdentifier()) {
@@ -176,12 +181,12 @@ public class RebusScheduleTask implements Runnable {
 	 * @return A FeasibilityResult object containing the result code (mResultCode). In the case of a failure, this
 	 *         result also includes the job (mFailsOn) that the result code applies to. 
 	 */
-	private FeasibilityResult checkScheduleFeasibility(ArrayList<VehicleScheduleJob> schedule, int vehicleNum) {
+	private FeasibilityResult checkScheduleFeasibility(ArrayList<VehicleScheduleJob> schedule, int vehicleNum, int lastMove) {
 		
 		int numPassengers = 0;
 		FeasibilityResult result = new FeasibilityResult();
 		
-		Rebus.updateServiceTimes(schedule, mCache, vehicleNum);
+		Rebus.updateServiceTimes(schedule, mCache, vehicleNum, lastMove);
 		
 		// If soft constraints are enabled, all schedules pass the feasibility check
 		if(Rebus.isSettingEnabled(Rebus.SOFT_CONSTRAINTS)) {

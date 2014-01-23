@@ -246,7 +246,7 @@ public class Rebus {
 			ArrayList<VehicleScheduleJob> optimalSchedule = optimalVehicle.getSchedule();
 			optimalSchedule.add(optimalScheduling.mOptimalPickupIndex, pickupJob);
 			optimalSchedule.add(optimalScheduling.mOptimalDropoffIndex, dropoffJob);
-			updateServiceTimes(optimalSchedule, mCache, -1);
+			updateServiceTimes(optimalSchedule, mCache, -1, 0);
 			
 			Log.iln(TAG, "Trip " + t.getIdentifier() + " successfully scheduled. Vehicle: " + optimalVehicle.getIdentifier()
 					+ ". Pickup index: " + optimalScheduling.mOptimalPickupIndex 
@@ -263,6 +263,7 @@ public class Rebus {
 		}
 		return scheduleSuccessful;
 	}
+
 	
 	/**
 	 * Updates the service times of each job in this schedule
@@ -271,16 +272,37 @@ public class Rebus {
 	 * @param vehicleNum the vehicle number if this should update a working schedule,
 	 *                   or -1 if this should update the finalized schedule 
 	 */
-	public static void updateServiceTimes(ArrayList<VehicleScheduleJob> schedule, RouteCache cache, int vehicleNum) {
-		// Initialize time to first pickup/dropoff job in the list
-		int curTime = schedule.get(1).getStartTime();
-		if(vehicleNum < 0)
-			schedule.get(1).setServiceTime(curTime);
-		else
-			schedule.get(1).setWorkingServiceTime(vehicleNum, curTime);
+	public static void updateServiceTimes(ArrayList<VehicleScheduleJob> schedule, RouteCache cache, int vehicleNum, int lastMove) {
 		
-		// Start at index 2. We skip the start job and the first pickup job
-		for(int i = 2; i < schedule.size() - 1; i++) {
+		// The last job whose service time is guaranteed correct is at 2 indices previous.
+		// The previous job likely swapped with the job at lastMove, rendering its service
+		// time inaccurate. So we start at lastMove - 2;
+		int idx = lastMove - 2;
+		// Ensure idx is within valid range. If not, set it to first pickup job in schedule
+		if(idx < 1)
+			idx = 1;
+
+		// Initialize current time to the service time of our last trustworthy job. Or,
+		// if it turns out that the last trustworthy job is that first pickup, initialize
+		// time to its requested start time
+		int curTime;
+		if(idx == 1) {
+			curTime = schedule.get(idx).getStartTime();
+			// In this case we must also initialize service time
+			if(vehicleNum < 0)
+				schedule.get(idx).setServiceTime(curTime);
+			else
+				schedule.get(idx).setWorkingServiceTime(vehicleNum, curTime);
+		} else {
+			if(vehicleNum < 0)
+				curTime = schedule.get(idx).getServiceTime();
+			else
+				curTime = schedule.get(idx).getWorkingServiceTime(vehicleNum);
+		}		
+		
+		// Start at the previously determined index PLUS ONE. We already know that the job
+		// at idx has a trustworthy service time from the steps above.
+		for(int i = idx+1; i < schedule.size() - 1; i++) {
 			VehicleScheduleJob curJob = schedule.get(i);
 			int type = curJob.getType();
 			
