@@ -222,7 +222,7 @@ public class RebusScheduleTask implements Runnable {
 
 				// Get the travel time between last location and here
 				int totalTripTravelTime = curJob.getWorkingServiceTime(mVehiclePlanIndex) 
-						- VehicleScheduleJob.findCorrespondingJob(curJob, schedule).getWorkingServiceTime(mVehiclePlanIndex);
+						- curJob.getCorrespondingJob().getWorkingServiceTime(mVehiclePlanIndex);
 				
 				// If the total trip travel time exceeds the max allowable trip travel time,
 				// fail the feasibility test.

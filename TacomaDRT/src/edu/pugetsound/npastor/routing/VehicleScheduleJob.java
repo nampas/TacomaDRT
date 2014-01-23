@@ -31,6 +31,7 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 	private VehicleScheduleJob mNextJob;
 	private Point2D mLocation;
 	private int mWaitTime;
+	private VehicleScheduleJob mCorrespondingJob;
 	
 	// These arrays allow for worker threads to set their own
 	// "working" values as they evaluate this job in their 
@@ -56,6 +57,10 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		mWorkingTimesToNextJob = new int[numVehicles];
 		mWorkingNextJobs = new VehicleScheduleJob[numVehicles];
 		mWorkingServiceTimes = new int[numVehicles];
+	}
+	
+	public void setCorrespondingJob(VehicleScheduleJob corrJob) {
+		mCorrespondingJob = corrJob;
 	}
 	
 	/**
@@ -158,6 +163,10 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		return mPlannedServiceTime;
 	}
 	
+	public VehicleScheduleJob getCorrespondingJob() {
+		return mCorrespondingJob;
+	}
+	
 	public int compareTo(VehicleScheduleJob job) {
 		int returnVal = 0;
 		
@@ -166,30 +175,6 @@ public class VehicleScheduleJob implements Comparable<VehicleScheduleJob>, Clone
 		else if(compareVal > 0) returnVal = 1;
 		
 		return returnVal;
-	}
-	
-	/**
-	 * Finds the corresponding job. Pickup and dropoff jobs for the same trip are considered corresponding.
-	 * @param job Job to find corresponding pair for
-	 * @return The corresponding job
-	 */
-	public static VehicleScheduleJob findCorrespondingJob(VehicleScheduleJob job, ArrayList<VehicleScheduleJob> jobs) {
-		//For now, assume this is a pickup/dropoff
-		int keyId = job.getTrip().getIdentifier();
-		VehicleScheduleJob correspondingJob = null;
-		for(VehicleScheduleJob j : jobs) {
-			Trip t = j.getTrip();
-			if(t != null) {
-				if(t.getIdentifier() == keyId && j.getType() != job.getType()) {
-					correspondingJob = j;
-					break;
-				}
-			}
-		}
-		if(correspondingJob == null) 
-			Log.e(TAG, "No corresponding job found for job type " +
-					job.getType() + ", trip " + job.getTrip().getIdentifier());
-		return correspondingJob;
 	}
 	
 	@Override

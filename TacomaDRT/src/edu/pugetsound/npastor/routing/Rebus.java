@@ -195,6 +195,9 @@ public class Rebus {
 				t.getPickupTime(), durationMins, VehicleScheduleJob.JOB_TYPE_PICKUP, plan.length);
 		VehicleScheduleJob dropoffJob = new VehicleScheduleJob(t, t.getDestinationPoint(),
 				t.getPickupTime() + durationMins, 0, VehicleScheduleJob.JOB_TYPE_DROPOFF, plan.length);
+		// Set corresponding jobs
+		pickupJob.setCorrespondingJob(dropoffJob);
+		dropoffJob.setCorrespondingJob(pickupJob);
 		
 		// A list of thread results. Each thread will insert a result into this list at the index
 		// corresponding to the index of the vehicle it's evaluating

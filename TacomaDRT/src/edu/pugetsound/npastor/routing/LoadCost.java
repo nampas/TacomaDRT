@@ -39,7 +39,7 @@ public class LoadCost {
 			}
 			
 			// Update running total of the objective function
-			double objectiveFuncInc = getJobLoad(curJob, VehicleScheduleJob.findCorrespondingJob(curJob, schedule), 
+			double objectiveFuncInc = getJobLoad(curJob, 
 					passengers, lastJob, schedule.size());
 			msg += objectiveFuncInc + " ";
 			objectiveFunction += objectiveFuncInc;
@@ -62,11 +62,11 @@ public class LoadCost {
 	 * @param passengers Number of passengers in the vehicle
 	 * @return The load cost for this stop (the specified job)
 	 */
-	private double getJobLoad(VehicleScheduleJob job, VehicleScheduleJob correspondingJob, 
-						int passengers, VehicleScheduleJob lastJob, int scheduleSize) {
+	private double getJobLoad(VehicleScheduleJob job, int passengers,
+			VehicleScheduleJob lastJob, int scheduleSize) {
 		// Calculate the REBUS load cost
 		//			Log.iln(TAG, "Load cost for job type " + job.getType() + ", id " + job.getTrip().getIdentifier());
-		double cost = loadDrivingTime(job, correspondingJob) +
+		double cost = loadDrivingTime(job) +
 				loadWaitingTime(job) +
 				loadDesiredServiceTimeDeviation(job) +
 				loadCapacityUtilization(passengers);
@@ -85,15 +85,15 @@ public class LoadCost {
 	 * @param job Job to evaluate
 	 * @return The driving time laod cost for this stop (the specified job)
 	 */
-	private double loadDrivingTime(VehicleScheduleJob job, VehicleScheduleJob correspondingJob) {
+	private double loadDrivingTime(VehicleScheduleJob job) {
 		Trip t = job.getTrip();
 		int minDrivingTime = (int)t.getRoute().getTime() / 60;
 
 		// We need to construct the entire trip that this job is a member of.
 		VehicleScheduleJob startJob = job.getType() == VehicleScheduleJob.JOB_TYPE_PICKUP ?
-				job : correspondingJob;
+				job : job.getCorrespondingJob();
 		VehicleScheduleJob endJob = job.getType() == VehicleScheduleJob.JOB_TYPE_DROPOFF ? 
-				job : correspondingJob;
+				job : job.getCorrespondingJob();
 		int waitingTime = job.getWaitTime(mVehiclePlanIndex);
 
 		double cost = Rebus.DR_TIME_C1 * (endJob.getWorkingServiceTime(mVehiclePlanIndex) - startJob.getWorkingServiceTime(mVehiclePlanIndex)) 
