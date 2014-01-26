@@ -25,6 +25,7 @@ public class Constants {
 	public final static String LOG_TXT = "/log.txt";
 	public final static String SCHED_TXT = "/schedules.txt";
 	public final static String STATS_CSV = "/statistics.csv";
+	public final static String BOARDINGS_CSV = "/boardings.csv";
 	public final static String REBUS_SETTINGS_CSV = "/rebus_settings.csv";
 	public final static String TRIP_SHP_DIR = "/trips_shp";
 	public final static String TRIP_PREFIX_SHP = "/tripgeo_";

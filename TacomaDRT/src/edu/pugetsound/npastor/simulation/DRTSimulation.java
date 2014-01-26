@@ -210,6 +210,7 @@ public class DRTSimulation {
 		writeStatisticsTxtFile();
 		writeRebusSettingsFile();
 		writeRejectedTripFiles();
+		writeBoardingsByHourFile();
 	}
 	
 	/**
@@ -556,7 +557,7 @@ public class DRTSimulation {
 	}
 	
 	/**
-	 * Writes a text file and a shapefile containing information regarding the rejected trips
+	 * Writes a text file containing information regarding the rejected trips
 	 */
 	private void writeRejectedTripFiles() {
 		// Don't bother writing anything if there are no rejected trips
@@ -571,8 +572,74 @@ public class DRTSimulation {
 			text.add(t.tripNum + " " + i + " " + t.trip.toStringSpaceSeparated());
 		}
 		DRTUtils.writeTxtFile(text, Constants.TRIPS_REJECTED_TXT, true);
+	}
+	
+	/**
+	 * Writes a file tracking vehicle boardings at half-hour intervals
+	 */
+	private void writeBoardingsByHourFile() {
 		
-		//TODO: Write the shapefile
+		ArrayList<String> text = new ArrayList<String>();
+		
+		// Measure at 30 minutes intervals
+		int minIncrement = 30;	
+		int startMins = Constants.BEGIN_OPERATION_HOUR * 60;
+		int endMins = Constants.END_OPERATION_HOUR * 60;
+		// Track the system totals
+		int[] periodTotals = new int[(endMins - startMins) / minIncrement];
+		
+		// Build the 30 minutes period headers, and add to the text list
+		StringBuilder strBuilder = new StringBuilder();
+		strBuilder.append("VehicleId" + COMMA_DELIM);
+		for(int i = startMins; i < endMins; i += minIncrement)
+			strBuilder.append(i + COMMA_DELIM);
+		text.add(strBuilder.toString());
+		
+		// Loop through each vehicle
+		for(Vehicle v: mVehiclePlans) {
+			ArrayList<VehicleScheduleJob> schedule = v.getSchedule();
+			strBuilder = new StringBuilder();
+			strBuilder.append(v.getIdentifier() + COMMA_DELIM);
+			
+			int vehicleBoardings = 0;
+			
+			// Loop through each time period
+			for(int i = startMins; i < endMins; i += minIncrement) {
+				// Loop through the schedule looking for pickups that fall in the current
+				// time period
+				for(VehicleScheduleJob curJob: schedule) {
+
+					// We only need to consider pickup jobs
+					if(curJob.getType() != VehicleScheduleJob.JOB_TYPE_PICKUP)
+						continue;
+					
+					// Check if the job falls in the current time period...
+					int serviceTime = curJob.getServiceTime();
+					if(serviceTime >= i && serviceTime < i + minIncrement) {
+						// ...if so, increment the boardings counter
+						vehicleBoardings++;
+					}
+				}	
+				
+				// We've found all boardings for the current time period. Add this
+				// number to the vehicle string
+				strBuilder.append(vehicleBoardings + COMMA_DELIM);
+				// And add to the system totals
+				periodTotals[(i - startMins) / minIncrement] += vehicleBoardings;
+			}			
+			// This vehicle if finished, add its line to the text
+			text.add(strBuilder.toString());
+		}
+		
+		// Finally, the last line of the file will be system totals for each time period
+		strBuilder = new StringBuilder();
+		strBuilder.append("System" + COMMA_DELIM);
+		for(int i = 0; i < periodTotals.length; i++) {
+			strBuilder.append(periodTotals[i] + COMMA_DELIM);
+		}
+		text.add(strBuilder.toString());
+		
+		DRTUtils.writeTxtFile(text, Constants.BOARDINGS_CSV, true);
 		
 	}
 	
