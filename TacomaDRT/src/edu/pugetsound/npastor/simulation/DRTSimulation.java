@@ -584,60 +584,77 @@ public class DRTSimulation {
 		// Measure at 30 minutes intervals
 		int minIncrement = 30;	
 		int startMins = Constants.BEGIN_OPERATION_HOUR * 60;
-		int endMins = Constants.END_OPERATION_HOUR * 60;
+		int endMins = 24 * 60; // We'll call this midnight, as actual service time likely exceeds planned service time
 		// Track the system totals
-		int[] periodTotals = new int[(endMins - startMins) / minIncrement];
+		int[] boardingTotals = new int[(endMins - startMins) / minIncrement];
+		int[] dropoffTotals = new int[(endMins - startMins) / minIncrement];
 		
-		// Build the 30 minutes period headers, and add to the text list
-		StringBuilder strBuilder = new StringBuilder();
-		strBuilder.append("VehicleId" + COMMA_DELIM);
+		// Build the period headers, and add to the text
+		StringBuilder headers = new StringBuilder();
+		headers.append("VehicleId" + COMMA_DELIM);
 		for(int i = startMins; i < endMins; i += minIncrement)
-			strBuilder.append(i + COMMA_DELIM);
-		text.add(strBuilder.toString());
+			headers.append(i + COMMA_DELIM);
+		text.add(headers.toString());
 		
 		// Loop through each vehicle
 		for(Vehicle v: mVehiclePlans) {
 			ArrayList<VehicleScheduleJob> schedule = v.getSchedule();
-			strBuilder = new StringBuilder();
-			strBuilder.append(v.getIdentifier() + COMMA_DELIM);
+			StringBuilder boardings = new StringBuilder();
+			StringBuilder departures = new StringBuilder();
+			boardings.append(v.getIdentifier() + " boardings" + COMMA_DELIM);
+			departures.append(v.getIdentifier() + " dropoffs" + COMMA_DELIM);
 			
 			int vehicleBoardings = 0;
+			int vehicleDepartures = 0;
 			
 			// Loop through each time period
 			for(int i = startMins; i < endMins; i += minIncrement) {
-				// Loop through the schedule looking for pickups that fall in the current
-				// time period
+				// Loop through the schedule looking for jobs that fall in the current time period
 				for(VehicleScheduleJob curJob: schedule) {
 
-					// We only need to consider pickup jobs
-					if(curJob.getType() != VehicleScheduleJob.JOB_TYPE_PICKUP)
+					int jobType = curJob.getType();
+					
+					// Ignore start/end jobs
+					if(jobType == VehicleScheduleJob.JOB_TYPE_START ||
+							jobType == VehicleScheduleJob.JOB_TYPE_END)
 						continue;
 					
 					// Check if the job falls in the current time period...
 					int serviceTime = curJob.getServiceTime();
 					if(serviceTime >= i && serviceTime < i + minIncrement) {
-						// ...if so, increment the boardings counter
-						vehicleBoardings++;
+						// ...if so, increment the boardings or departure counter
+						if(jobType == VehicleScheduleJob.JOB_TYPE_PICKUP)
+							vehicleBoardings++;
+						else
+							vehicleDepartures++;
 					}
 				}	
 				
-				// We've found all boardings for the current time period. Add this
-				// number to the vehicle string
-				strBuilder.append(vehicleBoardings + COMMA_DELIM);
+				// We've found all boardings/departures for the current time period. Add this
+				// number to the vehicle strings
+				boardings.append(vehicleBoardings + COMMA_DELIM);
+				departures.append(vehicleDepartures + COMMA_DELIM);
 				// And add to the system totals
-				periodTotals[(i - startMins) / minIncrement] += vehicleBoardings;
+				int index = (i - startMins) / minIncrement;
+				boardingTotals[index] += vehicleBoardings;
+				dropoffTotals[index] += vehicleDepartures;
 			}			
 			// This vehicle if finished, add its line to the text
-			text.add(strBuilder.toString());
+			text.add(boardings.toString());
+			text.add(departures.toString());
 		}
 		
 		// Finally, the last line of the file will be system totals for each time period
-		strBuilder = new StringBuilder();
-		strBuilder.append("System" + COMMA_DELIM);
-		for(int i = 0; i < periodTotals.length; i++) {
-			strBuilder.append(periodTotals[i] + COMMA_DELIM);
+		StringBuilder boardings = new StringBuilder();
+		StringBuilder dropoffs = new StringBuilder();
+		boardings.append("system boardings" + COMMA_DELIM);
+		dropoffs.append("system dropoffs" + COMMA_DELIM);
+		for(int i = 0; i < boardingTotals.length; i++) {
+			boardings.append(boardingTotals[i] + COMMA_DELIM);
+			dropoffs.append(dropoffTotals[i] + COMMA_DELIM);
 		}
-		text.add(strBuilder.toString());
+		text.add(boardings.toString());
+		text.add(dropoffs.toString());
 		
 		DRTUtils.writeTxtFile(text, Constants.BOARDINGS_CSV, true);
 		
