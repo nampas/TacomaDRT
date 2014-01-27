@@ -41,7 +41,7 @@ public class TripGenerator {
 
 	public final static String TAG = "TripGenerator";
 	
-	private final static String TRIP_FILE_LBL = "Trip";
+	public final static String TRIP_FILE_LBL = "Trip";
 	
 	// Minimum allowed trip time
 	public final static int MIN_TRIP_TIME_MINS = 5;
@@ -90,7 +90,8 @@ public class TripGenerator {
 	 * across instances of the model, so we can test how different variables affect the
 	 * results
 	 */
-	public void generateTripsFromFile(String tripLogPath) {
+	public ArrayList<Trip> generateTripsFromFile(String tripLogPath, 
+			boolean doOnFinished) {
 		File file = new File(tripLogPath);
 		Log.iln(TAG, "Loading trips from: " + file.getPath());
 		
@@ -123,7 +124,14 @@ public class TripGenerator {
 			System.exit(1);
 		}
 		
-		onTripsGenerated();
+		if(doOnFinished)
+			onTripsGenerated();
+		return mTrips;
+	}
+	
+
+	public ArrayList<Trip> generateTripsFromFile(String tripLogPath) {
+		return generateTripsFromFile(tripLogPath, false);
 	}
 	
 	public ArrayList<Trip> getTrips() {
@@ -305,8 +313,7 @@ public class TripGenerator {
 		t.setOriginPoint(mPointGen.randomPointInTract(t.getOriginTract()));
 		t.setDestinationPoint(mPointGen.randomPointInTract(t.getDestinationTract()));
 	}
-	
-	//TODO: determine when requests are made known to agency
+
 	/**
 	 * Generates a trip pickup time and the time when the trip was made known to the agency.
 	 * Both in minute precision
