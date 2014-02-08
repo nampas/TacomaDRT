@@ -7,7 +7,7 @@ import edu.pugetsound.npastor.utils.TimeSegment;
 public class Vehicle {
 
 	//TODO: what is capacity?
-	public static final int VEHICLE_CAPACITY = 15;
+	public static final int VEHICLE_CAPACITY = 20;
 	
 	private int mVehicleId;
 	private ArrayList<VehicleScheduleJob> mSchedule;

@@ -49,7 +49,7 @@ public class TripRedistributor {
 		// Parse the trips out of the file source file
 		TripGenerator tripGen = new TripGenerator(false);
 		mTrips = tripGen.generateTripsFromFile(mSourceDir 
-				+ Constants.TRIPS_VEHICLES_TXT);
+				+ Constants.TRIPS_VEHICLES_TXT, false);
 		
 		// Do the redistribution
 		generatePickupTimes();

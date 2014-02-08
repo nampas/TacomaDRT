@@ -131,7 +131,7 @@ public class TripGenerator {
 	
 
 	public ArrayList<Trip> generateTripsFromFile(String tripLogPath) {
-		return generateTripsFromFile(tripLogPath, false);
+		return generateTripsFromFile(tripLogPath, true);
 	}
 	
 	public ArrayList<Trip> getTrips() {
